@@ -1,0 +1,367 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ====================== Алгебра ===================== */
+/* ============= Тригонометрические уравнения ========= */
+/* ==================================================== */
+debuglog("ft_alg_equations_trig.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ==================================================================== */
+/* Решить простейшее тригонометрическое уравнение с линейным аргументом */
+/* Попытка решить тригонометрическое уравнение без преобразований       */
+/* ==================================================================== */
+debuglog("solve_simple_trigonometric_equation", debug_message_func_load)$
+solve_simple_trigonometric_equation(prs) := block(
+	[res, expr, rs, rs_ans,
+	st, s_l, s, vl, answ],
+	debug_start_function("solve_simple_trigonometric_equation", [fp_high_level, fp_solver]),
+	s_l : [], answ : false,
+	expr : get_val_by_alias(prs, "equation"),
+	debuglog(printf(false, "expr=~a", expr)),
+	/* Линейное */
+	rs : solve_linear_trigonometric_equation_linear_argument(prs),
+	if not(can_solve_p(rs)) then (res : rs, go(tag_quit)),
+	/* Квадратное */
+	/* !TODO! */
+	/* Поиск возможности замены тригонометрических выражений */
+	/* !TODO! */
+	/* Разложение на множители */
+	/* !TODO! */
+	s_l : [printf(false, "$~a$ --- не линейное тригонометрическое уравнение с линейным аргументом", totex(expr))],
+	answ : [[type = cant_find_solution, value = "Такое задание мы не можем решить"]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	tag_quit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ============================================================================= */
+/* Решить простейшее линейное тригонометрическое уравнение с линейным аргументом */
+/* ============================================================================= */
+debuglog("solve_linear_trigonometric_equation_linear_argument", debug_message_func_load)$
+solve_linear_trigonometric_equation_linear_argument(prs) := block(
+	[res, expr, rp, a1, a2, b1, b2, t_op, b, x1, x2, xs,
+	st, s_l, s, vl, answ],
+	debug_start_function("solve_linear_trigonometric_equation_linear_argument", [fp_high_level, fp_solver]),
+	s_l : [], answ : false,
+	expr : get_val_by_alias(prs, "equation"),
+	st : printf(false, "Решим линейное тригонометрическое уравнение: $~a$\\\\~2%", totex(expr)),
+	if (op(expr) = "=") then expr : first(expr)-second(expr),
+	debuglog(printf(false, "expr=~a", expr)),
+	rp : linear_trig_lin_arg_x_p(expr, x),
+	debuglog(printf(false, "rp=~a", rp)),
+	if rp = false then (
+		s_l : [printf(false, "$~a$ --- не линейное тригонометрическое уравнение с линейным аргументом", totex(expr))],
+		answ : [[type = cant_find_solution, value = "Такое задание мы не можем решить"]],
+		go(tag_exit)),
+	[a1, b1, a2, b2, t_op] : expr_linear_trig_linear_x(expr, x),
+	debuglog(printf(false, "a1=~a, a2=~a, b1=~a, b2=~a, t_op=~a", a1, a2, b1, b2, t_op)),
+	if (a1 # 1) then append_to_s_l("$~a$~2%", totex(a1*t_op(a2*x+b2)=-b1)),
+	b : -b1/a1,
+	append_to_s_l("$~a$~2%", totex(t_op(a2*x+b2)=b)),
+	if ((abs(b) > 1) and ((t_op = sin) or (t_op = cos))) then (
+		debuglog(printf(false, "too big b=~a", b)),
+		append_to_s_l("$\\left| ~a \\right|>1$, следовательно это уравнение не имеет корней.~2%", totex(b)),
+		answ : [[type = ts_value, value = ts_emptyset]],
+		go(tag_exit)),
+	x1 : false, x2 : false,
+	/* Решаем внешнюю тригонометрию */
+	if t_op = sin then (
+		if (b = 0) then (
+			x1 : ts_periodic_value(0, %pi),
+			append_to_s_l("$~a=~a$;~2%", totex(a2*x+b2), totex(x1))),
+		if (b = 1) then (
+			x1 : ts_periodic_value(%pi/2, 2*%pi),
+			append_to_s_l("$x=~a$;~2%", totex(a2*x+b2), totex(x1))),
+		if (b = -1) then (
+			x1 : ts_periodic_value(-%pi/2, 2*%pi),
+			append_to_s_l("$x=~a$;~2%", totex(a2*x+b2), totex(x1))),
+		if (x1 = false) then (
+			x1 : ts_periodic_value(asin(b), %pi),
+			x2 : ts_periodic_value(%pi-asin(b), %pi),
+			append_to_s_l("$~a=~a$; $~a=~a$;~2%", totex(a2*x+b2), totex(x1), totex(a2*x+b2), totex(x2)))),
+	if t_op = cos then (
+		if (b = 0) then (
+			x1 : ts_periodic_value(%pi/2, %pi),
+			append_to_s_l("$~a=~a$;~2%", totex(a2*x+b2), totex(x1))),
+		if (b = 1) then (
+			x1 : ts_periodic_value(0, 2*%pi),
+			append_to_s_l("$x=~a$;~2%", totex(a2*x+b2), totex(x1))),
+		if (b = -1) then (
+			x1 : ts_periodic_value(%pi, 2*%pi),
+			append_to_s_l("$x=~a$;~2%", totex(a2*x+b2), totex(x1))),
+		if (x1 = false) then (
+			x1 : ts_periodic_value(acos(b), %pi),
+			x2 : ts_periodic_value(-acos(b), %pi),
+			append_to_s_l("$~a=~a$; $~a=~a$;~2%", totex(a2*x+b2), totex(x1), totex(a2*x+b2), totex(x2)))),
+	if t_op = tan then (
+		x1 : ts_periodic_value(atan(b), %pi),
+		append_to_s_l("$~a=~a$;~2%", totex(a2*x+b2), totex(x1))),
+	if t_op = cot then (
+		x1 : ts_periodic_value(acot(b), %pi),
+		append_to_s_l("$~a=~a$;~2%", totex(a2*x+b2), totex(x1))),
+	if ((x1 = false) and (x2 = false)) then go(tag_exit),
+	/* Разрешаем линейность аргумента */	
+	if (b2 # 0) then (
+		s : "",
+		if (x1 # false) then (
+			x1 : ts_periodic_value(first(x1)-b2, second(x1)),
+			s : printf(false, "~a$~a=~a$; ", s, totex(a2*x), totex(x1))),
+		if (x2 # false) then (
+			x2 : ts_periodic_value(first(x2)-b2, second(x2)),
+			s : printf(false, "~a$~a=~a$; ", s, totex(a2*x), totex(x2))),
+		append_to_s_l("~a~2%", s)),
+	if (a2 # 1) then (
+		s : "",
+		if (x1 # false) then (
+			x1 : ts_periodic_value(first(x1)/a2, second(x1)/a2),
+			s : printf(false, "~a$~a=~a$; ", s, totex(x), totex(x1))),
+		if (x2 # false) then (
+			x2 : ts_periodic_value(first(x2)/a2, second(x2)/a2),
+			s : printf(false, "~a$~a=~a$; ", s, totex(x), totex(x2))),
+		append_to_s_l("~a~2%", s)),
+	/* Формируем ответ */
+	if x2 = false 
+	then answ : [[type = ts_value, value = x1]]
+	else answ : [[type = ts_value, value = x1], [type = ts_value, value = x2]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =========================================== */
+/* Решить тригонометрическое уравнение заменой */
+/* =========================================== */
+debuglog("solve_trigonometric_equation_by_substitution", debug_message_func_load)$
+solve_trigonometric_equation_by_substitution(prs) := block(
+	[res, expr, rp, a1, a2, b1, b2, t_op, b, x1, x2, xs, rs, rs_ans,
+	st, s_l, s, vl, answ],
+	debug_start_function("solve_trigonometric_equation_by_substitution", [fp_high_level, fp_solver]),
+	s_l : [], answ : false, res : false,
+	expr : get_val_by_alias(prs, "equation"),
+	st : printf(false, "Решим тригонометрическое уравнение $~a$ с помощью замены.~2%", totex(expr)),
+	if (op(expr) = "=") then expr : first(expr)-second(expr),
+	debuglog(printf(false, "expr=~a", expr)),
+	rp : expr_trig_data_x(expr),				/* получаем данные тригонометрического выражения */
+	/* Если в выражении только один вид триг функции и один вид ее аргумента, то пробуем замену */
+	if (listp(rp) and listp(rp[1]) and listp(rp[2]) and (length(rp[1])=1) and (length(rp[2])=1)) then block(
+		[t_op, 		/* заменяемая функция */
+		t_ar,  		/* аргумент заменяемой функции */
+		t_e,  		/* заменяемое выражение */
+		expr_t,  	/* уравнение после замены */
+		t_par],	 	/* имя для параметра */
+		t_op : rp[1][1], t_ar : rp[2][1], t_e : t_op(t_ar),
+		t_par : gensym(),
+		expr_t : subst(t_par, t_e, expr),
+		if not(freeof(x, expr_t)) then go(tag_if1_exit),	/* если после замены осталась неизвестная, то замена не удалась */
+		expr_t : subst(x, t_par, expr_t),
+		rs : solve_algebraic_equation([[alias = "equation", value = expr_t]]),	/* вызываем функцию для решения алгебраического уравнения */
+		if can_solve_p(rs) then (				/* если удалось решить алгебраическое уравнение */
+			rs_ans : getprop(rs, answer),
+			s : getprop(rs, solution),
+			append_to_s_l("~a", s)
+			/* !TODO! - решить простейшее триг уравнение для каждого найденного корня */
+			),
+		/* !TODO! */
+		tag_if1_exit),
+	tag_exit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ============================================================ */
+/* Решить тригонометрическое уравнение разложением на множители */
+/* ============================================================ */
+debuglog("solve_trigonometric_equation_by_factorization", debug_message_func_load)$
+solve_trigonometric_equation_by_factorization(prs) := block(
+	[res, expr, expr_f, rp, rs, rs_ans,
+	st, s_l, s, vl, answ],
+	debug_start_function("solve_trigonometric_equation_by_factorization", [fp_high_level, fp_solver]),
+	s_l : [], answ : false, res : false,
+	expr : get_val_by_alias(prs, "equation"),
+	st : printf(false, "Решим тригонометрическое уравнение $~a$ разложением на множители.~2%", totex(expr)),
+	if (op(expr) = "=") then expr : first(expr)-second(expr),
+	debuglog(printf(false, "expr=~a", expr)),
+	expr : factor(expr),	/* пытаемся разложить выражение на множители внутренними средствами */
+	if (op(expr) = "*") then block([e_ars, e, b],		/* если выражение является произведением */
+		e_ars : args(expr),							/* оставляем только множители, содержащие переменную */
+		e : 1,
+		for e_ar in e_ars do
+			if not(freeof(x, e_ar)) then e : e * e_ar,
+		expr : e,
+		e_ars : args(expr),
+		b : true,
+		for e_ar in e_ars while b do (				/* бегаем по сомножителям и решаем каждый отдельно */
+			rs : solve_trigonometric_equation([[alias = "equation", value = e_ar]]),
+			rs_ans : getprop(rs, answer),
+			if can_solve_p(rs) 
+				then (answ : append(answ, rs_ans), s : getprop(rs, solution), append_to_s_l("~a", s)) 
+				else b : false),
+		if (b = false) then (s_l : ["Это уравнение мы решить не можем"], answ : [[type = cant_find_solution, value = "Все корни не могут быть найдены"]])
+		),
+	/* !TODO! */
+	tag_exit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =================================== */
+/* Решить тригонометрическое уравнение */
+/* =================================== */
+debuglog("solve_trigonometric_equation", debug_message_func_load)$
+solve_trigonometric_equation(prs) := block(
+	[res, expr,
+	rs, rs_ans,
+	st, s_l, s, vl, answ],
+	debug_start_function("solve_trigonometric_equation", [fp_high_level, fp_solver]),
+	s_l : [], answ : false,
+	expr : get_val_by_alias(prs, "equation"),
+	st : printf(false, "Решим тригонометрическое уравнение: $~a$~2%", totex(expr)),
+	/* Попытка решить простейшее уравнение */
+	rs : solve_linear_trigonometric_equation_linear_argument(prs),
+	if can_solve_p(rs) then (
+		answ : getprop(rs, answer),
+		s_l : getprop(rs, solution_list),
+		go(tag_select_roots)),
+	/* !TODO! */
+	/* Переход к синусам и косинусам */
+	/* !TODO! */
+	/* Поиск общего аргумента для замены */
+	/* !TODO! */
+	/* Понижение множителей аргументов к одному и раскрытие сумм в аргументах */
+	/* !TODO! */
+	/* Разложение на множители */
+	rs : solve_trigonometric_equation_by_factorization(prs),
+	if can_solve_p(rs) then (
+		answ : getprop(rs, answer),
+		s_l : getprop(rs, solution_list),
+		go(tag_select_roots)),
+	/* !TODO! */
+	tag_select_roots,
+	if (((get_val_by_alias(prs, "a") # false) and (get_val_by_alias(prs, "b") # false)) or (get_val_by_alias(prs, "interval") # false)) then (
+		/* !TODO! - корни в отбор неправильно передаются */
+		rs : select_roots_in_interval(append(prs, answ)),
+		rs_ans : getprop(rs, answer),
+		if getprop(rs_ans[1], type) = cant_find_solution then go(tag_exit)),
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================ */
+/* Отбор корней в данном промежутке */
+/* ================================ */
+debuglog("select_roots_in_interval", debug_message_func_load)$
+select_roots_in_interval(prs) := block(
+	[res, rts, a, b, intrvl, xs,
+	st, s_l, s, vl, answ],
+	debug_start_function("select_roots_in_interval", [fp_high_level, fp_solver]),
+	s_l : [], answ : [],
+	/* Получаем параметры */
+	rts : get_val_by_alias(prs, "roots"),
+	a : get_val_by_alias(prs, "a"),
+	b : get_val_by_alias(prs, "b"),
+	if ((a # false) and (b # false)) 
+		then intrvl : ts_simple_interval(a, b, [false, false])
+		else intrvl : get_val_by_alias(prs, "interval"),
+	if (intervl = false) then (
+		answ : [[type = cant_find_solution, value = "Не указан интервал для отбора корней"]],
+		go(tag_exit)),
+	/* Отбираем корни */
+	st : printf(false, "Отберем корни, принадлежащие промежутку $~a$~2%", totex(intrvl)),
+	for r in rts do block([],		/* пробегаем по списку корней */
+		if ((listp(r)) and (getprop(t, type) = ts_value)) then block([v],	/* если список со структурой значения */
+			v : getprop(r, value),
+			if atom(r) then (			/* если имеем атомарное значение */
+				if val_in_interval_p(v, intrvl) 
+				then (
+					append_to_s_l("$~a \\in ~a$ --- подходит;~2%", totex(v), totex(intrvl)),
+					answ : append(answ, [[type = ts_value, value = v]]))
+				else append_to_s_l("$~a \\nin ~a$ --- не подходит;~2%", totex(v), totex(intrvl))),
+			if (not(atom(r)) and (op(r)=ts_periodic_value)) then block(		/* если имеем периодическое значение */
+				[v0, vp,	 	/* база и период периодического корня */
+				x1, x2, xd, 	/* начало, конец и типы границы интервала */
+				x1z, x2z,		/* наименьшее и наибольшее целое в интервале */
+				n1, n2, 		/* текст для неравенств */
+				k_l, x_l],		/* списки целых значений и соответствующих корней */
+				x1 : first(intrvl), x2 : second(intrvl), xd : third(intrvl),
+				v0 : first(r), vp : second(r),
+				if xd[1] then n1 : "\\geq" else n1 : "<",
+				if xd[2] then n2 : "\\geq" else n2 : "<",
+				append_to_s_l("$~a ~a ~a ~a ~a$;~2%", totex(x1), n1, totex(r), n2, totex(x2)),
+				if (v0 # 0) then (		/* вычитаем из неравенства добавок */
+					x1 : x1 - v0, x2 : x2 - v0,
+					append_to_s_l("$~a ~a ~a ~a ~a$;~2%", totex(x1), n1, totex(ts_periodic_value(0, vp)), n2, totex(x2))),
+				if (vp # 1) then (		/* деление неравенства на множитель */
+					x1 : x1/vp, x2 : x2/vp,
+					if x1>x2 then [x1, x2] : [x2, x1],		/* меняем местами концы если было деление на отрицательное число */
+					append_to_s_l("$~a ~a ~a ~a ~a$;~2%", totex(x1), n1, totex(ts_periodic_value(0, 1)), n2, totex(x2))),
+				k_l : [], x_l : [],
+				x1z : ceiling(x1),
+				if ((x1z = x1) and (xd[1] = false)) then x1z : x1z + 1,
+				x2z : floor(x2),
+				if ((x2z = x2) and (xd[2] = false)) then x2z : x2z - 1,
+				for i : x1z thru x2z do k_l : append(k_l, [i]),		/* список целых значений удовлетворяющих неравенству */
+				if (length(k_l) = 0) 
+				then append_to_s_l("Ни одно целое значение не удовлетворяет этому неравенству;~2%")
+				else (
+					append_to_s_l("$k=~[~a; ~]$;~2%", k_l),
+					x_l : vp*k_l+v0,											/* список корней удовлетворяющих неравенству */
+					append_to_s_l("$x=~[~a; ~]$;~2%", x_l),
+					for xx in x_l do answ : append(answ, [[type = ts_value, value = xx]]))
+				))),
+	/* !TODO! */
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =================================================================================== */
+/* Функция, возвращает все варианты замен по тригонометрическим тождествам в выражении */
+/* Принимает в качестве аргумента выражение e и возвращает список выражений, каждое из */
+/* которых является следствием исходного выражения. */
+/* =================================================================================== */
+/* Схема решения (тригонометрических) уравнений */
+/* Формируем список форм выражения */
+	/* добавляем в список самро выражение */
+	/* его разложение на множители */
+	/* и с раскрытыми скобками */
+/* Формируем список ближайших следствий */
+	/* создаем список следствий для каждого выражения предыдущего списка */
+/* Объединяем списки */
+	/* для каждого выражения пробуем стандартные методы решения простейших уравнений */
+debuglog("expression_trigonometric_changes_variants", debug_message_func_load)$
+expression_trigonometric_changes_variants(e) := block([
+	res,																/* результат функции */
+	e_op,																/* внешняя операция выражения */
+	e_ar,																/* аргументы выражения */
+	e_ar_vrs,
+	e_ar_cp
+	],
+	debug_start_function("expression_trigonometric_changes_variants", [fp_mid_level]),
+	res : [],															/* результат пока пустой */
+	if atom(e) then go(tag_exit),										/* если выражение атомарное, то делать тут нечего */
+	e_op : op(e),														/* внешняя операция выражения */
+	e_ar : args(e),														/* аргументы выражения */
+	/* Генерация вариантов для целого выражения */
+	/* !TODO! */
+	/* Проход по подвыражениям и вызов для каждого этой функции */
+	e_ar_vrs : [],														/* список со списками вариантов */
+	for e_a in e_ar do block([r],										/* проходим по аргументам */
+		r : expression_trigonometric_changes_variants(e_a),				/* для каждого агрумента получаем список вариантов преобразований */
+		e_ar_vrs : append(e_ar_vrs, [setify(r)])						/* добавляем в список со списками вариантов */
+		),
+	e_ar_cp : apply(cartesian_product, e_ar_vrs),						/* прямое произведение */
+	map(e_op, e_ar_cp),
+	/* !TODO! */
+	tag_exit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================================================================= */
+/* Функция, возвращает варианты замен по тригонометрическим тождествам в выражении на верхнем уровне */
+/* ================================================================================================= */
+debuglog("expression_trigonometric_changes_variants_top_level", debug_message_func_load)$
+expression_trigonometric_changes_variants_top_level(e) := block([res],
+	debug_start_function("expression_trigonometric_changes_variants_top_level", [fp_mid_level]),
+	/* !TODO! */
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$

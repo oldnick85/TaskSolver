@@ -1,0 +1,68 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ====================== Алгебра ===================== */
+/* ====================== Логика ====================== */
+/* ==================================================== */
+debuglog("ft_alg_logic.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ================== */
+/* Логические функции */
+/* ================== */
+l_implication(x, y) := block([res], 
+	if (((x = false) or (x = true)) and ((y = false) or (y = true))) 
+		then res : (not(x) or y)
+		else res : 'l_implication(x, y),
+	res)$
+l_equivalence(x, y) := block([res], 
+	if (((x = false) or (x = true)) and ((y = false) or (y = true))) 
+		then res : ((x and y) or (not(x) and not(y)))
+		else res : 'l_equivalence(x, y),
+	res)$
+/* ================================================== */
+/* Составить таблицу истинности логического выражения */
+/* ================================================== */
+debuglog("truth_table_logical_expression", debug_message_func_load)$
+truth_table_logical_expression(prs) := block(
+	[res, 
+	lexpr,																/* логическое выражение */
+	largs,																/* логические аргументы */
+	csub,																/* текущие подвыражения */
+	lsub,																/* список подвыражений, которые нужно вычислять */
+	ltbl,																/* таблица истинности */
+	st, s_l, s, vl, b, answ],
+	debug_start_function("truth_table_logical_expression", [fp_high_level, fp_solver]),
+	s_l : [],
+	[lexpr] : get_vals_by_aliases(prs, ["logical expression"]),
+	if (lexpr = false) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	debuglog(printf(false, "lexpr=~a", lexpr)),
+	st : printf(false, "Составить таблицу истинности логического выражения $~a$.~2%", totex(lexpr)),
+	ltbl : [],
+	largs : listofvars(lexpr),											/* получаем список переменных в выражении */
+	lsub : get_all_subexpressions(lexpr),								/* формируем список подвыражений, которые нужно вычислять */
+	lsub : setdifference(
+		setify(lsub), 
+		union(setify(largs), {lexpr})),
+	lsub : append(largs, listify(lsub), [lexpr]),
+	lvals : cartesian_power_lists([false, true], length(largs)),		/* получаем все возможные комбинации значений переменных */
+	for lval in lvals do block([sb, sv],								/* проходим по комбинациям значений */
+		sb : map("=", largs, lval),										/* вычисляем значение выражения */
+		sv : ev(lsub, sb),
+		ltbl : append(ltbl, [sv])),
+	sltbl : subst([false = 0, true = 1], ltbl),
+	s : to_tex_table(sltbl, [ts_top_captions = lsub]),
+	append_to_s_l("~a", s),
+	/* Ответ */
+	answ : [[type = ts_value, 
+		ts_text = "таблица истинности составлена",
+		ts_name = "таблица истинности", 
+		ts_caption = "таблица истинности", 
+		ts_alias = "truth table",  
+		value = ltbl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$

@@ -1,0 +1,279 @@
+debuglog("func-ts-email.mac", debug_message_module_load)$
+/* ================================ */
+/* Обработать файл с сырым проектом */
+/* ================================ */
+debuglog("process_raw_project_file", debug_message_func_load)$
+process_raw_project_file(fname) := block([res, dir_raw, dir_err, dir_rdy, fnm_raw, fnm_err, fnm_rdy, sys_s, prj, mail_addr], res : "",
+	dir_raw : "./works/raw_projects/",				/* каталог с сырыми проектами */
+	dir_err : "./works/error_projects/",			/* каталог с проектами, вызывающими фатальную ошибку */
+	dir_rdy : "./works/ready_projects/",			/* каталог с готовыми проектами */
+	dir_old : "./works/old_projects/",
+	dir_prj : "./projects/",
+	debug_start_function("process_raw_project_file", [fp_high_level, fp_common]),
+	fnm_raw : sconcat(dir_raw, fname),				/* имя сырого проекта */
+	fnm_err : sconcat(dir_err, fname),				/* имя ошибочного проекта */
+	fnm_rdy : sconcat(dir_rdy, fname),				/* имя готового проекта */
+	fnm_old : sconcat(dir_old, fname),				/* имя старого проекта */
+	sys_s : printf(false, "mv '~a' '~a'", fnm_raw, fnm_err),	/* перемещаем проект из сырого в ошибочный */
+	debuglog(printf(false, "sys_s = ~a", sys_s)),
+	system(sys_s),
+	prj : load_project_from_file(fnm_err),			/* загружаем проект из каталога ошибочных */
+	prj : generate_project_solution(prj),			/* генерируем его решение */
+	save_project_to_file(prj, fnm_err),				/* сохраняем проект обратно */
+	fname : make_project_tex_file_and_compile(prj, fname),	/*  */
+	debuglog(printf(false, "fname = ~a", fname)),
+	/* Перемещаем проект, ТеХ-файл с решениями и документ с решениями в каталог готовых проектов */
+	sys_s : printf(false, "mv '~a' '~a'", fnm_err, fnm_rdy),
+	system(sys_s),
+	debuglog(printf(false, "move project: sys_s = ~a", sys_s)),
+	sys_s : printf(false, "mv '~a~a.tex' '~a~a.tex'", dir_prj, fname, dir_rdy, fname),
+	system(sys_s),
+	debuglog(printf(false, "move tex: sys_s = ~a", sys_s)),
+	sys_s : printf(false, "mv '~a~a.pdf' '~a~a.pdf'", dir_prj, fname, dir_rdy, fname),
+	system(sys_s),
+	debuglog(printf(false, "move pdf: sys_s = ~a", sys_s)),
+	/* Отправляем документ с решениями по электронной почте */
+	mail_addr : getprop(prj, project_source_name),
+	sys_s : printf(false, "mpack -s \"Project file from TaskSolver\" \"~a~a.pdf\" ~a", dir_rdy, fname, mail_addr),
+	system(sys_s),
+	debuglog(printf(false, "send mail: sys_s = ~a", sys_s)),
+	/* Перемещаем проект и его ТеХ-файл в каталог старых проектов; документ удаляем */
+	sys_s : printf(false, "rm '~a~a.pdf'", dir_rdy, fname),
+	system(sys_s),
+	debuglog(printf(false, "delete pdf: sys_s = ~a", sys_s)),
+	sys_s : printf(false, "mv '~a' '~a'", fnm_rdy, fnm_old),
+	system(sys_s),
+	debuglog(printf(false, "move project to old: sys_s = ~a", sys_s)),
+	sys_s : printf(false, "mv '~a~a.tex' '~a~a.tex'", dir_rdy, fname, dir_old, fname),
+	system(sys_s),
+	debuglog(printf(false, "move tex to old: sys_s = ~a", sys_s)),
+	/* Конец */
+	debug_end_function(),
+	res)$
+/* ======================================= */
+/* Скачать почту в локальный почтовый ящик */
+/* ======================================= */
+debuglog("download_email", debug_message_func_load)$
+download_email() := block([res, sys_s], res : "",
+	debug_start_function("download_email", [fp_high_level, fp_common]),
+	sys_s : printf(false, "fetchmail -N -d0 -v -f /home/~a/.fetchmailrc", usr_name),
+	debuglog(printf(false, "try to bash fetchmail = ~a", sys_s)),
+	system(sys_s),
+	sys_s : printf(false, "read -t 5"), system(sys_s),			/* ждем 5 секунд, чтобы файл с почтой обновился */
+	debug_end_function(),
+	res)$
+/* ================================ */
+/* Очистить локальный почтовый ящик */
+/* ================================ */
+debuglog("clear_local_email_file", debug_message_func_load)$
+clear_local_email_file([p]) := block([res, fname, f_em, sys_s], res : "",
+	debug_start_function("clear_local_email_file", [fp_high_level, fp_common]),
+	if length(p)=0 then fname : printf(false, "/var/mail/~a", usr_name) else fname : p[1],
+	debuglog(printf(false, "fname=~a", fname)),
+	if file_search(fname)#false then block([],
+		historylog(t_message, printf(false, "Файл с почтой найден~%"), []),
+		f_em : openw(fname))			/* открываем файл с почтой */
+	else block([], 
+		historylog(t_message, printf(false, "Файл с почтой не найден~%"), []),
+		f_em : false, res : false),
+	debuglog(printf(false, "f_em=~a", f_em)),
+	if f_em=false then go(tag_exit),
+	printf(f_em, "~%"),
+	close(f_em),
+	tag_exit,
+	/* debuglog(printf(false, "res = ~a", res)), */
+	sys_s : printf(false, "rm ~a", fname),
+	system(sys_s),
+	debug_end_function(),
+	res)$
+/* ========================================= */
+/* Получить текст локального почтового ящика */
+/* ========================================= */
+debuglog("get_local_email_text", debug_message_func_load)$
+get_local_email_text([p]) := block([res, fname, f_em], res : "",
+	debug_start_function("get_local_email_text", [fp_high_level, fp_common]),
+	if length(p)=0 then fname : printf(false, "/var/mail/~a", usr_name) else fname : p[1],
+	debuglog(printf(false, "fname=~a", fname)),
+	if file_search(fname)#false then block([],
+		historylog(t_message, printf(false, "Файл с почтой найден~%"), []),
+		f_em : openr(fname))			/* открываем файл с почтой */
+	else block([], 
+		historylog(t_message, printf(false, "Файл с почтой не найден~%"), []),
+		f_em : false, res : false),
+	debuglog(printf(false, "f_em=~a", f_em)),
+	if f_em=false then go(tag_exit),
+	while (rl # false) do block([cur_proj, mail_subj, nxst], nxst : false,
+		rl : readline(f_em),			/* читаем следующую строку */
+		if rl#false then res : sconcat(res, printf(false, "~a~%", rl))),
+	tag_exit,
+	debuglog(printf(false, "email text length = ~a", slength(res))),
+	/* debuglog(printf(false, "res = ~a", res)), */
+	debug_end_function(),
+	res)$
+/* ==================================================== */
+/* Разделить текст локального почтового ящика на части, */
+/* относящиеся к разным письмам                         */
+/* ==================================================== */
+debuglog("split_local_email_text", debug_message_func_load)$
+split_local_email_text(s) := block([res, ps, last_ps, ps_l], res : [], ps_l : [], ps : true, last_ps : 1,
+	debug_start_function("split_local_email_text", [fp_high_level, fp_common]),
+	s : printf(false, "~%~%~a", s),
+	while ps#false do block([s_f],
+		s_f : printf(false, "~%From "),
+		ps : ssearch(s_f, s, sequal, last_ps),		/* ищем начало письма по ключевому полю */
+		debuglog(printf(false, "ps = ~a, last_ps = ~a", ps, last_ps)),
+		last_ps : ps+slength(s_f),
+		if ps#false then ps_l : append(ps_l, [ps])),
+	debuglog(printf(false, "ps_l = ~a", ps_l)),
+	ps_l : append(ps_l, [slength(s)]),
+	for i:1 thru length(ps_l)-1 do block([t_s],
+		debuglog(printf(false, "i = ~a, ps_l[i] = ~a, ps_l[i+1] = ~a", i, ps_l[i], ps_l[i+1])),
+		t_s : substring(s, ps_l[i], ps_l[i+1]),
+		debuglog(printf(false, "ts = ~a", t_s)),
+		res : push(t_s, res)),
+	debuglog(printf(false, "text parts count = ~a", map(slength, res))),
+	/* debuglog(printf(false, "res = ~a", res)), */
+	debug_end_function(),
+	res)$
+/* =============================== */
+/* Создать проект из текста письма */
+/* =============================== */
+debuglog("make_project_from_email_text", debug_message_func_load)$
+make_project_from_email_text(s) := block([res, ps, ps1, ps2, s_f, s_f1, s_f2, s_ea, s_sb, s_tx, pr_name, p_tsks], res : false,
+	debug_start_function("make_project_from_email_text", [fp_high_level, fp_common]),
+	/* Ищем обратный адрес */
+	s_f1 : printf(false, "~%Return-Path: <"),
+	ps1 : ssearch(s_f1, s),
+	if ((ps1=false) or (ps1>100)) then go(tag_exit),
+	ps1 : ps1+slength(s_f1),
+	s_f2 : printf(false, ">~%"),
+	ps2 : ssearch(s_f2, s, 'sequal, ps1),
+	if ps2=false then go(tag_exit),
+	s_ea : substring(s, ps1, ps2),
+	debuglog(printf(false, "s_ea=~a", s_ea)),
+	pr_name : printf(false, "~a", timedate()),
+	/* Создаем новый проект и заполняем некоторые его параметры */
+	res : make_new_project(),
+	res : setprop(res, project_name, pr_name),
+	res : setprop(res, project_source, ts_email),
+	res : setprop(res, project_source_name, s_ea),
+	/* Ищем тему письма */
+	s_f1 : printf(false, "~%Subject: "),
+	ps1 : ssearch(s_f1, s),
+	if ps1=false then go(tag_exit),
+	ps1 : ps1+slength(s_f1),
+	s_f2 : printf(false, "~%"),
+	ps2 : ssearch(s_f2, s, 'sequal, ps1),
+	if ps2=false then go(tag_exit),
+	s_sb : substring(s, ps1, ps2),
+	debuglog(printf(false, "s_sb=~a", s_sb)),
+	s_f1 : printf(false, "=?UTF-8?B?"),
+	ps1 : ssearch(s_f1, s_sb),
+	s_f2 : printf(false, "=?="),
+	ps2 : ssearch(s_f2, s_sb),
+	if ps1=1 and ps2#false then block([],
+		s_sb : substring(s_sb, slength(s_f1)+1, ps2),
+		debuglog(printf(false, "s_sb=~a", s_sb)),
+		s_sb : base64_decode(s_sb)),
+	debuglog(printf(false, "s_sb=~a", s_sb)),
+	ps1 : ssearch("solve", s_sb, 'sequalignore),
+	ps2 : ssearch("please", s_sb, 'sequalignore),
+	if ((ps1=false) or (ps2=false)) then go(tag_exit),		/* если тема письма не та, то выходим */
+	/* Ищем содержание письма */
+	s_f : printf(false, "~%Content-Type: text/plain"),
+	ps : ssearch(s_f, s),
+	if ps=false then go(tag_exit),
+	s_f1 : printf(false, "~2%"),
+	ps1 : ssearch(s_f1, s, 'sequal, ps),
+	ps1 : ps1+slength(s_f1),
+	ps2 : ssearch(s_f1, s, 'sequal, ps1),
+	s_tx : substring(s, ps1, ps2),
+	s_f2 : printf(false, "Content-Transfer-Encoding: base64"),
+	ps2 : ssearch(s_f2, s, 'sequal, ps),
+	debuglog(printf(false, "s_tx=~a", s_tx)),
+	if ((ps2#false) and (ps2<ps1)) then	s_tx : base64_decode(sremove(printf(false, "~%") ,s_tx)),
+	debuglog(printf(false, "s_tx=~a", s_tx)),
+	/* Находим задания в тексте письма */
+	p_tsks : get_tasks_from_email_text(s_tx),
+	res : setprop(res, project_tasks, p_tsks),
+	tag_exit,									/* метка для выхода */
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ======================================== */
+/* Обработка текста, извлеченного из письма */
+/* ======================================== */
+debuglog("proc_email_text", debug_message_func_load)$
+proc_email_text(s, projname, mail_addr) := block([res, dtpos, brpos, c_s, sltn, sltns, textext, sys_s, prj], 
+	debug_start_function("proc_email_text", [fp_mid_level, fp_common]),
+	sltns : [],											/* список решений сначала пустой */
+	projname : sconcat("Project ", timedate()),			/* имя проекта создаем по дате и времени */
+	prj : make_new_project(),							/* создаем проект для данного текста */
+	prj : setprop(prj, project_name, projname),
+	prj : setprop(prj, project_source, ts_email),
+	prj : setprop(prj, project_source_name, mail_addr),
+	debuglog(printf(false,"s=~a",s)),
+	s : strim(" ", s), 									/* убираем пробелы по краям строки */
+	s : sremove(printf(false,"~%"), s), 				/* убираем все переносы строк */
+	debuglog(printf(false, "s=~a", s)),
+	tag_find_new_task, 									/* метка для начала поиска нового задания */
+	dtpos : ssearch("::", s),							/* ищем начало первой в строке команды по ключевым символам "::" */
+	if dtpos=false then go(tag_new_task_not_found),		/* если команда не найдена, то идем к выходу */
+	s : substring(s, dtpos+2), 							/* оставляем остаток строки после "::" */
+	brpos : ssearch(");", s), 							/* ищем конец команды по ключевым символам ");" */
+	if brpos=false then go(tag_new_task_not_found), 	/* если конец не найден, то идем к выходу */
+	c_s : substring(s, 1, brpos+2), 					/* вырезаем подстроку с командой */
+	s : substring(s, brpos+2), 							/* оставляем остаток */
+	debuglog(printf(false, "c_s=~a~%s=~a", c_s, s)),
+	historylog(t_message, printf(true, "> найдено новое задание ~a", c_s), []),
+	tsk : get_task_from_string(c_s), 					/* получаем задание из строки (вместе с решением) */
+	prj : add_task_to_project(tsk, prj),				/* добавляем задание в проект */
+	debuglog(printf(false, "prj=~a", prj)),
+	go(tag_find_new_task),								/* переходим к поиску нового решения */
+	tag_new_task_not_found,								/* метка для выхода из цикла поиска */
+	make_project_tex_file_and_compile(prj, projname),
+	/* Отправляем письмо с результатом */
+	sys_s : printf(false, "mpack -s \"Test file\" \"projects/~a.pdf\" ~a", projname, mail_addr),
+	debuglog(printf(false, "try to bash mpack = ~a", sys_s)),
+	historylog(t_message, printf(false, "Sending message to ~a~%", mail_addr), []),
+	system(sys_s),
+	res : prj,
+	debug_end_function(),
+	res)$
+/* ============== */
+/* Начало проекта */
+/* ============== */
+debuglog("ts_email_main", debug_message_func_load)$
+ts_email_main() := block([res, em_txt, em_txt_parts, s_s, fl, s], res : true,
+	download_email(),										/* загружаем новую почту в локальный почтовый файл */
+	inp : readlinestdio(),
+	em_txt : get_local_email_text(),						/* получаем содержимое почтового файла */
+	em_txt_parts : split_local_email_text(em_txt),			/* делим содержимое на части, относящиеся к разным письмам */
+	for em_txt_part in em_txt_parts do block([prj, prj_fn],	/* проходим по этим частям */
+		prj : make_project_from_email_text(em_txt_part),	/* создаем проект из части */
+		if prj=false then go(tag_next_part),
+		prj_fn : printf(false, 								/* генерируем имя файла проекта */
+			"./works/raw_projects/~a_~a", 
+			getprop(prj, creation_time), md5sum(getprop(prj, project_name))),
+		prj : setprop(prj, project_file_name, prj_fn),		/* устанавливаем имя файла в проекте */
+		save_project_to_file(prj, prj_fn),					/* сохраняем проект в файл */
+		tag_next_part,
+		debuglog(printf(false, "prj=~a", prj))),
+	fl_n : printf(false, "/tmp/ts_flist_~x~x~x~x", random(16), random(16), random(16), random(16)),
+	s_s : printf(false, "ls ./works/raw_projects/ > ~a", fl_n),		/* cохраняем список файлов во временный файл */ 
+	system(s_s),											/* с сырыми проектами */
+	fl : openr(fl_n),										/* открываем файл со списком сырых проектов */
+	s : readline(fl),										/* читаем строку из этого файла */
+	while s#false do block([prj, sys_s],					/* пока строка читается... */
+		debuglog(printf(false, "s=~a", s)),
+		sys_s : printf(false, 
+			"maxima --batch-string='load(\"ts.mac\");load(\"code/func-ts-email.mac\");process_raw_project_file(\"~a\");'", 
+			s),
+		debuglog(printf(false, "sys_s=~a", sys_s)),
+		system(sys_s),
+		s : readline(fl)),
+	close(fl),												/* закрываем файл со списком сырых проектов */
+	sys_s : printf(false, "rm '~a'", fl_n),					/* удаляем файл со списком сырых проектов */
+	system(sys_s),
+	clear_local_email_file(),								/* очищаем локальную почту */
+	res)$

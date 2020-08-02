@@ -1,0 +1,20 @@
+/* ============================================= */
+/* == Режим ввода заданий из командной строки == */
+/* ============================================= */
+/* !TODO! */
+/* НОД и НОК многочленов */
+/* найти кратность корня многочлена */
+/* разложить на неприводимые множители */
+/* представить через основные симметрические многочлены */
+/* найти все рациональные корни многочлена */
+/* поправить порядок слагаемых в многочленах */
+tasksolver_processing_source : ts_cmdline$
+tasksolver_processing_mode : ts_test$
+tasksolver_function_statistic_log : false$								/* будет ли вестись лог статистики вызовов функций */
+generate_debug_functions : true$										/* будут ли генерироваться функции отладки */
+debuglog_is_on : true$
+load("code/lispfunc.lisp")$
+load("ts.mac")$
+load("code/func-ts-cmdline.mac")$
+load("code/func-unittests.mac")$
+ts_cmdline_main()$

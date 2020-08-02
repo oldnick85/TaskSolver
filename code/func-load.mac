@@ -1,0 +1,111 @@
+/* ================================================== */
+/* @begin sort_args_for_sum */
+/* @type function */
+/* @brief Загрузка и инициализация параметров */
+/* @details Загрузка и инициализация параметров из файла */
+/*          "./service_files/settings.mac". Если после этого переменные */
+/*          debug_out_source и history_out_source не определены, */
+/*          то они инициализируются по умолчанию. */
+/* @end */
+/* ================================================== */
+load_settings() := block([res], res : true,
+	res : file_search("settings.mac", ["./service_files/"]),
+	printf(true, "load_settings: res=~a~%", res),
+	if (res # false) then
+		load("service_files/settings.mac"),
+	if atom(debug_out_source) then debug_out_source : [
+		[true, true],													/* куда выводятся сообщения начала и конца */
+		[true, true],													/* куда выводятся нормальные сообщения */
+		[true, true]													/* куда выводятся сообщения циклов */
+		],
+	if atom(history_out_source) then history_out_source : [true, true],
+	res)$
+/* ================================================== */
+/* @begin load_statistic */
+/* @type function */
+/* @brief Загрузка и инициализация статистики */
+/* @details Загрузка и инициализация статистики из файла */
+/*          "./service_files/statistic.mac". Если после этого переменная */
+/*          function_calls_statistical_data не определена, */
+/*          то они инициализируется по умолчанию. */
+/* @end */
+/* ================================================== */
+load_statistic() := block([res], 
+	res : file_search("statistic.mac", ["./service_files/"]),
+	printf(true, "load_statistic: res=~a~%", res),
+	if (res = false) then block(
+		function_calls_statistical_data : []
+		/* project_processing_statistical_data : [] */)
+		else load("service_files/statistic.mac"),
+	res)$
+/* ================================================== */
+/* @begin get_system_properties */
+/* @type function */
+/* @brief Получение свойств системы */
+/* @details Получение свойств системы.      */
+/* 			На выходе список со свойствами системы. */
+/* @result список [имя_юзера, имя_компьютера, операционная_система, версия_максимы, */ 
+/*                версия_программы, модель_процессора, размер_оперативной_памяти]    */
+/* @todo Команда finger не годится, нужны другие */
+/* @end */
+/* ================================================== */
+/* cat /proc/loadavg */
+/* cat /proc/uptime */
+/* debuglog("get_system_properties", debug_message_func_load); */
+get_system_properties() := block(
+	[res, 
+	fl, 
+	sys_s, s, ss, sst, bi_s], 
+	res : [false, false, false, false, false, false, false],
+	/* !TODO! - finger не работает на сервере, данные нужно получать иначе */
+	/* Имя юзера */
+	res[1] : "root",
+	sys_s : "finger > /tmp/ts_sysprop.dat",
+	system(sys_s),
+	fl : openr("/tmp/ts_sysprop.dat"),
+	s : readline(fl),
+	if (s = false) then go(tag_close1),
+	s : readline(fl),
+	if (s = false) then go(tag_close1),
+	ss : tokens(s, 'alphanumericp),
+	res[1] : ss[1],
+	tag_close1,
+	close(fl),
+	/* Имя компьютера */
+	/* /etc/hostname - файл с данными о имени компьютера */
+	fl : openr("/etc/hostname"),
+	res[2] : readline(fl),
+	close(fl),
+	/* Операционная система */
+	/* /proc/version - файл с данными о версии линукса */
+	fl : openr("/proc/version"),
+	res[3] : readline(fl),
+	close(fl),
+	/* Версия максимы */
+	bi_s : build_info(),
+	res[4] : printf(false, "Maxima version: ~a; Lisp: ~a", bi_s@version, bi_s@lisp_name),
+	/* Версия программы */
+	res[5] : tasksolver_version,
+	/* Процессор */
+	/* /proc/cpuinfo - файл с данными о процессоре */
+	fl : openr("/proc/cpuinfo"),
+	s : true,
+	while (s # false) do block([],
+		s : readline(fl),
+		if (ssearch("model name", s, 'sequalignore) = 1) then block([],
+			res[6] : substring(s, 14),
+			s : false)),
+	close(fl),
+	/* Оперативная память */
+	/* /proc/meminfo - файл с данными о памяти */
+	fl : openr("/proc/meminfo"),
+	s : true,
+	while (s # false) do block([],
+		s : readline(fl),
+		if (ssearch("MemTotal:", s, 'sequalignore) = 1) then block([],
+			res[7] : substring(s, 17),
+			s : false)),
+	tag_exit,
+	close(fl),
+	/* Все готово, выводим результат */
+	res)$

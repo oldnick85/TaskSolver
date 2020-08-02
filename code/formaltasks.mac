@@ -1,0 +1,20 @@
+/* ====================================================== */
+/* ================= Формальные задания ================= */
+/* ====================================================== */
+debuglog("formaltasks.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+load("code/ft_matan.mac")$
+load("code/ft_matan_integrate_patterns.mac")$							/* паттерны для интегрирования */
+load("code/ft_alg.mac")$
+load("code/ft_alg_matrixes.mac")$
+load("code/ft_alg_equations.mac")$
+load("code/ft_alg_equations_special_form.mac")$
+load("code/ft_alg_equations_trig.mac")$
+load("code/ft_number_theory.mac")$
+load("code/ft_alg_complex_numbers.mac")$
+load("code/ft_alg_expressions_work.mac")$
+load("code/ft_alg_logic.mac")$
+load("code/ft_chances.mac")$
+load("code/ft_angeom.mac")$
+load("code/ft_diffgeom.mac")$
+load("code/ft_stat.mac")$

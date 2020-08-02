@@ -1,0 +1,30 @@
+/* ======================================================================== */
+/* ===================== Юнит-тесты функций проекта ======================= */
+/* ======================================================================== */
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+run_all_unittests() := block(
+	[
+	tst_success,
+	tests_cnt,			/* общее число тестов */
+	fail_cnt,			/* число проваленных тестов */
+	prs, res
+	],
+	tests_cnt : 0,
+	fail_cnt : 0,
+	printf(true, "START ALL UNITTESTS~%"),
+	/*  */
+	tst_success : true,
+	prs : [
+		[alias = "a", value = 2], 
+		[alias = "b", value = 3], 
+		[alias = "m", value = 13]],
+	res : solve_eq_modulo_1_degree(prs),
+	/* !TODO! */
+	printf(true, "TEST solve_eq_modulo_1_degree..."),
+	if (tst_success) 
+		then printf(true, "ok~%")
+		else (printf(true, "FAIL~%"), fail_cnt : fail_cnt + 1),
+	tests_cnt : tests_cnt,
+	/* Подводим итоги */
+	printf(true, "Tests (failed): ~a (~a)~%", tests_cnt, fail_cnt),
+	true)$

@@ -1,0 +1,169 @@
+informaltasks_examples : [
+	/* ====================== Алгебра ======================= */
+	[ts_shortname = "ma_gcd2ea",	/* Наибольший общий делитель двух чисел */
+	ts_params = [
+		[alias = "m", value = 210],
+		[alias = "n", value = 580]]],
+	[ts_shortname = "ma_sle",		/* Решение линейного уравнения */
+	ts_params = [
+		[alias = "a", value = 3],
+		[alias = "b", value = -7]]],
+	[ts_shortname = "ma_sqe",		/* Решение квадратного уравнения */
+	ts_params = [
+		[alias = "a", value = 2],
+		[alias = "b", value = -3],
+		[alias = "c", value = 1]]],
+	[ts_shortname = "ma_sbqe",		/* Решение биквадратного уравнения */
+	ts_params = [
+		[alias = "a", value = 1],
+		[alias = "b", value = -13],
+		[alias = "c", value = 36]]],
+	[ts_shortname = "ma_divpoly",	/* Поделить многочлены столбиком */
+	ts_params = [
+		[alias = "dividend", value = x^2+3*x-2],
+		[alias = "divider", value = x+1]]],
+	[ts_shortname = "ma_fprbt",		/* Найти корни многочлена с помощью теоремы Безу */
+	ts_params = [
+		[alias = "P(x)", value = x^3+x^2+x-3]]],
+	[ts_shortname = "ma_fprbt",	
+	ts_params = [
+		[alias = "P(x)", value = x^6-x^5-x^4+x^3]]],
+	[ts_shortname = "ma_minv33",	/* Найти обратную матрицу 3 на 3 */
+	ts_params=[
+		[alias = "M", value = matrix([1, 2, 3], [-4, 5, 6], [7, 8, -9])]]],
+	[ts_shortname = "ma_mdet33",	/* Найти определитель матрицы 3 на 3 */
+	ts_params=[
+		[alias = "M", value = matrix([1, 2, 3], [-4, 5, 6], [7, 8, -9])]]],
+	[ts_shortname = "ma_mdet",		/* Найти определитель матрицы */
+	ts_params = [
+		[alias = "M", value = matrix([-1, 0, 2, 5], [4, 1, -8, 0], [6, -9, -1, 8], [1, 3, 5, 7])]]],
+	[ts_shortname = "ma_slesk33",	/* Решение системы линейных уравнений 3x3 методом Крамера */
+	ts_params=[
+		[alias = "a11", value = -1],		[alias = "a12", value = 1],		[alias = "a13", value = 13],
+		[alias = "a21", value = 21],		[alias = "a22", value = 6],		[alias = "a23", value = 23],
+		[alias = "a31", value = 31],		[alias = "a32", value = 32],		[alias = "a33", value = 33],
+		[alias = "b1", 	value = -1],		[alias = "b2", 	value = -2],		[alias = "b3", 	value = -3]]], 
+	[ts_shortname = "ma_mtutf33",	/* Привести матрицу 3 на 3 к верхнетреугольному виду */
+	ts_params=[
+		[alias = "a11", value = 11],		[alias = "a12", value = 12],		[alias = "a13", value = 13],
+		[alias = "a21", value = 21],		[alias = "a22", value = 22],		[alias = "a23", value = 23],
+		[alias = "a31", value = 31],		[alias = "a32", value = 32],		[alias = "a33", value = 33]]], 
+	[ts_shortname = "ma_mtutf",		/* Привести матрицу к верхнетреугольному виду */
+	ts_params=[
+		[alias = "M", value = matrix([1, 2, 3, 4], [5, 6, 7, 8], [3, 2, 4, 1], [7, 6, 1, 0])]]], 
+	[ts_shortname = "ma_mtuutf",	/* Привести матрицу к верхнеунитреугольному виду */
+	ts_params=[
+		[alias = "M", value = matrix([1, 2, 3, 4], [5, 6, 7, 8], [3, 2, 4, 1], [7, 6, 1, 0])]]],
+	[ts_shortname = "ma_mtuudf",	/* Привести матрицу к диагональному виду */
+	ts_params=[
+		[alias = "M", value = matrix([1, 2, 3, 4], [5, 6, 7, 8], [3, 2, 4, 1], [7, 6, 1, 0])]]],
+	[ts_shortname = "ma_slesg",		/* Решить систему линейных уравнений методом Гаусса */
+	ts_params=[
+		[alias = "M", value = matrix([1, 2, 3, 4, -5], [5, 6, 7, 8, 9], [3, 2, 4, 1, 7], [7, 6, 1, 0, 1])]]],
+	[ts_shortname = "ma_slesk",		/* Решить систему линейных уравнений методом Крамера */
+	ts_params=[
+		[alias = "M", value = matrix([1, 2, 3, 4, -5], [5, 6, 7, 8, 9], [3, 2, 4, 1, 7], [7, 6, 1, 0, 1])]]],
+	[ts_shortname = "ma_mm",		/* Перемножить две матрицы */
+	ts_params=[
+		[alias = "A", value = matrix([1, 2, 3], [4, 5, 6], [7, 8, 9], [6, 4, 2])],
+		[alias = "B", value = matrix([2, -9], [3, 5], [8, 9])]]],
+	/* ============== Аналитическая геометрия =============== */
+	[ts_shortname = "mg_vl",	/* Нахождение длины вектора */
+	ts_params = [
+		[alias = "v", value = [10, 11, 12]]]], 
+	[ts_shortname = "mg_vsp",	/* Нахождение скалярного произведения двух векторов */
+	ts_params = [
+		[alias = "v", value = [11, -12, 13]],
+		[alias = "w", value = [24, 25, 26]]]], 
+	[ts_shortname = "mg_vvp",	/* Нахождение векторного произведения двух векторов в пространстве */
+	ts_params = [
+		[alias = "v", value = [11, 12, 13]],
+		[alias = "w", value = [24, -25, 26]]]],
+	[ts_shortname = "mg_vmp",	/* Нахождение смешанного произведения трех векторов в пространстве */
+	ts_params = [
+		[alias = "v", value = [11, 1, -13]],
+		[alias = "w", value = [24, -25, 26]],
+		[alias = "u", value = [2, -25, 6]]]], 
+	[ts_shortname = "mg_ta3cvp",	/* Найти площадь треугольника с данными координатами вершин в пространстве с помощью векторного произведения */
+	ts_params = [
+		[alias = "A", value = [1, -2, -7]],
+		[alias = "B", value = [-3, 3, 11]],
+		[alias = "C", value = [8, 2, 0]]]], 
+	[ts_shortname = "mg_tv3cmp",	/* Найти объем тетраэдра с данными координатами вершин в пространстве с помощью смешанного произведения */
+	ts_params = [
+		[alias = "A", value = [10, 6, 0]],
+		[alias = "B", value = [3, 2, 1]],
+		[alias = "C", value = [0, 4, -5]],
+		[alias = "D", value = [3, -2, -5]]]], 
+	[ts_shortname = "mg_th3cbv",	/* Найти высоту тетраэдра с данными координатами вершин в пространстве с помощью векторов */
+	readiness = ts_full_readiness,
+	ts_params = [
+		[alias = "A", value = [0, -7, 9]],
+		[alias = "B", value = [-3, 2, 2]],
+		[alias = "C", value = [15, 0, -1]],
+		[alias = "D", value = [9, 2, 8]]]],
+/* ================ Теория вероятностей ================= */
+	[ts_shortname = "mc_drvdtdl",	/* Закон распределения дискретной случайной величины заданной таблицей вероятностей */
+	ts_params = [
+		[alias = "xp_table", value = [[0, 1, 2, 3, 4, 5], [0.1, 0.2, 0.2, 0.2, 0.2, 0.1]]]]],
+	[ts_shortname = "mc_drvdtev",	/* Математическое ожидание дискретной случайной величины заданной таблицей вероятностей */
+	ts_params = [
+		[alias = "xp_table", value = [[0, 1, 2, 3, 4, 5], [0.1, 0.2, 0.2, 0.2, 0.2, 0.1]]]]],
+	[ts_shortname = "mc_drvdtdev",	/* Математическое ожидание и дисперсия дискретной случайной величины заданной таблицей вероятностей */
+	ts_params = [
+		[alias = "xp_table", value = [[0, 1, 2, 3, 4, 5], [0.1, 0.2, 0.2, 0.2, 0.2, 0.1]]]]],
+	[ts_shortname = "mc_drv2dtdcmvcc",	/* Характеристики дискретной двумерной случайной величины, заданной таблицей */
+	ts_params = [
+		[alias = "xyp_table", value = matrix([0, 1, 2, 3], [-1, 0.1, 0.1, 0.2], [-2, 0.1, 0.2, 0.3])]]],
+	[ts_shortname = "mc_crvdfev",	/* Математическое ожидание непрерывной случайной величины заданной функцией плотности вероятности на промежутке */
+	ts_params = [
+		[alias = "f(x)", value = 2*x],
+		[alias = "a", value = 0],
+		[alias = "b", value = 1]]],
+	[ts_shortname = "mc_crvdfdev",	/* Дисперсия и математическое ожидание непрерывной случайной величины заданной функцией плотности вероятности на промежутке */
+	ts_params = [
+		[alias = "f(x)", value = 2*x],
+		[alias = "a", value = 0],
+		[alias = "b", value = 1]]],
+	[ts_shortname = "mc_itml",		/* Интегральная теорема Муавра-Лапласа */
+	ts_params = [
+		[alias = "n", value = 100],
+		[alias = "p", value = 0.5],
+		[alias = "m1", value = 10],
+		[alias = "m2", value = 30]]],
+	[ts_shortname = "mc_poentbs",	/* Вероятность наступления события некоторое число раз по схеме Бернулли */
+	ts_params = [
+		[alias = "n", value = 10],
+		[alias = "p", value = 0.4],
+		[alias = "m1", value = 2],
+		[alias = "m2", value = 5]]],
+/* ===================== Матанализ ====================== */
+	[ts_shortname = "mm_iint",		/* Найти неопределенный интеграл */
+	ts_params = [
+		[alias = "f(x)", value = x+sin(x)]]],
+	[ts_shortname = "mm_dint",		/* Найти определенный интеграл */
+	ts_params = [
+		[alias = "f(x)", value = x+sin(x)],
+		[alias = "a", value = 0],
+		[alias = "b", value = 1]]],
+	[ts_shortname = "mm_fdf1v",		/* Найти производную функции одного переменного */
+	ts_params = [
+		[alias = "f(x)", value = x+x*sin(x)]]],
+/* ===================== Статистика ===================== */
+	[ts_shortname = "ms_srvec",		/* По данной выборке случайной величины вычислить её эмпирические характеристики */
+	ts_params = [
+		[alias = "v_list", value = [1, 2, 1, 4, 5, 3, 2, 3, 2, 1, 7, 4, 3, 5, 5, 6, 5, 7, 1, 9, 8]]]],
+	[ts_shortname = "ms_bdvs",		/* Построить дискретный вариационный ряд */
+	ts_params = [
+		[alias = "v_list", value = [1, 2, 1, 4, 5, 3, 2, 3, 2, 1, 7, 4, 3, 5, 5, 6]]]],
+	[ts_shortname = "ms_bivs",		/* Построить интервальный вариационный ряд */
+	ts_params = [
+		[alias = "v_list", value = [1, 2, 1, 4, 5, 3, 2, 3, 2, 1, 7, 4, 3, 5, 5, 6]],
+		[alias = "ni", value = 0]]],
+	[ts_shortname = "ms_lalsm1v",	/* Линейная аппроксимация методом наименьших квадратов функции одного переменного */
+	ts_params = [
+		[alias = "xy_table", value = [[-2, -1, 0, 1, 2], [0.15, -0.01, 0.5, 0.7, 1]]]]],
+	[ts_shortname = "ms_qalsm1v",	/* Квадратичная аппроксимация методом наименьших квадратов функции одного переменного */
+	ts_params = [
+		[alias = "xy_table", value = [[-2, -1, 0, 1, 2], [0.15, -0.01, 0.5, 0.7, 1]]]]]
+]$

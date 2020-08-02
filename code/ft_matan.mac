@@ -1,0 +1,411 @@
+/* ==================================================== */
+/* ================  Формальные задания =============== */
+/* ================ Математический анализ ============= */
+/* ==================================================== */
+debuglog("ft_matan.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ============================ */
+/*   Интегрирование по частям   */
+/* ============================ */
+debuglog("matanaliz_find_indefinite_integral_by_parts", debug_message_func_load)$
+matanaliz_find_indefinite_integral_by_parts(prs) := block([res, fnct, ffnct, st, s1, s2, answ],
+	debug_start_function("matanaliz_find_indefinite_integral_by_parts", [fp_mid_level, fp_solver]),
+	fnct : get_val_by_alias(prs,"f(x)"),
+	debuglog(printf(false, "fnct=~a", fnct)),
+	st : printf(false,"Найдем интеграл методом интегрирования по частям от функции $f(x)=~a$.~%~%", totex(fnct)),
+	s1 : printf(false,"$\\customint ~a \\customdx=$ ",totex(fnct)),
+	for p_e in patterns_for_integrate_by_parts do block([ptrn, prd, u, v, du, dv, ptrn_pars],
+		ptrn : get_prop(p_e, pattern),
+		prd : get_prop(p_e, pred),
+		u : get_prop(p_e, f_u),
+		v : get_prop(p_e, f_v),
+		du : get_prop(p_e, f_du),
+		dv : get_prop(p_e, f_dv),
+		ptrn_pars : apply(ptrn, [fnct]),
+	if ptrn_pars then block([],
+		/* !TODO! */
+		res)
+	else block(
+		answ : [[type = cant_find_solution, value = "Такое задание мы решить пока не можем"]],
+		res : [solution_title = st,
+			solution = "",
+			solution_steps = [],
+			answer = answ])),   
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/*====================================================*/
+/* Найти табличное значение неопределенного интеграла */
+/*====================================================*/
+debuglog("matanaliz_find_indefinite_integral_from_table", debug_message_func_load)$
+matanaliz_find_indefinite_integral_from_table(prs) := block([res, fnct, ffnct, st, ss, s1, s2, answ],
+	debug_start_function("matanaliz_find_indefinite_integral_from_table", [fp_high_level, fp_solver]),
+	fnct : get_val_by_alias(prs, "f(x)"),				/* интегрируемая функция */
+	debuglog(printf(false, "fnct=~a",fnct)),
+	st : printf(false, "Найдем табличное значение интеграла от функции $f(x)=~a$.~%~%", totex(fnct)),
+	ss : [printf(false, "$\\customint ~a \\customdx$ ", totex(fnct))],
+	debuglog(printf(false, "const_x_p=~a, linear_x_p=~a, power_x_p=~a~%", const_x_p(fnct, x), linear_x_p(fnct, x), power_x_p(fnct, x))),
+	/* Цикл по паттернам табличных интегралов пока не найдется решение */
+	for ti in table_for_integrate_by_table while atom(res)=true do block([ptrn, stps, rp],
+		ptrn : getprop(ti, pattern), 		/* паттерн */
+		stps : getprop(ti, steps),   		/* шаги решения */
+		debuglog(printf(false, "in pattern cycle ptrn=~a, stps=~a", ptrn, stps)),
+		rp : ptrn(fnct, x),					/* результат применения паттерна к выражению */
+		debuglog(printf(false, "in pattern cycle rp=~a", rp)),
+		if (rp # false) then block([],    	/* если паттерн подошел к выражению, то генерируем решение */
+			for stp in stps do block([s, s_st], 	/* Каждый шаг генерирует часть решения, если только он не false */
+				s : subst(rp, stp),
+				debuglog(printf(false, "in steps cycle s=~a~%", s)),
+				s_st : totex(s),
+				if (s # false) then ss : append(ss, [printf(false, "$= ~a$ ", totex(s))]),
+				debuglog(printf(false, "in steps cycle ss=~a~%", ss)),
+				answ : [[type = expression, value = s]]),
+			res : [solution_title = st,
+                   solution = apply(sconcat, ss),
+                   solution_steps = ss,
+                   answer = answ])),
+	if (atom(res) = true) then block([],
+		answ : [[type = cant_find_solution, value = "Такое задание мы решить пока не можем"]],
+		res : [solution_title = st,
+			solution = "",
+			solution_steps = [],
+			answer = answ]),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================= */
+/* Вычислить неопределенный интеграл */
+/* ================================= */
+debuglog("matanaliz_find_indefinite_integral", debug_message_func_load)$
+matanaliz_find_indefinite_integral(prs) := block(
+	[res, 																/* результат работы функции */
+	tans, 																/* ответы вызываемых решателей */
+	fnct, 																/* подынтегральная функция */
+	smp_fn, 															/* функция после упрощения */
+	vichis, vichres,						 							/* вычислим ли интеграл и результат вычисления */
+	nst_lvl, can_find_int, 												/*  */
+	st, s, s_l, s1, s2, answ], 											/* строковые переменные и ответ */
+	debug_start_function("matanaliz_find_indefinite_integral", [fp_high_level, fp_solver]),
+	s_l : [], can_find_int : false,
+	fnct : get_val_by_alias(prs, "f(x)"),
+	nst_lvl : get_val_by_alias(prs, "nesting level"),					/* уровень вложенности */
+	if (nst_lvl = false) then nst_lvl : 1,
+	if (nst_lvl > 5) then (
+		answ : [[type = cant_find_solution, value = "Такое задание мы решить пока не можем"]], 
+		go(tag_end)),
+	debuglog(printf(false, "fnct=~a", fnct)),
+	st : printf(false, "Найдем неопределенный интеграл $\\int~a\\mathrm{d}x$~2%", totex(fnct)),
+	/* Проверка на вычислимость с помощью встроенной функции */
+	vichres : integrate(fnct, x),
+	vichis : true,
+	if (is(not atom(vichres)) and is(op(vichres) = ts_op_integrate)) then (
+		vichis : false,
+		answ : [[type = impossible_find_solution, value = "Скорее всего это неберущийся интеграл"]],
+		s : "Скорее всего это неберущийся интеграл",
+		s_l : push(s, s_l),
+		go(tag_end)),
+	debuglog(printf(false, "the integral in theory can be token => ~a", vichres)),
+	/* Поискать среди готовых решений */
+	/* TODO */
+	/* Попытаться вычислить табличный интеграл */
+	res : matanaliz_find_indefinite_integral_from_table(prs),
+	tans : get_prop(res, answer),
+	debuglog(printf(false, "tans=~a", tans)),
+	if (get_prop(tans[1], type) # cant_find_solution) then (
+		append_to_s_l("~a~a", getprop(res, solution_title), getprop(res, solution)), 
+		answ : tans, 
+		go(tag_end)),
+	/* Попытаться проинтегрировать по частям */
+	debuglog(printf(false, "int by parts")),
+	/* res : matanaliz_find_indefinite_integral_by_parts(prs), */
+	/* tans : get_prop(res, answer), */
+	/* if get_prop(tans[1],type)#cant_find_solution then go(tag_end), */
+	/* Попытаться проинтегрировать заменой */
+	debuglog(printf(false, "int by change")),
+	/* TODO - интегрирование по частям и заменой */
+	/* Попытаться найти интеграл суммы */
+	debuglog(printf(false, "int by sum")),
+	smp_fn : expand(fnct),
+	if not(atom(smp_fn)) then if op(smp_fn)="+" then block([summands_lst, can_int_all, rslt_l],			/* если внешняя операция - сумма */
+		append_to_s_l("$\\int~a\\mathrm{d}\\x$ $=\\int~a\\mathrm{d}\\x$~%", totex(fnct), totex(smp_fn)),
+		append_to_s_l("Проинтегрируем каждое слагаемое по отдельности:~2%"),
+		rslt_l : [],
+		can_int_all : true,										/* переменная - сможем ли проинтегрировать все слагаемые */
+		summands_lst : args(smp_fn),								/* список слагаемых */
+		debuglog(printf(false, "summands_lst=~a", summands_lst)),
+		for smmnd in summands_lst while can_int_all do block([s_prms, s_res, s_ans],	/* проход по слагаемым */
+			debuglog(printf(false, "smmnd=~a", smmnd)),
+			s_prms : [[alias = "f(x)", value = smmnd], 
+				[alias = "nesting level", value = nest_lvl+1]],			/* параметры для интегрирования */
+			s_res : matanaliz_find_indefinite_integral(s_prms),		/* интегрируем слагаемое */
+			debuglog(printf(false, "s_res=~a", s_res)),
+			s_ans : get_prop(s_res, answer),							/* получаем результат интегрирования */
+			if (get_prop(s_ans[1], type) = cant_find_solution) 			/* удалось проинтегрировать или нет */
+			then can_int_all : false
+			else block([],
+				rslt_l : push(get_prop(s_ans[1], value), rslt_l),
+				append_to_s_l("~a~2%", getprop(s_res, solution)))),
+		debuglog(printf(false, "can_int_all=~a", can_int_all)),	
+		debuglog(printf(false, "rslt_l=~a", rslt_l)),	
+		if can_int_all 
+		then block([],
+			can_find_int : true,
+			answ : [[type = expression, value = apply("+", rslt_l)]])
+		else block([],
+			can_find_int : false,
+			answ : [[type = cant_find_solution, value = "Такое задание мы решить пока не можем"]],
+			s_l : [""])),
+	if can_find_int then go(tag_end),
+	/* Попытаться найти интеграл после упрощения исходного выражения */
+	smp_fn : ratsimp(fnct),
+	if smp_fn#fnct then block([t_prms, t_res, t_ans],		/* если упрощение дало результат */
+		append_to_s_l(" $=\\int~a\\mathrm{d}\\x$ ", totex(smp_fn)),
+		t_prms : [[name = "f(x)", alias = "f(x)", value = smp_fn]],
+		t_res : matanaliz_find_indefinite_integral(t_prms),
+		t_ans : get_prop(t_res, answer),
+		if getprop(t_ans[1], type) = cant_find_solution 
+			then can_find_int : false
+			else block([],
+				can_find_int : true,
+				append_to_s_l("~a", getprop(t_res, solution)),
+				answ : t_ans)),
+	/* Методы закончились */
+	if (vichis = true) then (
+		can_find_int : true,
+		answ : [[type = ts_value, value = vichres]],
+		append_to_s_l(" $=~a$", totex(vichres))),
+	if (can_find_int = false) then (
+		answ : [[type = cant_find_solution, value = "Такое задание мы решить пока не можем"]],
+		s_l : [""]),
+	tag_end,
+	res : [solution_title = st,
+			solution = apply(sconcat, s_l),
+			solution_steps = s_l,
+			answer = answ],
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =============================== */
+/* Вычислить определенный интеграл */
+/* =============================== */
+debuglog("matanaliz_find_definite_integral", debug_message_func_load)$
+matanaliz_find_definite_integral(prs) := block(
+	[res, 
+	fnct, a, b, 
+	i_res, i_ans, i_fn, i_fn_a, i_fn_b, 
+	rs, st, s, s_l, s1, s2, answ],
+	debug_start_function("matanaliz_find_definite_integral", [fp_high_level, fp_solver]),
+	s_l : [],
+	fnct : get_val_by_alias(prs, "f(x)"),								/* подынтегральная функция */
+	a : get_val_by_alias(prs, "a"),										/* нижний предел интегрирования */
+	b : get_val_by_alias(prs, "b"),										/* верхний предел интегрирования */
+	debuglog(printf(false, "fnct=~a", fnct)),
+	st : printf(false, 
+		"Вычислим определенный интеграл $\\int^{~a}_{~a}~a\\mathrm{d}x$~2%", 
+		totex(b), totex(a), totex(fnct)),
+	i_res : matanaliz_find_indefinite_integral(prs),					/* находим неопределенный интеграл */
+	st : printf(false, 
+		"~a Для этого ~a", 
+		st, string_to_downcase(getprop(i_res, solution_title))),
+	append_to_s_l("~a", getprop(i_res, solution)),
+	i_ans : getprop(i_res, answer),
+	debuglog(printf(false, "i_ans=~a", i_ans)),
+	/* !TODO! чушь какая то if (getprop(i_ans[1], type) # expression) then (answ : i_ans, go(tag_end)), */
+	i_fn : getprop(i_ans[1], value),									/* берем первообразную */
+	i_fn_a : subst(xa, x, i_fn),										/* и подставляем в нее пределы интегрирования */
+	i_fn_b : subst(xb, x, i_fn),
+	debuglog(printf(false, "i_fn=~a, i_fn_a=~a, i_fn_b=~a", i_fn, i_fn_a, i_fn_b)),
+	[s1, rs] : totex_calc_val(i_fn_b - i_fn_a, [xb = b, xa = a]),
+	answ : [[type = ts_value, value = rs]],
+	append_to_s_l(
+		"~2%$\\int^{~a}_{~a}~a$=$\\left.~a\\right|^{~a}_{~a}$=~a~2%", 
+		totex(b), totex(a), totex(fnct), totex(i_fn), totex(b), totex(a), s1),
+	tag_end,
+	res : [solution_title = st,
+			solution = apply(sconcat, s_l),
+			solution_steps = s_l,
+			answer = answ],
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin[function] expr_diff_x */
+/* @brief Вычислить производные верхнего уровня */
+/* @details Вычисляет производные верхнего уровня в выражении, результат не обязательно конечный */
+/* @param e - выражение */
+/* @result выражение после вычисления производных */
+/* @example expr_diff_x(ts_diff_x(sin(x^2))) -> cos(x^2)*ts_diff_x(x^2) */
+/* @end */
+/* ================================================== */
+expr_diff_x(e):=block([res],
+	debug_start_function("expr_diff_x", [fp_high_level, fp_solver]),
+	debuglog(printf(false, "e=~a", e)),
+	if atom(e) 
+	then res : e														/* если выражение атомарное... */
+	else block(															/* если выражение - функция... */
+		[e_o, 															/* внешняя операция выражения */
+		e_a],															/* аргументы выражения */
+		debuglog(printf(false, "e is not atom")),
+		e_o : op(e), e_a : args(e),										/* получаем внешнюю операцию и аргументы выражения */
+		e : map(expr_diff_x, e),										/* рекурсия: раскрываем производные внутри выражения */
+		if (e_o = ts_diff_x) then block([e_e],							/* если операция - дифференцирование... */
+			debuglog(printf(false, "e has ts_diff_x")),
+			if (arg_in_expression_p(x, e) = false) then 				/* проверим есть ли вообще в выражении x */
+				(e : 0, go(tag_end_op_diff)),
+			e_e : e_a[1],												/* дифференцируемое выражение */
+			debuglog(printf(false, "e_e=~a", e_e)),
+			if atom(e_e) 
+				then (debuglog(printf(false, "e_e is atom")),
+					if (e_e = x) then e : 1 else e : 0)
+				else block([
+					e_oo, 												/* внешняя операция дифференцируемого выражения */
+					e_aa												/* аргументы дифференцируемого выражения */
+					],
+					debuglog(printf(false, "e_e is not atom")),
+					e_oo : op(e_e), e_aa : args(e_e),
+					debuglog(printf(false, "e_oo=~a, e_aa=~a", e_oo, e_aa)),
+					if e_oo = "-" then 									/* производная отрицательного значения */
+						e : -ts_diff_x(e_aa[1]),
+					if e_oo = "+" then 									/* производная суммы */
+						e : map(ts_diff_x, e_e),
+					if e_oo = "/" then block([df1, df2],				/* производная частного */
+						df1 : ts_diff_x(e_aa[1]),
+						if arg_in_expression_p(x, e_aa[1])=false then df1 : 0,
+						df2 : ts_diff_x(e_aa[2]),
+						if arg_in_expression_p(x, e_aa[2])=false then df2 : 0,
+						e : (df1*e_aa[2]-e_aa[1]*df2)/(e_aa[2]^2)
+						),
+					if e_oo = "*" then block([],						/* производная произведения */
+						e : 0,
+						for i : 1 thru length(e_aa) do ([p_oo],
+							p_oo : 1,
+							for j : 1 thru length(e_aa) do
+								if (i = j) then p_oo : p_oo * ts_diff_x(e_aa[j]) else p_oo : p_oo*e_aa[j],
+							debuglog(printf(false, "p_oo=~a", p_oo)),
+							e : e + p_oo)),
+					if ((e_oo = "^") and (arg_in_expression_p(x, e_aa[2]) = false)) then	/* производная степенной функции */
+						if (e_aa[1] = x) 
+						then e : e_aa[2]*(e_aa[1]^(e_aa[2]-1)) 
+						else e : e_aa[2]*(e_aa[1]^(e_aa[2]-1))*ts_diff_x(e_aa[1]),
+					if ((e_oo = "^") and (arg_in_expression_p(x, e_aa[1]) = false)) then (	/* производная показательной функции */
+						if (e_aa[2] = x) 
+							then e : log(e_aa[1])*((e_aa[1])^(e_aa[2])) 
+							else e : log(e_aa[1])*((e_aa[1])^(e_aa[2]))*ts_diff_x(e_aa[2])),
+					if (e_oo = sqrt) then (								/* производная квадратного корня */
+						if (e_aa[1] = x) 
+							then e : 1/(2*sqrt(e_aa[1])) 
+							else e : 1/(2*sqrt(e_aa[1]))*ts_diff_x(e_aa[1])),
+					if (e_oo = log) then 								/* производная логарифма */
+						if (e_aa[1] = x) 
+						then e : 1/x 
+						else e : (1/e_aa[1])*ts_diff_x(e_aa[1]),
+					if (e_oo = sin) then 								/* производная синуса */
+						if (e_aa[1] = x) 
+						then e : cos(x) 
+						else e : cos(e_aa[1])*ts_diff_x(e_aa[1]),
+					if (e_oo = cos) then 								/* производная косинуса */
+						if (e_aa[1] = x) 
+						then e : -sin(x) 
+						else e : -sin(e_aa[1])*ts_diff_x(e_aa[1]),
+					if (e_oo = tan) then 								/* производная тангенса */
+						if (e_aa[1] = x) 
+						then e : 1/cos(x)^2
+						else e : ts_diff_x(e_aa[1])/cos(e_aa[1])^2,
+					if (e_oo = cot) then 								/* производная котангенса */
+						if (e_aa[1] = x) 
+						then e : -1/sin(x)^2
+						else e : -ts_diff_x(e_aa[1])/sin(e_aa[1])^2,
+					if (e_oo = asin) then 								/* производная арксинуса */
+						if (e_aa[1] = x) 
+						then e : 1/sqrt(1-x^2) 
+						else e : ts_diff_x(e_aa[1])/sqrt(1-e_aa[1]^2),
+					if (e_oo = acos) then 								/* производная арккосинуса */
+						if (e_aa[1] = x) 
+						then e : -1/sqrt(1-x^2) 
+						else e : -ts_diff_x(e_aa[1])/sqrt(1-e_aa[1]^2),
+					if (e_oo = atan) then 								/* производная арктангенса */
+						if (e_aa[1] = x) 
+						then e : 1/(1+x^2) 
+						else e : ts_diff_x(e_aa[1])/(1+e_aa[1]^2),
+					if (e_oo = acot) then 								/* производная арккотангенса */
+						if (e_aa[1] = x) 
+						then e : -1/(1+x^2) 
+						else e : -ts_diff_x(e_aa[1])/(1+e_aa[1]^2)
+					),
+			tag_end_op_diff)		
+		),
+	res : e,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @type function */
+/* @begin expr_diff_x_evident */
+/* @brief Вычислить очевидные производные в выражении */
+/* @details Вычисляет очевидние производные верхнего уровня в выражении, такие как производная константы и т.п. */
+/* @param e - выражение */
+/* @result выражение после вычисления производных */
+/* @example expr_diff_x_evident(ts_diff_x(5)) -> 0 */
+/* @end */
+/* ================================================== */
+expr_diff_x_evident(e) := block(
+	[res,																/* результат */
+	e_op,																/* операция выражения */
+	e_ar																/* аргументы выражения */
+	],
+	if atom(e) then (res : e, go(tag_exit)),
+	e_op : op(e),
+	e_ar : args(e),
+	if ((e_op = ts_diff_x) and (arg_in_expression_p(x, e) = false)) 
+		then (res : 0, go(tag_exit)),
+	if ((e_op = ts_diff_x) and (arg_in_expression_p(x, e_ar[1]/x) = false)) 
+		then (res : diff(e_ar[1], x), go(tag_exit)),
+	res : map(expr_diff_x_evident, e),
+	tag_exit,
+	res)$
+/* ================================================== */
+/* @type function */
+/* @begin find_derivative_func_1_var */
+/* @brief Найти производную функции одного переменного */
+/* @details Найти производную функции одного переменного */
+/* @param prs - стандартный ассоциативный список для решателя: "f(x)" - дифференцируемая функция */
+/* @result стандартный список-результат решателя */
+/* @example find_derivative_func_1_var([[alias="f(x)", value = x+sin(x)]]) -> [[...]] */
+/* @todo Минус перед функцией не считает, обратные тригонометрические функции невозможно ввести */
+/* @tags solver */
+/* @end */
+/* ================================================== */
+debuglog("find_derivative_func_1_var", debug_message_func_load)$
+find_derivative_func_1_var(prs) := block(
+	[res, 																/* результат функции */
+	fnct, 																/* дифференцируемая функция */
+	f_e, f_e_new,														/* функция, обернутая нашим оператором дифференцирования */
+	i_res, i_ans, 
+	st, s, s_l, 
+	ii, 
+	answ],
+	debug_start_function("find_derivative_func_1_var", [fp_high_level, fp_solver]),
+	s_l : [],
+	fnct : get_val_by_alias(prs, "f(x)"),
+	debuglog(printf(false, "fnct=~a", fnct)),
+	st : printf(false, "Найдем производную функции $f(\\x)=~a$", totex(fnct)),
+	f_e : ts_diff_x(fnct),
+	f_e_new : false,
+	append_to_s_l("$~a$ ", totex(f_e)),
+	/* цикл - на каждом этапе вычисляем операторы дифференцирования */
+	ii : 0,
+	tag_new_step,
+	ii : ii + 1,
+	debuglog(printf(false, "ii=~a", ii)),
+	f_e_new : expr_diff_x(f_e),
+	f_e_new : expr_diff_x_evident(f_e_new),
+	if (f_e = f_e_new) then go(tag_exit),
+	append_to_s_l("$= ~a$ ", totex(f_e_new)),
+	f_e : f_e_new,
+	if (op_in_expression_p(ts_diff_x, f_e) and (ii < 50)) then go(tag_new_step),
+	tag_exit,
+	answ : [[type = root, value = f_e]],
+	tag_end,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$

@@ -1,0 +1,9 @@
+====================
+==== TASKSOLVER ====
+====================
+
+TaskSolver is a project whose task is to generate solutions to typical problems of higher and elementary mathematics.
+The text of the solution is displayed in maximum detail, as if the problem was solved manually by a person.
+
+This project is fully designed for Russian-speaking users. Multilingual implementation is not architecturally designed.
+The multilingual implementation is not architecturally laid down and I will not develop it in the near future, sorry...

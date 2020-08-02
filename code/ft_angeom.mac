@@ -1,0 +1,1143 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ============= Аналитическая геометрия ============== */
+/* ==================================================== */
+debuglog("ft_angeom.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ================== */
+/* Нормировать вектор */
+/* ================== */
+debuglog("vector_normalize", debug_message_func_load)$
+vector_normalize(prs) := block(
+	[res, 																/* результат функции */
+	v, v_n, vn_n,														/* параметр - вектор */
+	l, vl,
+	pr, rs, rs_s, rs_ans,
+	st, ss, s_l, s, tbl_s, 												/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("vector_normalize", [fp_high_level, fp_solver]),
+	v : get_val_by_alias(prs, "v"),										/* получаем параметр */
+	v_n : get_val_by_alias(prs, "v name"),
+	if v_n = false then v_n : "\\vec{v}",
+	vn_n : get_val_by_alias(prs, "v norm name"),
+	if vn_n = false then vn_n : "\\vec{v}_N",
+	debuglog(printf(false, "v=~a", v)),
+	st : printf(false, "Нормировать вектор $~a(~a)$.", v_n, to_tex_vector(v)),
+	pr : prs,															/* готовим параметры для вычисления длины вектора */
+	rs : vector_length(pr),												/* и вычисляем длину вектора */
+	rs_s : getprop(rs, solution),
+	append_to_s_l("~a~2%", rs_s),
+	rs_ans : getprop(rs, answer),
+	l : getprop(rs_ans[1], value),
+	if (l = 0) then (													/* если вектор имеет нулевую длину, то его и вернем */
+		append_to_s_l("Вектор имеет нулевую длину, поэтому не может быть нормализован. Оставляем исходный вектор.~2%"),
+		vl : v, 
+		go(tag_exit)),
+	append_to_s_l("$~a=$ $\\frac{1}{\\left|~a\\right|}\\cdot ~a=$", vn_n, v_n, v_n),
+	append_to_s_l("$~a\\cdot\\left(~a\\right)=$", totex(1/l), to_tex_vector(v)),
+	vl : (1/l)*v,
+	append_to_s_l("$\\left(~a\\right)$", to_tex_vector(vl)),
+	tag_exit,
+	answ : [[type = ts_value, 
+		ts_name = "вектор", 
+		ts_alias = "|v|", 
+		value = vl]],
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ======================== */
+/* Нахождение длины вектора */
+/* ======================== */
+debuglog("vector_length", debug_message_func_load)$
+vector_length(prs) := block(
+	[res, 																/* результат функции */
+	v, v_n,																/* параметр - вектор */
+	vl,
+	expr, var_l,
+	st, ss, s_l, s, tbl_s,											 	/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("vector_length", [fp_high_level, fp_solver]),
+	v : get_val_by_alias(prs, "v"),										/* получаем параметр */
+	v_n : get_val_by_alias(prs, "v name"),
+	if (v_n = false) then v_n : "\\vec{v}",
+	debuglog(printf(false, "v=~a", v)),
+	st : printf(false, "Найти длину вектора $~a(~a)$.", v_n, to_tex_vector(v)),
+	var_l : [], expr : 0,
+	for c in v do block([p],
+		p : gensym("vv"),
+		expr : expr + p^2,
+		var_l : push(p = c, var_l)),
+	expr : sqrt(expr),
+	[s, vl] : totex_calc_val(expr, var_l),
+	append_to_s_l("$\\left|~a\\right|=$ ~a;~2%", v_n, s),
+	answ : [[type = root, ts_name = "длина вектора", ts_alias = "|v|", value = vl]],
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================ */
+/* Нахождение скалярного произведения двух векторов */
+/* ================================================ */
+debuglog("vector_scalar_product", debug_message_func_load)$
+vector_scalar_product(prs) := block(
+	[res, 																/* результат функции */
+	v, w, v_n, w_n,														/* параметры */
+	vl, l,
+	expr, var_l,
+	st, ss, s_l, s, tbl_s,											 	/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("vector_scalar_product", [fp_high_level, fp_solver]),
+	[v, w, v_n, w_n] : get_vals_by_aliases(prs, 
+		["v", "w", "v name", "w name"]),								/* получаем параметры */
+	if (v_n = false) then v_n : "\\vec{v}",
+	if (w_n = false) then w_n : "\\vec{w}",
+	debuglog(printf(false, "v=~a, w=~a", v, w)),
+	st : printf(false, "Найти скалярное произведение векторов $~a(~a)$ и $~a(~a)$.", v_n, to_tex_vector(v), w_n, to_tex_vector(w)),
+	if (length(v) # length(w)) then (
+		answ : [[type = cant_find_solution, value = ""]],
+		append_to_s_l("Векторы имеют разные размерности, поэтому найти их скалярное произведение невозможно."),
+		go(tag_exit)),
+	l : length(v),
+	var_l : [],
+	expr : 0,
+	for i : 1 thru l do block([p, q],
+		p : gensym("vv"),	q : gensym("ww"),
+		expr : expr+p*q,
+		var_l : push(p = v[i], var_l),
+		var_l : push(q = w[i], var_l)),
+	[s, vl] : totex_calc_val(expr, var_l),
+	append_to_s_l("$~a\\cdot ~a=$ ~a~2%", v_n, w_n, s),
+	answ : [[type = ts_value, ts_name = "скалярное произведение", ts_alias = "(v,w)", value = vl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ============================================== */
+/* Нахождение косинуса угла между двумя векторами */
+/* ============================================== */
+debuglog("vectors2_angle_cosinus", debug_message_func_load)$
+vectors2_angle_cosinus(prs) := block(
+	[res, 																/* результат функции */
+	v, w, v_n, w_n,														/* параметры */
+	vl, lv, lw, smulvw,
+	pr, rs, rs_ans,
+	expr, var_l,
+	st, ss, s_l, s, tbl_s,											 	/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("vectors2_angle_cosinus", [fp_high_level, fp_solver]),
+	[v, w, v_n, w_n] : get_vals_by_aliases(prs, 
+		["v", "w", "v name", "w name"]),								/* получаем параметры */
+	if v_n = false then v_n : "\\vec{v}",
+	if w_n = false then w_n : "\\vec{w}",
+	debuglog(printf(false, "v=~a, w=~a", v, w)),
+	st : printf(false, 
+		"Найти косинус угла между векторами $~a(~a)$ и $~a(~a)$.", 
+		v_n, to_tex_vector(v), w_n, to_tex_vector(w)),
+	if (length(v) # length(w)) then (
+		answ : [[type = cant_find_solution, value = ""]],
+		append_to_s_l("Векторы имеют разные размерности, поэтому решить задание невозможно."),
+		go(tag_exit)),
+	/* Находим скалярное произведение векторов */
+	pr : [[alias = "v", value = v],
+		[alias = "w", value = w],
+		[alias = "v name", value = v_n],
+		[alias = "w name", value = w_n]],
+	rs : vector_scalar_product(pr),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("~a~2%", rs_s),
+	rs_ans : getprop(rs, answer),
+	smulvw : getprop(rs_ans[1], value),
+	/* Находим длину первого вектора */
+	pr : [[alias = "v", value = v],
+		[alias = "v name", value = v_n]],								/* готовим параметры для вычисления длины вектора */
+	rs : vector_length(pr),												/* и вычисляем длину вектора */
+	rs_s : getprop(rs, solution),
+	append_to_s_l("~a~2%", rs_s),
+	rs_ans : getprop(rs, answer),
+	lv : getprop(rs_ans[1], value),
+	/* Находим длину второго вектора */
+	pr : [[alias = "v", value = w], 
+		[alias = "v name", value = w_n]],								/* готовим параметры для вычисления длины вектора */
+	rs : vector_length(pr),												/* и вычисляем длину вектора */
+	rs_s : getprop(rs, solution),
+	append_to_s_l("~a~2%", rs_s),
+	rs_ans : getprop(rs, answer),
+	lw : getprop(rs_ans[1], value),
+	[s, vl] : totex_calc_val(g_sm/(g_lv*g_lw), [g_sm = smulvw, g_lv = lv, g_lw = lw]),
+	append_to_s_l(
+		"$\\cos(\\angle(~a; ~a))=\\frac{~a\\cdot ~a}{\\left|~a\\right|\\cdot\\left|~a\\right|}=$ ~a~2%", 
+		v_n, w_n, v_n, w_n, v_n, w_n, s),
+	answ : [[type = ts_value, 
+		ts_name = "косинус угла", 
+		ts_alias = "cos(v,w)", 
+		value = vl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* =============================================================== */
+/* Нахождение векторного произведения двух векторов в пространстве */
+/* =============================================================== */
+debuglog("vector_vector_product", debug_message_func_load)$
+vector_vector_product(prs) := block(
+	[res, 																/* результат функции */
+	v, w, v_n, w_n,														/* параметры */
+	v1, v2, v3, w1, w2, w3,
+	vl, l,
+	M1, M2, M3, vxw,
+	expr, var_l,
+	st, ss, s_l, s, tbl_s, 												/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("vector_vector_product", [fp_high_level, fp_solver]),
+	debuglog(printf(false, "prs=~a", prs)),
+	[v, w, v_n, w_n, v1, v2, v3, w1, w2, w3] : 
+		get_vals_by_aliases(prs, ["v", "w", "v name", "w name", "v1", "v2", "v3", "w1", "w2", "w3"]),	/* получаем параметры */
+	if v = false then v : [v1, v2, v3],
+	if w = false then w : [w1, w2, w3],
+	if v_n = false then v_n : "\\vec{v}",
+	if w_n = false then w_n : "\\vec{w}",
+	debuglog(printf(false, "v=~a, w=~a", v, w)),
+	st : printf(false, "Найти векторное произведение векторов $~a(~a)$ и $~a(~a)$.", v_n, to_tex_vector(v), w_n, to_tex_vector(w)),
+	if ((length(v)#length(w)) or (length(v)#3) or (length(w)#3)) then (
+		answ : [[type=cant_find_solution, value = ""]],
+		append_to_s_l("Векторы имеют некорректные размерности, поэтому найти их векторное произведение невозможно."),
+		go(tag_exit)),
+	M1 : matrix([v[2], v[3]], [w[2], w[3]]),
+	M2 : matrix([v[1], v[3]], [w[1], w[3]]),
+	M3 : matrix([v[1], v[2]], [w[1], w[2]]),
+	vxw : [determinant(M1), -determinant(M2), determinant(M3)],
+	debuglog(printf(false, "vxw=~a", vxw)),
+	append_to_s_l(
+		"$~a\\times ~a=$ $\\left(\\left|~a\\right|;-\\left|~a\\right|;\\left|~a\\right|\\right)=$ ", 
+		v_n, w_n, to_tex_matr_arr(M1), to_tex_matr_arr(M2), to_tex_matr_arr(M3)),
+	append_to_s_l("$\\left(~a\\right)$;~2%", to_tex_vector(vxw)),
+	answ : [[type = ts_vector, ts_name = "векторное произведение", ts_alias = "[v,w]", value = vxw]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* =============================================================== */
+/* Нахождение смешанного произведения трех векторов в пространстве */
+/* =============================================================== */
+debuglog("vector_mixed_product", debug_message_func_load)$
+vector_mixed_product(prs) := block(
+	[res, 																/* результат функции */
+	v, w, u, v_n, w_n, u_n,												/* параметры */
+	v1, v2, v3, w1, w2, w3, u1, u2, u3,
+	vl, l, rs, rs_ans,
+	M, vwu,
+	expr, var_l,
+	st, ss, s_l, s, tbl_s, 												/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("vector_mixed_product", [fp_high_level, fp_solver]),
+	[v, w, u, v_n, w_n, u_n, v1, v2, v3, w1, w2, w3, u1, u2, u3] : 
+		get_vals_by_aliases(prs, ["v", "w", "u", "v name", "w name", "u name", "v1", "v2", "v3", "w1", "w2", "w3", "u1", "u2", "u3"]),	/* получаем параметры */
+	if (v = false) then v : [v1, v2, v3],
+	if (w = false) then w : [w1, w2, w3],
+	if (u = false) then u : [u1, u2, u3],
+	if v_n = false then v_n : "\\vec{v}",
+	if w_n = false then w_n : "\\vec{w}",
+	if u_n = false then u_n : "\\vec{u}",
+	st : printf(false, 
+		"Найти смешанное произведение векторов $~a(~a)$, $~a(~a)$ и $~a(~a)$.", 
+		v_n, to_tex_vector(v), w_n, to_tex_vector(w), u_n, to_tex_vector(u)),
+	if ((length(v)#3) or (length(w)#3) or (length(u)#3)) then (
+		answ : [[type = cant_find_solution, value = ""]],
+		append_to_s_l("Векторы имеют некорректные размерности, поэтому найти их смешанное произведение невозможно."),
+		go(tag_exit)),
+	M : matrix([v[1], v[2], v[3]], [w[1], w[2], w[3]], [u[1], u[2], u[3]]),
+	append_to_s_l("$\\left(~a;~a;~a\\right)=$ ", v_n, w_n, u_n),
+	rs : matrix_determinant_3x3([[alias = "M", value = M]]),
+	rs_ans : getprop(rs, answer),
+	vwu : getprop(rs_ans[1], value),
+	append_to_s_l("~a", getprop(rs, solution)),
+	answ : [[type = ts_single_value, ts_name = "смешанное произведение", ts_alias = "(v,w,u)", value = vwu]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ======================================================== */
+/* Найти площадь треугольника с данными координатами вершин */
+/* в пространстве с помощью векторного произведения         */
+/* ======================================================== */
+debuglog("triangle_area_3d_coordinates_vector_product", debug_message_func_load)$
+triangle_area_3d_coordinates_vector_product(prs) := block(
+	[res, 																/* результат функции */
+	A, B, C, A_n, B_n, C_n,												/* параметры */
+	A1, A2, A3, B1, B2, B3, C1, C2, C3,
+	AB, AC,
+	vl, vl1, l, rs, rs_ans,
+	expr, var_l,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("triangle_area_3d_coordinates_vector_product", [fp_high_level, fp_solver]),
+	[A, B, C, A_n, B_n, C_n, A1, A2, A3, B1, B2, B3, C1, C2, C3] : 
+		get_vals_by_aliases(prs, ["A","B","C","A name","B name","C name","A1","A2","A3","B1","B2","B3","C1","C2","C3"]),	/* получаем параметры */
+	if A = false then A : [A1, A2, A3],
+	if B = false then B : [B1, B2, B3],
+	if C = false then C : [C1, C2, C3],
+	if A_n = false then A_n : "A",
+	if B_n = false then B_n : "B",
+	if C_n = false then C_n : "C",
+	debuglog(printf(false, "A=~a, B=~a, C=~a", A, B, C)),
+	if ((length(A)#3) or (length(B)#3) or (length(C)#3)) then (			/*  */
+		answ : [[type = cant_find_solution, value = ""]],
+		append_to_s_l("Точки или векторы имеют некорректные размерности."),
+		go(tag_exit)),
+	st : printf(false, 													/* задание решения */
+		"Найти площадь треугольника $~a~a~a$ с данными координатами вершин $~a~a$, $~a~a$ и $~a~a$", 
+		A_n, B_n, C_n, A_n, to_tex_vector_rb(A), B_n, to_tex_vector_rb(B), C_n, to_tex_vector_rb(C)),
+	AB : B-A, AC : C-A,													/* находим векторы, на которые натянут треугольник */
+	debuglog(printf(false, "AB=~a, AC=~a", AB, AC)),
+	append_to_s_l("Найдем координаты векторов, на которые натянут треугольник $~a~a~a$:~2%", A_n, B_n, C_n),
+	append_to_s_l( 														/* выводим в решение первый вектор... */
+		"$\\overrightarrow{~a ~a}=\\left(~a-~a;~a-~a;~a-~a\\right)=~a$;~2% ", 
+		A_n, B_n, totex(B[1]), 
+		totex(A[1], "prbim" = true), totex(B[2]), totex(A[2], "prbim" = true), 
+		totex(B[3]), totex(A[3], "prbim" = true), to_tex_vector_rb(AB)),
+	append_to_s_l( 														/* ...и второй */
+		"$\\overrightarrow{~a ~a}=\\left(~a-~a;~a-~a;~a-~a\\right)=~a$;~2% ", 
+		A_n, C_n, totex(C[1]), totex(A[1], "prbim" = true), totex(C[2]), totex(A[2], "prbim" = true), 
+		totex(C[3]), totex(A[3], "prbim" = true), to_tex_vector_rb(AC)),
+	append_to_s_l("Найдем их векторное произведение:~2%"),
+	rs : vector_vector_product(											/* ищем векторное произведение этих векторов */
+		[[alias = "v", value = AB], [alias = "w", value = AC],
+		[alias = "v name", value = printf(false, "\\overrightarrow{~a~a}", A_n, B_n)], 
+		[alias = "w name", value = printf(false, "\\overrightarrow{~a~a}", A_n, C_n)]]),
+	rs_ans : getprop(rs, answer),
+	vl1 : getprop(rs_ans[1], value),
+	append_to_s_l("~a", getprop(rs, solution)),
+	append_to_s_l("Найдем длину их векторного произведения:~2%"),
+	rs : vector_length(
+		[[alias = "v", value = vl1], 
+		[alias = "v name", value = printf(false, "\\overrightarrow{~a~a}\\times\\overrightarrow{~a~a}", A_n, B_n, A_n, C_n)]]),
+	rs_ans : getprop(rs, answer),
+	vl1 : getprop(rs_ans[1], value),
+	s : getprop(rs, solution),
+	append_to_s_l("~a", s),
+	append_to_s_l("Вычислим площадь треугольника:~2%"),
+	vl : vl1/2,
+	debuglog(printf(false, "vl1=~a, vl=~a", vl1, vl)),
+	append_to_s_l(														/* выводим его длину деленную на два */
+		"$S_{~a~a~a}=\\frac{1}{2}\\cdot\\left|~a\\right|=~a$~2%", 
+		A_n, B_n, C_n, totex(vl1), totex(vl)),
+	answ : [[type = ts_single_value, ts_name = "площадь треугольника", ts_alias = "S", value = vl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =================================================== */
+/* Найти объем тетраэдра с данными координатами вершин */
+/* в пространстве с помощью смешанного произведения    */
+/* =================================================== */
+debuglog("tetrahedron_volume_3d_coordinates_mixed_product", debug_message_func_load)$
+tetrahedron_volume_3d_coordinates_mixed_product(prs) := block(
+	[res, 																/* результат функции */
+	A, B, C, D, A_n, B_n, C_n, D_n,										/* параметры */
+	A1, A2, A3, B1, B2, B3, C1, C2, C3, D1, D2, D3,
+	AB, AC, AD,
+	vl, vl1, l, rs, rs_ans,
+	expr, var_l,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("tetrahedron_volume_3d_coordinates_mixed_product", [fp_high_level, fp_solver]),
+	[A, B, C, D, A_n, B_n, C_n, D_n] : get_vals_by_aliases(prs, 
+		["A", "B", "C", "D", "A name", "B name", "C name", "D name"]),	/* получаем параметры */
+	[A1, A2, A3, B1, B2, B3, C1, C2, C3, D1, D2, D3] : get_vals_by_aliases(prs, 
+		["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3", "D1", "D2", "D3"]),	/* получаем параметры */
+	if A = false then A : [A1, A2, A3],
+	if B = false then B : [B1, B2, B3],
+	if C = false then C : [C1, C2, C3],
+	if D = false then D : [D1, D2, D3],
+	if A_n = false then A_n : "A",
+	if B_n = false then B_n : "B",
+	if C_n = false then C_n : "C",
+	if D_n = false then D_n : "D",
+	debuglog(printf(false, "A=~a, B=~a, C=~a, D=~a", A, B, C, D)),
+	if ((length(A)#3) or (length(B)#3) or (length(C)#3) or (length(D)#3)) then (		/*  */
+		answ : [[type=cant_find_solution, value = ""]],
+		append_to_s_l("Точки или векторы имеют некорректные размерности."),
+		go(tag_exit)),
+	st : printf(false, 													/* задание решения */
+		"Найти объем тетраэдра $~a~a~a~a$ с данными координатами вершин $~a~a$, $~a~a$, $~a~a$ и $~a~a$", 
+		A_n, B_n, C_n, D_n, A_n, to_tex_vector_rb(A), B_n, to_tex_vector_rb(B), C_n, to_tex_vector_rb(C), D_n, to_tex_vector_rb(D)),
+	AB : B-A, AC : C-A, AD : D-A,										/* находим векторы, на которые натянут тетраэдр */
+	debuglog(printf(false, "AB=~a, AC=~a, AD=~a", AB, AC, AD)),
+	append_to_s_l("Найдем координаты векторов, на которые натянут тетраэдр $~a~a~a~a$:~2%", A_n, B_n, C_n, D_n),
+	append_to_s_l(	 													/* выводим в решение первый вектор... */
+		"$\\overrightarrow{~a~a}=\\left(~a-~a;~a-~a;~a-~a\\right)=~a$;~2% ", 
+		A_n, B_n, totex(B[1]), totex(A[1], "prbim" = true), totex(B[2]), totex(A[2], "prbim" = true), 
+		totex(B[3]), totex(A[3], "prbim" = true), to_tex_vector_rb(AB)),
+	append_to_s_l( 														/* ...второй... */
+		"$\\overrightarrow{~a~a}=\\left(~a-~a;~a-~a;~a-~a\\right)=~a$;~2% ", 
+		A_n, C_n, totex(C[1]), totex(A[1], "prbim" = true), totex(C[2]), totex(A[2], "prbim" = true), 
+		totex(C[3]), totex(A[3], "prbim" = true), to_tex_vector_rb(AC)),
+	append_to_s_l( 														/* ...и третий */
+		"$\\overrightarrow{~a~a}=\\left(~a-~a;~a-~a;~a-~a\\right)=~a$;~2% ", 
+		A_n, D_n, totex(D[1]), totex(A[1], "prbim" = true), totex(D[2]), totex(A[2], "prbim" = true), 
+		totex(D[3]), totex(A[3], "prbim" = true), to_tex_vector_rb(AD)),
+	append_to_s_l("Найдем их смешанное произведение:~2%"),
+	rs : vector_mixed_product(											/* ищем смешанное произведение этих векторов */
+		[[alias = "v", value = AB], [alias = "w", value = AC], [alias = "u", value = AD],
+		[alias = "v name", value = printf(false, "\\overrightarrow{~a~a}", A_n, B_n)], 
+		[alias = "w name", value = printf(false, "\\overrightarrow{~a~a}", A_n, C_n)], 
+		[alias = "u name", value = printf(false, "\\overrightarrow{~a~a}", A_n, D_n)]]),
+	rs_ans : getprop(rs, answer),
+	vl1 : getprop(rs_ans[1], value),
+	s : getprop(rs, solution),
+	append_to_s_l("~a", s),
+	vl : abs(vl1)/6,
+	debuglog(printf(false, "vl1=~a, vl=~a", vl1, vl)),
+	append_to_s_l("~2%Найдем объем тетраэдра:~2%"),
+	append_to_s_l(														/* выводим его абсолютную величину деленную на шесть */
+		"~2%$V_{~a~a~a~a}=\\frac{1}{6}\\cdot\\left|~a\\right|=~a$~2% ", 
+		A_n, B_n, C_n, D_n, totex(vl1), totex(vl)),
+	answ : [[type = ts_single_value, ts_name = "объем тетраэдра", ts_alias = "V", value = vl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ==================================================== */
+/* Найти высоту тетраэдра с данными координатами вершин */
+/* в пространстве с помощью векторов                    */
+/* ==================================================== */
+debuglog("tetrahedron_height_3d_coordinates_by_vectors", debug_message_func_load)$
+tetrahedron_height_3d_coordinates_by_vectors(prs) := block(
+	[res, 																/* результат функции */
+	A, B, C, D, A_n, B_n, C_n, D_n,										/* параметры */
+	A1, A2, A3, B1, B2, B3, C1, C2, C3, D1, D2, D3,
+	vl, tV, tS, rs, rs_ans,
+	expr, var_l,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("tetrahedron_height_3d_coordinates_by_vectors", [fp_high_level, fp_solver]),
+	[A, B, C, D, A_n, B_n, C_n, D_n] : get_vals_by_aliases(prs, 
+		["A", "B", "C", "D", "A name", "B name", "C name", "D name"]),				/* получаем параметры */
+	[A1, A2, A3, B1, B2, B3, C1, C2, C3, D1, D2, D3] : get_vals_by_aliases(prs, 
+		["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3", "D1", "D2", "D3"]),	/* получаем параметры */
+	if A = false then A : [A1, A2, A3],
+	if B = false then B : [B1, B2, B3],
+	if C = false then C : [C1, C2, C3],
+	if D = false then D : [D1, D2, D3],
+	if A_n = false then A_n : "A",
+	if B_n = false then B_n : "B",
+	if C_n = false then C_n : "C",
+	if D_n = false then D_n : "D",
+	debuglog(printf(false, "A=~a, B=~a, C=~a, D=~a", A, B, C, D)),
+	if ((length(A)#3) or (length(B)#3) or (length(C)#3) or (length(D)#3)) then (		/*  */
+		answ : [[type=cant_find_solution, value = ""]],
+		append_to_s_l("Точки или векторы имеют некорректные размерности."),
+		go(tag_exit)),
+	st : printf(false, 													/* задание решения */
+		"Найти высоту $h_{~a}$ тетраэдра $~a~a~a~a$ с данными координатами вершин $~a~a$, $~a~a$, $~a~a$ и $~a~a$", 
+		D_n, A_n, B_n, C_n, D_n, A_n, to_tex_vector_rb(A), B_n, to_tex_vector_rb(B), C_n, to_tex_vector_rb(C), D_n, to_tex_vector_rb(D)),
+	rs : tetrahedron_volume_3d_coordinates_mixed_product(				/* ищем объем тетраэдра */
+		[[alias = "A", value = A], [alias = "B", value = B], [alias = "C", value = C], [alias = "D", value = D],
+		[alias = "A name", value = A_n], 
+		[alias = "B name", value = B_n], 
+		[alias = "C name", value = C_n],
+		[alias = "D name", value = D_n]]),
+	rs_ans : getprop(rs, answer),
+	tV : getprop(rs_ans[1], value),
+	s : getprop(rs, solution),
+	append_to_s_l("~a", s),
+	if tV = 0 then (
+		append_to_s_l("Объем тетраэдра равен нулю, следовательно тетраэдр вырожденный и найти его высоту невозможно.~2%"),
+		answ : [[type = cant_find_solution, value = "Найти высоту невозможно"]],
+		go(tag_exit)),
+	rs : triangle_area_3d_coordinates_vector_product(					/* ищем площадь основания тетраэдра */
+		[[alias = "A", value = A], [alias = "B", value = B], [alias = "C", value = C],
+		[alias = "A name", value = A_n], 
+		[alias = "B name", value = B_n], 
+		[alias = "C name", value = C_n]]),
+	rs_ans : getprop(rs, answer),
+	tS : getprop(rs_ans[1], value),
+	s : getprop(rs, solution),
+	append_to_s_l("~a", s),
+	append_to_s_l("Найдем высоту тетраэдра:~2%"),
+	vl : 3 * tV / tS,
+	debuglog(printf(false, "tS=~a, tV=~a", tS, tV)),
+	append_to_s_l(														/* выводим его абсолютную величину деленную на шесть */
+		"$h=3\\cdot\\frac{V}{S}=3\\cdot\\frac{~a}{~a}=~a$~2% ", 
+		totex(tV), totex(tS), totex(vl)),
+	answ : [[type = ts_single_value, ts_name = "высота тетраэдра", ts_alias = "h", value = vl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ======================================================================== */
+/* Найти расстояние от точки до плоскости в пространстве с помощью векторов */
+/* ======================================================================== */
+debuglog("distance_from_point_to_plane_3d", debug_message_func_load)$
+distance_from_point_to_plane_3d(prs) := block(
+	[res, 																/* результат функции */
+	M, N, n, M_n, N_n, n_n,	al_n,										/* параметры */
+	M1, M2, M3, N1, N2, N3, n1, n2, n3,									/* координаты точек и вектора нормали */
+	cA, cB, cC, cD,														/* коэффициенты нормального уравнения плоскости */
+	vl, tV, tS, rs, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("distance_from_point_to_plane_3d", [fp_high_level, fp_solver]),
+	[cA, cB, cC, cD] : get_vals_by_aliases(prs, ["A", "B", "C", "D"]),
+	if ((cA # false) and (cB # false) and (cC # false) and (cD # false)) then go(tag_begin_solve),
+	[M, N, n, M_n, N_n, n_n] : 
+		get_vals_by_aliases(prs, ["M", "N", "n", "M name", "N name", "n name"]),				/* получаем параметры */
+	[M1, M2, M3, N1, N2, N3, n1, n2, n3] : 
+		get_vals_by_aliases(prs, ["M1", "M2", "M3", "N1", "N2", "N3", "n1", "n2", "n3"]),		/* получаем параметры */
+	if M = false then M : [M1, M2, M3],
+	if N = false then N : [N1, N2, N3],
+	if n = false then n : [n1, n2, n3],
+	if M_n = false then M_n : "M",
+	if N_n = false then N_n : "N",
+	if n_n = false then n_n : "\\vec{n}",
+	al_n : "\\alpha",
+	cA : n[1], cB : n[2], cC : n[3], 
+	cD : -n[1]*N[1]-n[2]*N[2]-n[3]*N[3],
+	if ((cA = 0) and (cB = 0) and (cC = 0)) then (
+		answ : [[type=cant_find_solution, value = "Нулевой вектор нормали --- вырожденная плоскость"]],
+		append_to_s_l("Нулевой вектор нормали --- вырожденная плоскость."),
+		go(tag_exit)),
+	append_to_s_l("Составим уравнение плоскости: ~%"),
+	append_to_s_l("$~a$: $~a$~2%", 
+		al_n, totex(cA*(x-N[1])+cB*(y-N[2])+cC*(z-N[3])=0)),
+	append_to_s_l("$~a$: $~a$~2%", 
+		al_n, totex(cA*x+cB*y+cC*z+cD=0)),
+	debuglog(printf(false, "M=~a, N=~a, n=~a", M, N, n)),
+	tag_begin_solve,
+	if ((length(M)#3) or (length(N)#3) or (length(n)#3)) then (			/*  */
+		answ : [[type=cant_find_solution, value = "Точки или векторы имеют некорректные размерности"]],
+		append_to_s_l("Точки или векторы имеют некорректные размерности."),
+		go(tag_exit)),
+	st : printf(false, 													/* задание решения */
+		"Найти расстояние от точки $~a~a$ до плоскости $~a$, проходящей через точку $~a~a$ с вектором нормали $~a~a$ в пространстве.", 
+		M_n, to_tex_vector_rb(M), al_n, N_n, to_tex_vector_rb(N), n_n, to_tex_vector_rb(n)),
+	[s, vl] : totex_calc_val(
+		abs(pA*pM1+pB*pM2+pC*pM3+pD)/sqrt(pA^2+pB^2+pC^2),
+		[pA = cA, pB = cB, pC = cC, pD = cD, pM1 = M[1], pM2 = M[2], pM3 = M[3]]),
+	append_to_s_l("$\\rho(~a,~a)=$ ~a", M_n, al_n, s),
+	answ : [[type = ts_value, 
+		ts_name = "расстояние", 
+		ts_caption="d",
+		ts_alias = "d", 
+		value = vl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =================================================================== */
+/* Найти расстояние от точки до прямой на плоскости с помощью векторов */
+/* =================================================================== */
+debuglog("distance_from_point_to_line_2d", debug_message_func_load)$
+distance_from_point_to_line_2d(prs) := block(
+	[res, 																/* результат функции */
+	M,  																/* точка, от которой ищется расстояние */
+	N, n,																/* точка и вектор нормали прямой */
+	M_n, N_n, 															/* имена точек */
+	n_n, al_n,															/* имена вектора нормали и прямой */
+	M1, M2, N1, N2, n1, n2,												/* координаты точек и вектора нормали */
+	cA, cB, cC,															/* коэффициенты нормального уравнения прямой */
+	vl, tV, tS, rs, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("distance_from_point_to_line_2d", [fp_high_level, fp_solver]),
+	[cA, cB, cC] : get_vals_by_aliases(prs, ["A", "B", "C"]),
+	if ((cA # false) and (cB # false) and (cC # false)) then go(tag_begin_solve),
+	[M, N, n, M_n, N_n, n_n] : 											/* получаем параметры */
+		get_vals_by_aliases(prs, ["M", "N", "n", "M name", "N name", "n name"]),
+	[M1, M2, N1, N2, n1, n2] : 											/* получаем параметры */
+		get_vals_by_aliases(prs, ["M1", "M2", "N1", "N2", "n1", "n2"]),
+	if M = false then M : [M1, M2],
+	if N = false then N : [N1, N2],
+	if n = false then n : [n1, n2],
+	if M_n = false then M_n : "M",
+	if N_n = false then N_n : "N",
+	if n_n = false then n_n : "\\vec{n}",
+	al_n : "l",
+	cA : n[1], cB : n[2], 
+	cC : -n[1]*N[1] - n[2]*N[2],
+	if ((cA = 0) and (cB = 0)) then (
+		answ : [[type = cant_find_solution, value = "Нулевой вектор нормали --- вырожденная прямая"]],
+		append_to_s_l("Нулевой вектор нормали --- вырожденная прямая."),
+		go(tag_exit)),
+	append_to_s_l("Составим уравнение прямой: ~%"),
+	append_to_s_l("$~a$: $~a$~2%", 
+		al_n, totex(cA * (x - N[1]) + cB * (y - N[2]) = 0)),
+	append_to_s_l("$~a$: $~a$~2%", 
+		al_n, totex(cA * x + cB * y + cC = 0)),
+	debuglog(printf(false, "M=~a, N=~a, n=~a", M, N, n)),
+	tag_begin_solve,
+	if ((length(M)#2) or (length(N)#2) or (length(n)#2)) then (			/* если размерности точек и векторов некорректные */
+		answ : [[type = cant_find_solution, value = "Точки или векторы имеют некорректные размерности"]],
+		append_to_s_l("Точки или векторы имеют некорректные размерности."),
+		go(tag_exit)),
+	st : printf(false, 													/* задание решения */
+		"Найти расстояние от точки $~a ~a$ до прямой $~a$, проходящей через точку $~a ~a$ с вектором нормали $~a ~a$ на плоскости.", 
+		M_n, to_tex_vector_rb(M), al_n, N_n, to_tex_vector_rb(N), n_n, to_tex_vector_rb(n)),
+	[s, vl] : totex_calc_val(
+		abs(pA*pM1+pB*pM2+pC)/sqrt(pA^2+pB^2),
+		[pA = cA, pB = cB, pC = cC, pM1 = M[1], pM2 = M[2]]),
+	append_to_s_l("$\\rho(~a,~a)=$ ~a", M_n, al_n, s),
+	answ : [[type = ts_value, 
+		ts_name = "расстояние", 
+		ts_caption = "d",
+		ts_alias = "d", 
+		value = vl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ===================================================================== */
+/* Найти расстояние от точки до прямой в пространстве с помощью векторов */
+/* ===================================================================== */
+debuglog("distance_from_point_to_line_3d", debug_message_func_load)$
+distance_from_point_to_line_3d(prs) := block(
+	[res, 																/* результат функции */
+	M, N, a, M_n, N_n, a_n,	al_n,										/* параметры */
+	M1, M2, M3, N1, N2, N3, a1, a2, a3,									/* координаты точек и направляющего вектора */
+	vMN, lMN, vcos, vsin,
+	pr, rs, rs_s, rs_ans,
+	vl, tV, tS, rs, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("distance_from_point_to_line_3d", [fp_high_level, fp_solver]),
+	[M, N, a, M_n, N_n, a_n] : 
+		get_vals_by_aliases(prs, ["M", "N", "a", "M name", "N name", "a name"]),				/* получаем параметры */
+	[M1, M2, M3, N1, N2, N3, a1, a2, a3] : 
+		get_vals_by_aliases(prs, ["M1", "M2", "M3", "N1", "N2", "N3", "a1", "a2", "a3"]),		/* получаем параметры */
+	if M = false then M : [M1, M2, M3],
+	if N = false then N : [N1, N2, N3],
+	if a = false then a : [a1, a2, a3],
+	if M_n = false then M_n : "M",
+	if N_n = false then N_n : "N",
+	if a_n = false then a_n : "\\vec{a}",
+	al_n : "l",
+	st : printf(false, 													/* задание решения */
+		"Найти расстояние от точки $~a~a$ до прямой $~a$, проходящей через точку $~a~a$ с направляющим вектором $~a~a$ в пространстве.", 
+		M_n, to_tex_vector_rb(M), al_n, N_n, to_tex_vector_rb(N), a_n, to_tex_vector_rb(a)),
+	/* находим координаты вектора MN */
+	vMN : N - M,
+	debuglog(printf(false, "MN=~a", vMN)),
+	append_to_s_l( 														/* выводим в решение вектор MN */
+		"$\\overrightarrow{~a ~a}=\\left(~a-~a;~a-~a;~a-~a\\right)=~a$;~2% ", 
+		M_n, N_n, 
+		totex(N[1]), totex(M[1], "prbim" = true), 
+		totex(N[2]), totex(M[2], "prbim" = true), 
+		totex(N[3]), totex(M[3], "prbim" = true), 
+		to_tex_vector_rb(vMN)),
+	/* находим косинус угла между векторами MN и a */
+	pr : [
+		[alias = "v", value = vMN], 
+		[alias = "w", value = a],
+		[alias = "v name", value = printf(false, "\\overrightarrow{~a ~a}", M_n, N_n)],
+		[alias = "w name", value = a_n]],
+	rs : vectors2_angle_cosinus(pr),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("~a", rs_s),
+	rs_ans : getprop(rs, answer),
+	vcos : getprop(rs_ans[1], value),
+	[s, vsin] : totex_calc_val(sqrt(1-g_vcos^2), [g_vcos = vcos]),
+	vsin : ratsimp(vsin),
+	append_to_s_l("$\\sin(\\alpha)=$ ~a~2%", s),
+	lMN : ratsimp(sqrt(vMN . vMN)),
+	vl : ratsimp(lMN*vsin),
+	append_to_s_l("$\\rho(~a;~a)=\\left|~a ~a\\right|\\cdot\\sin(\\alpha)=~a\\cdot ~a=~a$", 
+		M_n, al_n, M_n, N_n, totex(lMN), totex(vsin), totex(vl)),
+	answ : [[type = ts_value, 
+		ts_name = "расстояние", 
+		ts_caption="d",
+		ts_alias = "d", 
+		value = vl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =================================================== */
+/* Проверить, что два двумерных вектора образуют базис */
+/* =================================================== */
+debuglog("check_2_vectors_2d_basis", debug_message_func_load)$
+check_2_vectors_2d_basis(prs) := block(
+	[res, 																/* результат функции */
+	a1, a2, b1, b2,														/* параметры */
+	a_n, b_n,
+	a, b, detM, M,
+	pr, rs, rs_s, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("check_2_vectors_2d_basis", [fp_high_level, fp_solver]),
+	[a1, a2, b1, b2, a_n, b_n] : 
+		get_vals_by_aliases(prs, ["a1", "a2", "b1", "b2", "a name", "b name"]),				/* получаем параметры */
+	if (a_n = false) then a_n : "\\vec{a}",
+	if (b_n = false) then b_n : "\\vec{b}",
+	a : [a1, a2],
+	b : [b1, b2],
+	st : printf(false, 													/* задание решения */
+		"Проверить, что векторы $~a~a$ и $~a~a$ образуют базис.", 
+		a_n, to_tex_vector_rb(a), b_n, to_tex_vector_rb(b)),
+	M : matrix(a, b),
+	pr : [[alias = "M", value = M]],
+	rs : matrix_determinant(pr),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("$~a\\wedge ~a=$ ~a", a_n, b_n, rs_s),
+	rs_ans : getprop(rs, answer),
+	detM : getprop(rs_ans[1], value),
+	if (detM = 0) then
+		append_to_s_l("~2% Определитель (псевдоскалярное произведение) равен нулю, значит векторы линейно зависимы и не образуют базис.")
+	else
+		append_to_s_l("~2% Определитель (псевдоскалярное произведение) не равен нулю, значит векторы линейно независимы и образуют базис."),
+	answ : [[type = ts_string, 
+		ts_text = if (detM = 0) then "не образуют базис" else "образуют базис",
+		ts_name = "образуют базис", 
+		ts_caption = "образуют базис",
+		ts_alias = "образуют базис", 
+		value = if (detM = 0) then false else true]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =================================================== */
+/* Проверить, что три трехмерных вектора образуют базис */
+/* =================================================== */
+debuglog("check_3_vectors_3d_basis", debug_message_func_load)$
+check_3_vectors_3d_basis(prs) := block(
+	[res, 																/* результат функции */
+	a1, a2, a3, b1, b2,	b3, c1, c2, c3,									/* параметры */
+	a_n, b_n, c_n,
+	a, b, c, detM, M,
+	pr, rs, rs_s, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("check_3_vectors_3d_basis", [fp_high_level, fp_solver]),
+	[a1, a2, a3, b1, b2, b3, c1, c2, c3, a_n, b_n, c_n] : 				/* получаем параметры */
+		get_vals_by_aliases(prs, 
+			["a1", "a2", "a3", 
+			 "b1", "b2", "b3", 
+			 "c1", "c2", "c3", 
+			 "a name", "b name", "c name"]),
+	if (a_n = false) then a_n : "\\vec{a}",
+	if (b_n = false) then b_n : "\\vec{b}",
+	if (c_n = false) then c_n : "\\vec{c}",
+	a : [a1, a2, a3],
+	b : [b1, b2, b3],
+	c : [c1, c2, c3],
+	st : printf(false, 													/* задание решения */
+		"Проверить, что векторы $~a~a$, $~a~a$ и $~a~a$ образуют базис.", 
+		a_n, to_tex_vector_rb(a), b_n, to_tex_vector_rb(b), c_n, to_tex_vector_rb(c)),
+	M : matrix(a, b, c),
+	pr : [[alias = "M", value = M]],
+	rs : matrix_determinant(pr),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("$\\left( ~a; ~a; ~a \\right)=$ ~a", a_n, b_n, c_n, rs_s),
+	rs_ans : getprop(rs, answer),
+	detM : getprop(rs_ans[1], value),
+	if (detM = 0) then
+		append_to_s_l("~2% Определитель (смешанное произведение) равен нулю, значит векторы линейно зависимы и не образуют базис.")
+	else
+		append_to_s_l("~2% Определитель (смешанное произведение) не равен нулю, значит векторы линейно независимы и образуют базис."),
+	answ : [[type = ts_string, 
+		ts_text = if (detM = 0) then "не образуют базис" else "образуют базис",
+		ts_name = "образуют базис", 
+		ts_caption = "образуют базис",
+		ts_alias = "образуют базис", 
+		value = if (detM = 0) then false else true]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =================================================== */
+/* Проверить, что два двумерных вектора образуют базис */
+/* и найти координаты третьего вектора в этом базисе   */
+/* =================================================== */
+debuglog("check_2_vectors_2d_basis_and_find_coord_in_it", debug_message_func_load)$
+check_2_vectors_2d_basis_and_find_coord_in_it(prs) := block(
+	[res, 																/* результат функции */
+	a1, a2, b1, b2, c1, c2,												/* параметры */
+	a_n, b_n, c_n,
+	a, b, c, detM, M,
+	b_is_basis, x,
+	pr, rs, rs_s, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("check_2_vectors_2d_basis_and_find_coord_in_it", [fp_high_level, fp_solver]),
+	[a1, a2, b1, b2, c1, c2, a_n, b_n, c_n] : 							/* получаем параметры */
+		get_vals_by_aliases(prs, ["a1", "a2", "b1", "b2", "c1", "c2", "a name", "b name", "c name"]),
+	if (a_n = false) then a_n : "\\vec{a}",
+	if (b_n = false) then b_n : "\\vec{b}",
+	if (c_n = false) then c_n : "\\vec{c}",
+	a : [a1, a2],
+	b : [b1, b2],
+	c : [c1, c2],
+	st : printf(false, 													/* задание решения */
+		"Проверить, что векторы $~a~a$ и $~a~a$ образуют базис и найти координаты вектора $~a~a$ в этом базисе.", 
+		a_n, to_tex_vector_rb(a), b_n, to_tex_vector_rb(b), c_n, to_tex_vector_rb(c)),
+	rs : check_2_vectors_2d_basis(prs),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("~a", rs_s),
+	rs_ans : getprop(rs, answer),
+	b_is_basis : getprop(rs_ans[1], value),
+	if (b_is_basis = false) then (
+		answ : rs_ans,
+		go(tag_exit)),
+	/* Решаем систему линейных уравнений */
+	append_to_s_l("~2% Если в базисе $B=\\left\\{~a,~a\\right\\}$ вектор $~a$ имеет координаты $(x_1;x_2)$, ", 
+		a_n, b_n, c_n),
+	append_to_s_l("значит он раскладывается по векторам базиса $~a=x_1\\cdot ~a+x_2\\cdot ~a$.~2%",
+		c_n, a_n, b_n),
+	append_to_s_l("Чтобы найти координаты $(x_1;x_2)$ нужно решить систему линейных уравнений:~2%"),
+	append_to_s_l("$$\\left\\{ \\begin{array}{l} ~a\\cdot x_1 ~a\\cdot x_2 = ~a, \\\\ ~a\\cdot x_1 ~a\\cdot x_2 = ~a. \\end{array}  \\right.$$~2%",
+		totex(a1), totex(b1, "ppinm" = true), totex(c1), totex(a2), totex(b2, "ppinm" = true), totex(c2)),
+	append_to_s_l("Решим эту систему методом Крамера.~2%"),
+	M : transpose(matrix(a, b, c)),
+	pr : [[alias = "M", value = M]],
+	rs : solve_linear_system_kramer(pr),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("~a", rs_s),
+	rs_ans : getprop(rs, answer),
+	x : getprop(rs_ans[1], value),
+	append_to_s_l("Таким образом вектор в новом базисе имеет координаты $~a~a_{B}$.", 
+		c_n, to_tex_vector_rb(x)),
+	answ : rs_ans,
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ===================================================== */
+/* Проверить, что три трехмерных вектора образуют базис  */
+/* и найти координаты четвертого вектора в этом базисе */
+/* ===================================================== */
+debuglog("check_3_vectors_3d_basis_and_find_coord_in_it", debug_message_func_load)$
+check_3_vectors_3d_basis_and_find_coord_in_it(prs) := block(
+	[res, 																/* результат функции */
+	a1, a2, a3, b1, b2,	b3, c1, c2, c3,	d1, d2, d3,						/* параметры */
+	a_n, b_n, c_n, d_n,
+	a, b, c, d, detM, M,
+	pr, rs, rs_s, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("check_3_vectors_3d_basis_and_find_coord_in_it", [fp_high_level, fp_solver]),
+	[a1, a2, a3, b1, b2, b3, c1, c2, c3, d1, d2, d3, a_n, b_n, c_n, d_n] : 				/* получаем параметры */
+		get_vals_by_aliases(prs, 
+			["a1", "a2", "a3", 
+			 "b1", "b2", "b3", 
+			 "c1", "c2", "c3", 
+			 "d1", "d2", "d3",
+			 "a name", "b name", "c name", "d name"]),
+	if (a_n = false) then a_n : "\\vec{a}",
+	if (b_n = false) then b_n : "\\vec{b}",
+	if (c_n = false) then c_n : "\\vec{c}",
+	if (d_n = false) then d_n : "\\vec{d}",
+	a : [a1, a2, a3],
+	b : [b1, b2, b3],
+	c : [c1, c2, c3],
+	d : [d1, d2, d3],
+	st : printf(false, 													/* задание решения */
+		"Проверить, что векторы $~a~a$, $~a~a$ и $~a~a$ образуют базис и найти координаты вектора $~a~a$ в этом базисе.", 
+		a_n, to_tex_vector_rb(a), b_n, to_tex_vector_rb(b), c_n, to_tex_vector_rb(c), d_n, to_tex_vector_rb(d)),
+	rs : check_3_vectors_3d_basis(prs),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("~a", rs_s),
+	rs_ans : getprop(rs, answer),
+	b_is_basis : getprop(rs_ans[1], value),
+	if (b_is_basis = false) then (
+		answ : rs_ans,
+		go(tag_exit)),
+	/* Решаем систему линейных уравнений */
+	append_to_s_l("~2% Если в базисе $B=\\left\\{~a,~a,~a\\right\\}$ вектор $~a$ имеет координаты $(x_1;x_2;x_3)$, ", 
+		a_n, b_n, c_n, d_n),
+	append_to_s_l("значит он раскладывается по векторам базиса $~a=x_1\\cdot ~a+x_2\\cdot ~a+x_3\\cdot ~a$.~2%",
+		d_n, a_n, b_n, c_n),
+	append_to_s_l("Чтобы найти координаты $(x_1;x_2;x_3)$ нужно решить систему линейных уравнений:~2%"),
+	append_to_s_l("$$\\left\\{ \\begin{array}{l} ~a\\cdot x_1 ~a\\cdot x_2 ~a\\cdot x_3 = ~a, \\\\ ~a\\cdot x_1 ~a\\cdot x_2 ~a\\cdot x_3 = ~a, \\\\ ~a\\cdot x_1 ~a\\cdot x_2 ~a\\cdot x_3 = ~a. \\end{array}  \\right.$$~2%",
+		totex(a1), totex(b1, "ppinm" = true), totex(c1, "ppinm" = true), totex(d1), totex(a2), 
+		totex(b2, "ppinm" = true), totex(c2, "ppinm" = true), totex(d2), totex(a3), totex(b3, "ppinm" = true), 
+		totex(c3, "ppinm" = true), totex(d3)),
+	append_to_s_l("Решим эту систему методом Крамера.~2%"),
+	M : transpose(matrix(a, b, c, d)),
+	pr : [[alias = "M", value = M]],
+	rs : solve_linear_system_kramer(pr),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("~a", rs_s),
+	rs_ans : getprop(rs, answer),
+	x : getprop(rs_ans[1], value),
+	append_to_s_l("Таким образом вектор в новом базисе имеет координаты $~a~a_{B}$.", 
+		d_n, to_tex_vector_rb(x)),
+	answ : rs_ans,
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ===================================================== */
+/* Приведение квадрики к каноническому виду              */
+/* с помощью метода выделения полных квадратов.          */
+/* ===================================================== */
+debuglog("quadric_to_canonical_form_squares_method", debug_message_func_load)$
+quadric_to_canonical_form_squares_method(prs) := block(
+	[res, 																/* результат функции */
+	q, 																	/* квадрика в исходном виде */
+	q_nn,																/* квадрика в исходном и нормальном виде с игреками */
+	q_n,																/* квадрика в исходном и нормальном виде с иксами */
+	q_pq, q_p1, q_p2, q_pp,
+	qq, qq1,															/* остаток квадрики */
+	cyi1, cyi2,															/* номера новых переменных */
+	q_y1, q_y2,															/* замены для новых переменных */
+	n,																	/* размерность пространства */
+	Q,																	/* матрица соответствующей билинейной формы */
+	M,																	/* матрица замены координат: строка - новая переменная, столбец - старая */
+	Ml,																	/* список замен переменных */
+	cyi,																/* номер текущей новой переменной y */
+	xi_left,															/* список оставшихся индексов переменных x */
+	is_not_norm,														/* булеан не имеет нормального вида */
+	pr, rs, rs_s, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	cyi : 0,
+	Ml : [],
+	debug_start_function("quadric_to_canonical_form_squares_method", [fp_high_level, fp_solver]),
+	q : get_val_by_alias(prs, "q"),
+	q : subst([x1 = x[1], x2 = x[2], x3 = x[3], x4 = x[4], x5 = x[5],
+				x6 = x[6], x7 = x[7], x8 = x[8], x9 = x[9]], q),
+	st : printf(false, 
+		"Привести квадрику или квадратичную форму $q=~a$ к каноническому виду с помощью метода выделения полных квадратов.", 
+		totex(q)),
+	append_to_s_l("В аффинном пространстве задана квадрика или квадратичная форма q, относительно некоторого репера R. Приведем ее уравнение к каноническому виду."),
+	/* определяем максимальный порядок для x */
+	n : 0,
+	for i : 1 thru 100 do
+		if not(freeof(x[i], q)) then n : i,
+	debuglog(printf(false, "n=~a", n)),
+	if (n = 0) then (
+		append_to_s_l("Уравнение не содержит переменных вида $x_i$ и поэтому квадрикой или квадратичной формой не является."),
+		go(tag_exit)),
+	/* инициализируем матрицы */
+	Q : zeromatrix(n, n),
+	M : zeromatrix(n, n),
+	for i : 1 thru n do
+	for j : i thru n do block([cff],
+		if (i = j)
+			then Q[i,j] : coeff(q, x[i]^2)
+			else (cff : coeff(coeff(q, x[i]), x[j]), 
+				Q[i,j] : cff/2, 
+				Q[j,i] : cff/2)),
+	debuglog(printf(false, "Q=~a", Q)),
+	xi_left : makelist(i, i, 1, n),
+	append_to_s_l(" Выпишем матрицу квадратичной формы q:~%$$~a$$~2%", totex(Q)),
+	/* выделяем полные квадраты */
+	qq : q,
+	q_n : 0,
+	q_nn : 0,
+	append_to_s_l(" $~a$ ", totex(qq)),
+	is_not_norm : true,													/* изначально нормального вида нет */
+	/* коэффициенты матрицы Q нужно или обновлять после каждого шага, или не использовать (вместо них искать coeff) */
+	while (is_not_norm) do block(
+		[ca,															/* коэффициент при квадрате */
+		ci, cj,															/* найденные индексы */
+		b],
+		debuglog(printf(false, "q_n=~a", q_n)),
+		debuglog(printf(false, "qq=~a", qq)),
+		/* поиск квадрата, имеющего хоть одно соответствующее произведение */
+		ci : true,
+		for i : 1 thru n while (ci = true) do (							/* бежим по диагонали */
+			if (coeff(qq, x[i]^2) # 0) then 							/* если нашли ненулевой квадрат */
+				for j : i+1 thru n while (ci = true) do 				/* проходим по соответствующей строке в поисках произведения */
+					if (coeff(coeff(qq, x[i]), x[j]) # 0) then ci : i),
+		if (ci # true) then (											/* если квадрат найден */
+			xi_left : delete(ci, xi_left),
+			ca : coeff(qq, x[ci]^2),												/* коэффициент перед квадратом */
+			debuglog(printf(false, "ca=~a", ca)),
+			q_q1 : sum(coeff(coeff(qq, x[ci]), x[j])*x[ci]*x[j], j, 1, n) + ca*x[ci]^2,	/* сумма слагаемых, содержащих переменную под квадратом */
+			debuglog(printf(false, "q_q1=~a", q_q1)),
+			q_p1 : sum((1/2)*coeff(coeff(qq, x[ci]), x[j])*x[j], j, 1, n) + ca*x[ci],	/* сумма слагаемых в первых степенях */
+			debuglog(printf(false, "q_p1=~a", q_p1)),
+			cyi : cyi + 1,
+			Ml : append(Ml, [y[cyi] = q_p1]),
+			for j : 1 thru n do
+				if (ci = j) 
+					then M[cyi,j] : coeff(qq, x[ci]^2)
+					else M[cyi,j] : (1/2)*coeff(coeff(qq, x[ci]), x[j]),
+			q_p2 : q_p1 - coeff(qq, x[ci]^2)*x[ci],						/* сумма слагаемых в первых степенях без переменной под квадратом*/
+			q_p1 : (1/ca)*q_p1^2,
+			q_p2 : -(1/ca)*q_p2^2,
+			qq : qq - q_q1,
+			if (q_n = 0) then q_n_s : "" else q_n_s : printf(false, "(~a)+", totex(q_n)),
+			if (qq = 0) then qq_s : "" else qq_s : printf(false, "+(~a)", totex(qq)),
+			append_to_s_l("$=~a(~a)~a$ ", 
+				q_n_s, totex(q_q1), qq_s),
+			append_to_s_l("$=~a(~a)+(~a)~a$ ", 
+				q_n_s, totex(expand(q_p1)), totex(q_p2), qq_s),
+			append_to_s_l("$=~a(~a)+(~a)~a$ ", 
+				q_n_s, totex(q_p1), totex(q_p2), qq_s),
+			q_n : q_n + (1/ca)*y[cyi]^2,
+			qq : qq + expand(q_p2),
+			append_to_s_l("$=(~a)+(~a)$ ", 
+				totex(q_n), totex(qq)),
+			for j : 1 thru n do (Q[ci,j] : 0, Q[j,ci] : 0),
+			Q[ci,ci] : 1/ca,
+			go(tag_next)),
+		/* поиск произведения, которому не соответствуют квадраты */
+		ci : true, cj : true,
+		for i : 1 thru n while (ci = true) do 							/* пробегаем по всем верхне-правым элементам матрицы */
+		for j : i+1 thru n while (cj = true) do
+			if ((coeff(coeff(qq, x[i]), x[j]) # 0) and (coeff(qq, x[i]^2) = 0) and (coeff(qq, x[j]^2) = 0)) then 	/* если элемент не ноль, а на диагонали нули */
+				[ci, cj] : [i, j],										/* то он - искомый */
+		if ((ci # true) and (cj # true)) then (							/* если нашли такое произведение */
+			debuglog(printf(false, "ci=~a; cj=~a~%", ci, cj)),
+			xi_left : delete(ci, xi_left),
+			xi_left : delete(cj, xi_left),
+			ca : coeff(coeff(qq, x[ci]), x[cj]),
+			debuglog(printf(false, "ca=~a~%", ca)),
+			q_y1 : x[ci]/2+x[cj]/2,
+			q_y2 : x[ci]/2-x[cj]/2,
+			cyi1 : cyi + 1,
+			cyi2 : cyi + 2,
+			cyi : cyi + 2,
+			debuglog(printf(false, "cyi=~a; cyi1=~a; cyi2=~a~%", cyi, cyi1, cyi2)),
+			M[cyi1,ci] : 1/2, M[cyi1,cj] : 1/2,
+			M[cyi2,ci] : 1/2, M[cyi2,cj] : -1/2,
+			Ml : append(Ml, [y[cyi1] = q_y1, y[cyi2] = q_y2]),
+			Q[ci,cj] : 0, Q[cj,ci] : 0,
+			Q[ci,ci] : ca, Q[cj,cj] : ca,
+			qq : qq - ca*x[ci]*x[cj],
+			if (q_n = 0) then q_n_s : "" else q_n_s : printf(false, "(~a)+", totex(q_n)),
+			if (qq = 0) then qq_s : "" else qq_s : printf(false, "+(~a)", totex(qq)),
+			append_to_s_l("$=~a(~a)~a$ ", 
+				q_n_s, totex(ca*q_y1^2-ca*q_y2^2), qq_s),
+			q_n : q_n + ca*y[cyi1]^2-ca*y[cyi2]^2,
+			append_to_s_l("$=(~a)~a$ ", 
+				totex(q_n), qq_s),
+			debuglog("then go(tag_next)"),
+			go(tag_next)),
+			debuglog(printf(false, "xi_left = ~a~%", xi_left)),
+			for ci in xi_left do block([c],
+				c : coeff(qq, x[ci]^2),
+				if (c # 0) then (
+					cyi : cyi + 1,
+					Ml : append(Ml, [y[cyi] = abs(c)*x[ci]]),
+					M[cyi,ci] : abs(c),
+					q_n : q_n + (1/c)*y[cyi]^2)),
+		is_not_norm : false,
+		append_to_s_l("$=~a$ ", totex(q_n)),
+		tag_next,
+		debuglog("we right now after tag_next"),
+		q_nn : 0),
+	append_to_s_l("~2% Получили канонический вид квадрики q: $~a$",
+		totex(q_n)),
+	Ml : apply(ts_equations_system, Ml),
+	append_to_s_l("~2% Закон перехода от старых координат к новым: $~a$",
+		totex(Ml)),
+	append_to_s_l("~2% Матрица перехода от старых координат к новым: $~a$",
+		totex(M)),
+	answ : [[type = ts_expression, 
+		ts_text = "квадрика в каноническом виде",
+		ts_name = "квадрика", 
+		ts_caption = "квадрика в каноническом виде",
+		ts_alias = "q", 
+		value = q_n]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================================== */
+/* Приведение квадрики к каноническому виду */
+/* с помощью ортогональных преобразований. */
+/* ================================================================== */
+debuglog("quadric_to_canonical_form_orthogonal_transformation", debug_message_func_load)$
+quadric_to_canonical_form_orthogonal_transformation(prs) := block(
+	[res, 																/* результат функции */
+	q, Q,																/* квадрика и матрица билинейной формы */
+	q_n,
+	eig_vals,															/* собственные значения */
+	eig_vals_m,															/* кратности собственных значений */ 
+	eig_vecs,															/* собственные векторы */
+	eig_vecs_norm,
+	M, Mi,																/* матрица из собственных векторов */
+	tr_e,																/* формулы преобразования */
+	s_eig_vals, s_eig_vecs, s_eig_vecs_norm,
+	pr, rs, rs_s, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [], eig_vecs_norm : [],
+	debug_start_function("quadric_to_canonical_form_orthogonal_transformation", [fp_high_level, fp_solver]),
+	q : get_val_by_alias(prs, "q"),
+	st : printf(false, 
+		"Привести уравнение квадрики $q=~a$ к каноническому виду с помощью ортогональных преобразований.", 
+		totex(q)),
+	append_to_s_l("В евклидовом пространстве задана квадрика q, относительно некоторого репера R. Приведем уравнение квадрики к каноническому виду.~2%"),
+	/* определяем максимальный порядок для x */
+	n : 0,
+	for i : 1 thru 100 do
+		if not(freeof(x[i], q)) then n : i,
+	if (n = 0) then (
+		append_to_s_l("Уравнение не содержит переменных вида $x_i$ и поэтому квадрикой не является."),
+		go(tag_exit)),
+	Q : zeromatrix(n, n),
+	for i : 1 thru n do
+	for j : i thru n do block([cff],
+		if (i = j)
+			then Q[i,j] : coeff(q, x[i]^2)
+			else (cff : coeff(coeff(q, x[i]), x[j]), 
+				Q[i,j] : cff/2, 
+				Q[j,i] : cff/2)),
+	append_to_s_l("Выпишем квадратичную форму $g$ квадрики $q$:~%$$g=~a$$~%", 
+		totex(sum(sum(Q[i,j]*x[i]*x[j], j, 1, n), i, 1, n))),
+	append_to_s_l("Выпишем матрицу G квадратичной формы квадрики q:~%$$G=~a$$~2%", totex(Q)),
+	pr : [[alias = "M", value = Q]],
+	rs : algebra_matrix_eigenvalues_eigenvectors(pr),
+	rs_s : getprop(rs, solution),
+	rs_ans : getprop(rs, answer),
+	append_to_s_l("Найдем ее собственнные значения и векторы.~2%"),
+	eig_vals : getprop(rs_ans[1], value),
+	eig_vals_m : getprop(rs_ans[2], value),
+	eig_vecs : getprop(rs_ans[3], value),
+	M : apply(matrix, eig_vecs),
+	append_to_s_l("Составим матрицу из координат нормированных собственных векторов:~% $$~a$$", totex(M)),
+	Mi : ratsimp(invert(M)),
+	append_to_s_l("Найдем обратную ей матрицу:~% $$~a$$", totex(Mi)),
+	tr_e : makelist(x[i] = sum(y[j] * Mi[i,j], j, 1, n), i, 1, n),
+	append_to_s_l("Составим формулы преобразования координат: ~2%$$~a$$", to_tex_system(tr_e)),
+	q_n : ratsimp(subst(tr_e, q)),
+	append_to_s_l("После подстановки в уравнение квадрика будет иметь канонический вид: ~2%$$q(y)=~a$$", 
+		totex(q_n)),
+	answ : [[type = ts_expression, 
+		ts_text = "квадрика в каноническом виде",
+		ts_name = "квадрика", 
+		ts_caption = "квадрика в каноническом виде",
+		ts_alias = "q", 
+		value = q_n]],
+	/* !TODO! */
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$

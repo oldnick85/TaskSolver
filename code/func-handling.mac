@@ -1,0 +1,88 @@
+/* ======================================== */
+/* Функции обслуживания и поддержки проекта */
+/* ======================================== */
+/* ++++++++++++++++++++++++++++++++++++++++ */
+/* ================================== */
+/* Архивация текущей версии программы */
+/* ================================== */
+debuglog("archieve_current_tasksolver_version", debug_message_func_load);
+archieve_current_tasksolver_version() := block([b_home_dir, b_from_dir, b_to_dir, b_pass, b_pass_help, b_dt, b_fl, s_inp, arch_name, ss],
+	debug_start_function("archieve_current_tasksolver_version", [fp_high_level, fp_common]),
+	b_home_dir : "~",
+	b_from_dir : "~/TaskSolver",
+	printf(true, "Введите путь к программе (~a): ", b_from_dir),
+	s_inp : readlinestdio(),						/* получаем путь к программе */
+	if slength(s_inp)>0 then b_from_dir : s_inp,	/* если ничего не введено, то берем путь по умолчанию */
+	b_to_dir : "~/Dropbox/projects/TaskSolver-archive",
+	printf(true, "Введите путь для архива (~a): ", b_to_dir),
+	s_inp : readlinestdio(),						/* получаем путь к папке с архивами */
+	if slength(s_inp)>0 then b_to_dir : s_inp,		/* если ничего не введено, то берем путь по умолчанию */
+	b_pass : "shkimitun",
+	printf(true, "Введите пароль для архива (~a): ", b_pass),
+	s_inp : readlinestdio(),					/* получаем пароль для архива */
+	if slength(s_inp)>0 then b_pass : s_inp,	/* если ничего не введено, то берем пароль по умолчанию */
+	b_pass_help : "pmisha",
+	printf(true, "Введите подсказку для пароля (~a): ", b_pass_help),
+	s_inp : readlinestdio(),					/* получаем пароль для архива */
+	if slength(s_inp)>0 then b_pass_help : s_inp,	/* если ничего не введено, то берем подсказку по умолчанию */
+	b_dt : tokens(timedate()),
+	arch_name : printf(false, "~a/TaskSolver-~a-~a-~a.7z", b_to_dir, tasksolver_version, b_dt[1], b_pass_help),
+	ss : printf(false, 								/* пакуем папку в архив */
+		"7za a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on -p\"~a\" ~a ~a",	
+		/* "tar cf - ~a | 7za a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=on -p\"~a\" -si ~a",  */
+		b_pass, arch_name, b_from_dir),
+	printf(true, "Batching string = ~a~%", ss),
+	system(ss),
+	ss : printf(false, "7za x ~a", arch_name),	/* ss : printf(false, "7za x -so ~a | tar xf -", arch_name), */
+	printf(true, "ss = ~a~%", ss),
+	/* b_fl : openw(printf(false, "~a/ts-unpack", b_to_dir)), */
+	b_fl : openw(printf(false, "service_files/ts-unpack.sh")),
+	printf(b_fl, "#!/bin/sh~%"),
+	printf(b_fl, "cd ~~~%"),
+	printf(b_fl, "~a", ss),
+	close(b_fl),
+	ss : printf(false, "cp service_files/ts-unpack.sh ~a/ts-unpack.sh", b_to_dir),
+	printf(true, "ss = ~a~%", ss),
+	system(ss),
+	b_fl : opena(printf(false, "service_files/version_history.dat")),
+	printf(b_fl, "~a    ~a", tasksolver_version, b_dt[1]),
+	close(b_fl),
+	debug_end_function())$
+/* ================================= */
+/* Очистка рабочих каталогов проекта */
+/* ================================= */
+debuglog("clear_work_directories", debug_message_func_load);
+clear_work_directories([prms]) := block([res], res : true,
+	debug_start_function("clear_work_directories", [fp_high_level, fp_common]),
+	if (member(ts_service_logs, prms) or member(ts_all_files, prms)) then block([],
+		sys_s : "rm -rf service_files\/\*.log",
+		system(sys_s)),
+	if (member(ts_projects_files, prms) or member(ts_all_files, prms)) then block([],
+		sys_s : "rm -rf projects\/\*",
+		system(sys_s)),
+	if (member(ts_works_files, prms) or member(ts_all_files, prms)) then block([],
+		sys_s : "rm -rf works/raw_projects\/\*",
+		system(sys_s),
+		sys_s : "rm -rf works/error_projects\/\*",
+		system(sys_s),
+		sys_s : "rm -rf works/ready_projects\/\*",
+		system(sys_s),
+		sys_s : "rm -rf works/old_projects\/\*",
+		system(sys_s)),
+	debug_end_function(),
+	res)$
+/* =============================== */
+/* Архивация обработанных проектов */
+/* =============================== */
+debuglog("archieve_ready_projects", debug_message_func_load);
+archieve_ready_projects([prms]) := block([res, sys_s], res : true,
+	debug_start_function("archieve_ready_projects", [fp_high_level, fp_common]),
+	sys_s : "rm -rf works/ready_projects/*.pdf",
+	system(sys_s),
+	sys_s : "7z a archieved_projects.7z works/ready_projects/*",
+	system(sys_s),
+	sys_s : "rm -rf works/ready_projects/*",
+	system(sys_s),
+	/* !TODO! */
+	debug_end_function(),
+	res)$

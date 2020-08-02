@@ -1,0 +1,165 @@
+/* ====================================================== */
+/* ================ Неформальные задания ================ */
+/* ==================== Теория чисел ==================== */
+/* ====================================================== */
+debuglog("it_number_theory.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ========================================= */
+/* Решить сравнение по модулю первой степени */
+/* ========================================= */
+informaltask_algebra_solve_eq_modulo_1_degree : [
+	category = [ts_number_theory],
+	name = "algebra_solve_eq_modulo_1_degree",
+	shortname = "ma_sem1d",
+	readiness = ts_full_readiness,
+	short_description = "Решить сравнение по модулю первой степени",
+	text = "Решить сравнение по модулю первой степени $a\\cdot x\\equiv b\\ (mod m)$.",
+	taskparams = [
+		[parname = "a", pr_name = "a", pr_caption = "a", alias = "a", pr_type = type_s_integer, ts_default_value = 11],
+		[parname = "b", pr_name = "b", pr_caption = "b", alias = "b", pr_type = type_s_integer, ts_default_value = 2],
+		[parname = "m", pr_name = "m", pr_caption = "m", alias = "m", pr_type = type_s_integer, ts_default_value = 17]],
+	ts_parameters_extra = [
+		[parname = "x_name", pr_name = "x_name", pr_caption = "x_name", alias = "x name", pr_type = type_v_string, 
+			ts_default_value = "x"]],
+	solver = solve_eq_modulo_1_degree]$
+push(informaltask_algebra_solve_eq_modulo_1_degree, informaltasks)$
+/* ======================================================== */
+/* Найти каноническое разложение числа на простые множители */
+/* ======================================================== */
+informaltask_algebra_number_canonical_factor : [
+	category = [ts_number_theory],
+	name = "algebra_number_canonical_factor",
+	shortname = "ma_ncf",
+	readiness = ts_full_readiness,
+	short_description = "Найти каноническое разложение числа на простые множители",
+	text = "Найти каноническое разложение числа $n$ на простые множители.",
+	taskparams = [
+		[parname = "n", pr_name = "n", pr_caption = "n", alias = "n", pr_type = type_s_integer, ts_default_value = 11]],
+	ts_parameters_extra = [
+		[parname = "n_name", pr_name = "n_name", pr_caption = "n_name", alias = "n name", pr_type = type_v_string, 
+			ts_default_value = "n"]],
+	solver = number_canonical_factor]$
+push(informaltask_algebra_number_canonical_factor, informaltasks)$
+/* ========================================================= */
+/* Вычислить значение функции Эйлера от данного целого числа */
+/* ========================================================= */
+informaltask_algebra_calculate_euler_function : [
+	category = [ts_number_theory],
+	name = "algebra_calculate_euler_function",
+	shortname = "ma_cef",
+	readiness = ts_full_readiness,
+	short_description = "Вычислить значение функции Эйлера от данного целого числа",
+	text = "Вычислить значение функции Эйлера от данного целого числа $n$.",
+	taskparams = [
+		[parname = "n", pr_name = "n", pr_caption = "n", alias = "n", pr_type = type_s_integer, ts_default_value = 11]],
+	ts_parameters_extra = [
+		[parname = "n_name", pr_name = "n_name", pr_caption = "n_name", alias = "n name", pr_type = type_v_string, 
+			ts_default_value = "n"]],
+	solver = calculate_euler_function]$
+push(informaltask_algebra_calculate_euler_function, informaltasks)$
+/* ========================================== */
+/* Наименьшее общее кратное нескольких чисел */
+/* ========================================== */
+informaltask_algebra_least_common_multiple_euclid_algo : [
+	category = [ts_number_theory],
+	name = "algebra_least_common_multiple_2_numbers_euclid_algo",
+	shortname = "ma_lcmea",
+	readiness = ts_full_readiness,
+	short_description = "Найти НОК нескольких чисел алгоритмом Евклида",
+	text = "Найти наименьшее общее кратное (НОК) целых чисел $n_i$ с помощью алгоритма Евклида.",
+	taskparams = [
+		[parname = "n_i", pr_name = "n_i", pr_caption = "n_i", alias = "num list", pr_type = type_v_integer, 
+			ts_default_value = [26, 58, 93, 15]]],
+	ts_parameters_extra = [[parname = "n_i_name", pr_name = "n_i_name", pr_caption = "n_i_name", alias = "num list name", pr_type = type_v_string, 
+			ts_default_value = "n"]],
+	solver = least_common_multiple_euclid_algo]$
+push(informaltask_algebra_least_common_multiple_euclid_algo, informaltasks)$
+/* =================================== */
+/* Наименьшее общее кратное двух чисел */
+/* =================================== */
+informaltask_algebra_least_common_multiple_2_numbers_euclid_algo : [
+	category = [ts_number_theory],
+	name = "algebra_least_common_multiple_2_numbers_euclid_algo",
+	shortname = "ma_lcm2ea",
+	readiness = ts_full_readiness,
+	short_description = "Найти НОК двух чисел алгоритмом Евклида",
+	text = "Найти наименьшее общее кратное (НОК) двух целых чисел $m$ и $n$ с помощью алгоритма Евклида.",
+	taskparams = [
+		[parname = "m", pr_name = "m", pr_caption = "m", alias = "m", pr_type = type_s_integer, ts_default_value = 26],
+		[parname = "n", pr_name = "n", pr_caption = "n", alias = "n", pr_type = type_s_integer, ts_default_value = 32]],
+	solver = least_common_multiple_2_numbers_euclid_algo]$
+push(informaltask_algebra_least_common_multiple_2_numbers_euclid_algo, informaltasks)$
+/* ========================================== */
+/* Наибольший общий делитель нескольких чисел */
+/* ========================================== */
+informaltask_algebra_greatest_common_divisor_euclid_algo : [
+	category = [ts_number_theory],
+	name = "algebra_greatest_common_divisor_2_numbers_euclid_algo",
+	shortname = "ma_gcdea",
+	readiness = ts_full_readiness,
+	short_description = "Найти НОД нескольких чисел алгоритмом Евклида",
+	text = "Найти наибольший общий делитель (НОД) целых чисел $n_i$ с помощью алгоритма Евклида.",
+	taskparams = [
+		[parname = "n_i", pr_name = "n_i", pr_caption = "n_i", alias = "num list", pr_type = type_v_integer, 
+			pr_hint = "Список целых чисел",
+			ts_default_value = [26, 58, 93, 15]]],
+	ts_parameters_extra = [[parname = "n_i_name", pr_name = "n_i_name", pr_caption = "n_i_name", alias = "num list name", pr_type = type_v_string, 
+			ts_default_value = "n"]],
+	solver = greatest_common_divisor_euclid_algo]$
+push(informaltask_algebra_greatest_common_divisor_euclid_algo, informaltasks)$
+/* ==================================== */
+/* Наибольший общий делитель двух чисел */
+/* ==================================== */
+informaltask_algebra_greatest_common_divisor_2_numbers_euclid_algo : [
+	category = [ts_number_theory],
+	name = "algebra_greatest_common_divisor_2_numbers_euclid_algo",
+	shortname = "ma_gcd2ea",
+	readiness = ts_full_readiness,
+	short_description = "Найти НОД двух чисел алгоритмом Евклида",
+	text = "Найти наибольший общий делитель (НОД) двух целых чисел $m$ и $n$ с помощью алгоритма Евклида.",
+	taskparams = [
+		[parname = "m", pr_name = "m", pr_caption = "m", alias = "m", pr_type = type_s_integer, 
+			pr_hint = "Первое число",
+			ts_default_value = 26],
+		[parname = "n", pr_name = "n", pr_caption = "n", alias = "n", pr_type = type_s_integer, 
+			pr_hint = "Второе число",
+			ts_default_value = 32]],
+	solver = greatest_common_divisor_2_numbers_euclid_algo]$
+push(informaltask_algebra_greatest_common_divisor_2_numbers_euclid_algo, informaltasks)$
+/* ================================================ */
+/* Представить в виде цепной дроби правильную дробь */
+/* ================================================ */
+informaltask_algebra_present_in_continued_fraction_proper_fraction : [
+	category = [ts_number_theory],
+	name = "algebra_present_in_continued_fraction_proper_fraction",
+	shortname = "ma_pcfpf",
+	readiness = ts_full_readiness,
+	short_description = "Представить в виде цепной дроби правильную дробь",
+	text = "Представить в виде цепной дроби правильную дробь $\\frac{m}{n}$.",
+	taskparams = [
+		[parname = "m", pr_name = "m", pr_caption = "m", alias = "m", pr_type = type_s_integer, ts_default_value = 17],
+		[parname = "n", pr_name = "n", pr_caption = "n", alias = "n", pr_type = type_s_integer, ts_default_value = 11]],
+	ts_parameters_extra = [
+		[parname = "a_name", pr_name = "a_name", pr_caption = "a_name", alias = "a name", pr_type = type_v_string, 
+			ts_default_value = "a"],
+		[parname = "x_name", pr_name = "x_name", pr_caption = "x_name", alias = "x name", pr_type = type_v_string, 
+			ts_default_value = "x"]],
+	solver = present_in_continued_fraction_proper_fraction]$
+push(informaltask_algebra_present_in_continued_fraction_proper_fraction, informaltasks)$
+/* =============================================== */
+/* Найти число и сумму натуральных делителей числа */
+/* =============================================== */
+informaltask_algebra_number_and_amount_of_natural_divisors : [
+	category = [ts_number_theory],
+	name = "algebra_number_and_amount_of_natural_divisors",
+	shortname = "ma_naaond",
+	readiness = ts_full_readiness,
+	short_description = "Найти число и сумму натуральных делителей числа",
+	text = "Найти число и сумму натуральных делителей числа $n$.",
+	taskparams = [
+		[parname = "n", pr_name = "n", pr_caption = "n", alias = "n", pr_type = type_s_integer, ts_default_value = 11]],
+	ts_parameters_extra = [
+		[parname = "n_name", pr_name = "n_name", pr_caption = "n_name", alias = "n name", pr_type = type_v_string, 
+			ts_default_value = "n"]],
+	solver = number_and_amount_of_natural_divisors]$
+push(informaltask_algebra_number_and_amount_of_natural_divisors, informaltasks)$

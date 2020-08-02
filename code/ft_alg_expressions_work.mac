@@ -1,0 +1,166 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ====================== Алгебра ===================== */
+/* =============== Работа с выражениями =============== */
+/* ==================================================== */
+debuglog("ft_alg_expressions_work.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ========================================================================== */
+/* Функция возвращает коэффициенты внешне-линейного выражения expr = a*F(x)   */
+/* в виде списка [a, F(x)] и false если выражение не представимо в таком виде */
+/* ========================================================================== */
+expr_mult_external(expr, x) := block([res, a, F, r], res : false,
+	debug_start_function("expr_mult_external", [fp_low_level, fp_predicate]),
+	if (expr = x) then (res : [1, x], go(tag_exit)),
+	if freeof(x, expr) then go(tag_exit),
+	if atom(expr) then go(tag_exit),
+	if operatorp(expr, "-") then block([ears],
+		ears : args(expr),
+		if not(freeof(x, ears[1])) then (
+			r : expr_mult_external(ears[1], x),
+			a : -r[1], F : r[2]),
+		res : [a, F]),
+	if (res # false) then go(tag_exit),
+	if operatorp(expr, "/") then block([ears],
+		ears : args(expr),
+		if (not(freeof(x, ears[1])) and freeof(x, ears[2])) then (
+			r : expr_mult_external(ears[1], x),
+			a : r[1]/ears[2], F : r[2]),
+		res : [a, F]),
+	if (res # false) then go(tag_exit),
+	if operatorp(expr, "*") then block([ears],
+		ears : args(expr),
+		a : 1, F : 1,
+		for ea in ears do
+			if freeof(x, ea) then a : a * ea else F : F * ea,
+		res : [a, F]),
+	if (res # false) then go(tag_exit),
+	res : [1, expr],
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ============================================================================= */
+/* Функция возвращает коэффициенты внешне-линейного выражения expr = a*F(x)+b    */
+/* в виде списка [a, b, F(x)] и false если выражение не представимо в таком виде */
+/* ============================================================================= */
+expr_linear_external(expr, x) := block([res, a, b, F, r], res : false,
+	debug_start_function("expr_linear_external", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "expr=~a, x=~a", expr, x)),
+	if (expr = x) then (res : [1, 0, x], go(tag_exit)),
+	if freeof(x, expr) then go(tag_exit),
+	if atom(expr) then go(tag_exit),
+	if operatorp(expr, "+") then block([ears, m],
+		debuglog(printf(false, "operator +")),
+		m : 0, b : 0,
+		ears : args(expr),
+		for ea in ears do
+			if freeof(x, ea) then b : b + ea else m : m + ea,
+		debuglog(printf(false, "m=~a, b=~a", m, b)),
+		r : expr_mult_external(m, x),
+		if (r # false) then res : [r[1], b, r[2]]),
+	if (res # false) then go(tag_exit),
+	r : expr_mult_external(expr, x),
+	if (r # false) then (res : [r[1], 0, r[2]], go(tag_exit)),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ======================================================================= */
+/* Функция возвращает коэффициенты внешне-линейного выражения expr = a*x+b */
+/* в виде списка [a, b] и false если выражение не представимо в таком виде */
+/* ======================================================================= */
+expr_linear_external_x(expr, x) := block([res, a, b, r],
+	debug_start_function("expr_linear_external_x", [fp_low_level, fp_predicate]),
+	r : expr_linear_external(expr, x),
+	if (r[3] = x) then res : [r[1], r[2]] else res : false,
+	debug_end_function(),
+	res)$
+/* ======================================================================================= */
+/* Функция возвращает коэффициенты внешне-линейного выражения expr = a1*e_op(a2*x+b2)+b2   */
+/* в виде списка [a1, b1, a2, b2, e_op] и false если выражение не представимо в таком виде */
+/* ======================================================================================= */
+expr_linear_external_linear_x(expr, x) := block([res, a1, b1, a2, b2, e, e_a, e_op, r], res : false,
+	debug_start_function("expr_linear_external_linear_x", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "expr=~a, x=~a", expr, x)),
+	r : expr_linear_external(expr, x),
+	debuglog(printf(false, "r=~a", r)),
+	if (r = false) then go(tag_exit),
+	[a1, b1, e] : r,
+	e_op : op(e),
+	e_a : args(e),
+	debuglog(printf(false, "e_op=~a, e_a=~a", e_op, e_a)),
+	if length(e_a)>1 then go(tag_exit),
+	r : expr_linear_external(e_a[1], x),
+	if (r = false) then go(tag_exit),
+	[a2, b2, e] : r,
+	if (e # x) then go(tag_exit),
+	res : [a1, b1, a2, b2, e_op],
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ======================================================================================= */
+/* Функция возвращает коэффициенты внешне-линейного тригонометрического выражения expr = a1*t_op(a2*x+b2)+b1   */
+/* в виде списка [a1, b1, a2, b2, t_op] и false если выражение не представимо в таком виде */
+/* ======================================================================================= */
+expr_linear_trig_linear_x(expr, x) := block([res, a1, b1, a2, b2, e, e_a, e_op, r], res : false,
+	debug_start_function("expr_linear_trig_linear_x", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "expr=~a, x=~a", expr, x)),
+	r : expr_linear_external_linear_x(expr, x),
+	debuglog(printf(false, "r=~a", r)),
+	if ((r[5] = sin) or (r[5] = cos) or (r[5] = tan) or (r[5] = cot)) then res : r,
+	debug_end_function(),
+	res)$
+/* ======================================================================================= */
+/* Функция возвращает коэффициенты внешне-квадратного тригонометрического выражения expr = a1*t_op^2(arg_x)+b1*t_op(arg_x)+c1   */
+/* в виде списка [a1, b1, c1, arg_x, t_op] и false если выражение не представимо в таком виде */
+/* ======================================================================================= */
+expr_quadratic_trig_x(expr, x) := block(
+	[res, 
+	ca1, cb1, cc1, carg_x, mtch,
+	a1, b1, c1, t_op, arg_x, 
+	e, e_a, e_op, r], 
+	res : false,
+	debug_start_function("expr_quadratic_trig_x", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "expr=~a, x=~a", expr, x)),
+	matchdeclare(ca1, lambda([e], e#0 and freeof(x, e)), cb1, freeof(x), cc1, freeof(x),
+		carg1_x, lambda([e], not(freeof(x, e))), 
+		carg2_x, lambda([e], not(freeof(x, e)))),
+	/* sin */
+	defmatch(mtch, ca1*(sin(carg1_x))^2+cb1*sin(carg2_x)+cc1, x),
+	r : mtch(expr, x),
+	if (carg1_x # carg2_x) then r : false,
+	if (r # false) then ([a1, b1, c1] : subst(r, [ca1, cb1, cc1]), arg_x : carg1_x, t_op : sin, go(tag_exit)),
+	/* cos */
+	defmatch(mtch, ca1*(cos(carg1_x))^2+cb1*cos(carg2_x)+cc1, x),
+	r : mtch(expr, x),
+	if (carg1_x # carg2_x) then r : false,
+	if (r # false) then ([a1, b1, c1] : subst(r, [ca1, cb1, cc1]), arg_x : carg1_x, t_op : cos, go(tag_exit)),
+	/* tan */
+	defmatch(mtch, ca1*(tan(carg1_x))^2+cb1*tan(carg2_x)+cc1, x),
+	r : mtch(expr, x),
+	if (carg1_x # carg2_x) then r : false,
+	if (r # false) then ([a1, b1, c1] : subst(r, [ca1, cb1, cc1]), arg_x : carg1_x, t_op : tan, go(tag_exit)),
+	tag_exit,
+	if (r = false) then res : false else res : [a1, b1, c1, arg_x, t_op],
+	debug_end_function(),
+	res)$
+/* =================================================================================== */
+/* Функция возвращает данные о тригонометрическом выражении в виде списка со списками: */
+/* [входящие функции, аргументы функций] */
+/* =================================================================================== */
+expr_trig_data_x(expr, x) := block([res, l_f, l_a, e_op, e_ar, r], res : false, l_f : [], l_a : [],
+	debug_start_function("expr_trig_data_x", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "expr=~a, x=~a", expr, x)),
+	if (atom(expr) or freeof(x, expr)) then go(tag_exit),
+	e_op : op(expr), e_ar : args(expr),
+	if trig_func_p(e_op) then (l_f : [e_op], l_a : e_ar),
+	for e_a in e_ar do (
+		r : expr_trig_data_x(e_a, x),
+		if r # false then (l_f : append(l_f, r[1]), l_a : append(l_a, r[2]))),
+	l_f : unique(l_f), l_a : unique(l_a),
+	res : [l_f, l_a],
+	tag_exit,
+	debug_end_function(),
+	res)$
+trig_func_p(f) := block([res], res : false,
+	if ((f = sin) or (f = cos) or (f = tan) or (f = cot)) then res : true,
+	res)$

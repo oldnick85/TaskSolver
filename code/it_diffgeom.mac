@@ -1,0 +1,84 @@
+/* ====================================================== */
+/* ================ Неформальные задания ================ */
+/* ============= Дифференциальная геометрия ============= */
+/* ====================================================== */
+debuglog("it_diffgeom.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* =================== */
+/* Найти векторы репера Френе для кривой на плоскости, записать уравнения касательной и нормали, вычислить кривизну в данной точке */
+/* =================== */
+informaltask_curve_param_2d_point : [
+	category = [ts_diffgeometry],
+	ts_subcategory = ts_curves,
+	name = "curve_param_2d_point",
+	shortname = "mg_cp2p",
+	readiness = ts_full_readiness,
+	short_description = "Исследовать плоскую параметрическую кривую в данной точке",
+	text = "Найти векторы репера Френе для кривой на плоскости, заданной параметрическими уравнениями $x=x(t)$, $y=y(t)$. Записать уравнения касательной и нормали, вычислить кривизну в данной точке",
+	taskparams = [[parname = "xt", pr_name = "xt", pr_caption = "x(t)", alias = "x(t)", pr_type = type_s_expression,
+			pr_hint = "Параметрическое уравнение",
+			ts_default_value = (cos(t))],
+				[parname = "yt", pr_name = "yt", pr_caption = "y(t)", alias = "y(t)", pr_type = type_s_expression,
+			pr_hint = "Параметрическое уравнение",
+			ts_default_value = (sin(t))],
+				[parname = "t0", pr_name = "t0", pr_caption = "t_0", alias = "t0", pr_type = type_s_real,
+			pr_hint = "Значение параметра, соответствующее данной точке",
+			ts_default_value = 0]], 
+	ts_parameters_extra = [],
+	solver = curve_param_2d_point]$
+push(informaltask_curve_param_2d_point, informaltasks)$
+/* =================== */
+/* Найти векторы репера Френе для кривой на плоскости, записать уравнения касательной и нормали, вычислить кривизну в данной точке */
+/* =================== */
+informaltask_curve_param_3d_point : [
+	category = [ts_diffgeometry],
+	ts_subcategory = ts_curves,
+	name = "curve_param_3d_point",
+	shortname = "mg_cp3p",
+	readiness = ts_full_readiness,
+	short_description = "Исследовать пространственную параметрическую кривую в данной точке",
+	text = "Найти векторы репера Френе для кривой в пространстве, заданной уравнениями $x=x(t)$, $y=y(t)$, $z=z(t)$. Записать уравнения касательной, нормали и бинормали, вычислить кривизну и кручение в точке $M_0(t=t_0)$.",
+	taskparams = [[parname = "xt", pr_name = "xt", pr_caption = "x(t)", alias = "x(t)", pr_type = type_s_expression,
+			pr_hint = "Параметрическое уравнение",
+			ts_default_value = (cos(t))],
+				[parname = "yt", pr_name = "yt", pr_caption = "y(t)", alias = "y(t)", pr_type = type_s_expression,
+			pr_hint = "Параметрическое уравнение",
+			ts_default_value = (sin(t))],
+				[parname = "zt", pr_name = "zt", pr_caption = "z(t)", alias = "z(t)", pr_type = type_s_expression,
+			pr_hint = "Параметрическое уравнение",
+			ts_default_value = (t)],
+				[parname = "t0", pr_name = "t0", pr_caption = "t_0", alias = "t0", pr_type = type_s_real,
+			pr_hint = "Значение параметра, соответствующее данной точке",
+			ts_default_value = 0]], 
+	ts_parameters_extra = [],
+	solver = curve_param_3d_point]$
+push(informaltask_curve_param_3d_point, informaltasks)$
+/* =================== */
+/* Для данной поверхности, заданной параметрическими уравнениями, найти вектор нормали, записать уравнение нормали и касательной плоскости. Найти первую и вторую квадратичные формы. Найти полную и среднюю кривизну поверхности */
+/* =================== */
+informaltask_surface_param_point : [
+	category = [ts_diffgeometry],
+	ts_subcategory = ts_surfaces,
+	name = "surface_param_point",
+	shortname = "mg_spp",
+	readiness = ts_test_readiness,
+	short_description = "Исследовать поверхность в данной точке",
+	text = "Для данной поверхности, заданной параметрическими уравнениями $x=x(u,v)$, $y=y(u,v)$, $z=z(u,v)$, найти вектор нормали, записать уравнение нормали и касательной плоскости. Найти первую и вторую квадратичные формы. Найти полную и среднюю кривизну поверхности",
+	taskparams = [[parname = "xx", pr_name = "xx", pr_caption = "x(u,v)", alias = "x(u,v)", pr_type = type_s_expression,
+			pr_hint = "Параметрическое уравнение",
+			ts_default_value = (u*cos(v))],
+				[parname = "yy", pr_name = "yy", pr_caption = "y(u,v)", alias = "y(u,v)", pr_type = type_s_expression,
+			pr_hint = "Параметрическое уравнение",
+			ts_default_value = (u*sin(v))],
+				[parname = "zz", pr_name = "zz", pr_caption = "z(u,v)", alias = "z(u,v)", pr_type = type_s_expression,
+			pr_hint = "Параметрическое уравнение",
+			ts_default_value = (u)],
+				[parname = "u0", pr_name = "u0", pr_caption = "u_0", alias = "u0", pr_type = type_s_real,
+			pr_hint = "Значение параметра, соответствующее данной точке",
+			ts_default_value = 0],
+				[parname = "v0", pr_name = "v0", pr_caption = "v_0", alias = "v0", pr_type = type_s_real,
+			pr_hint = "Значение параметра, соответствующее данной точке",
+			ts_default_value = 0]], 
+	ts_parameters_extra = [],
+	solver = surface_param_point]$
+push(informaltask_surface_param_point, informaltasks)$

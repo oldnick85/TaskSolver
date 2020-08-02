@@ -1,0 +1,411 @@
+/* ==================================================== */
+/* ================  Формальные задания =============== */
+/* ===================== Статистика =================== */
+/* ==================================================== */
+debuglog("ft_stat.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ================================================================= */
+/* По данной выборке случайной величины вычислить                    */
+/* матожидание, дисперсию, несмещенную дисперсию, ср. кв. отклонение */
+/* ================================================================= */
+debuglog("selection_rv_empirical_characteristics", debug_message_func_load)$
+selection_rv_empirical_characteristics(prs) := block(
+	[res, 																/* результат */
+	v_l, n,  															/* выборка и ее длина */
+	al_pr,				 												/* вероятность для доверительных интервалов */
+	al_t, al_q, al_dlt,
+	al_q1, al_q2,
+	x_nm, 																/* имя переменной */
+	mx, Dx, sDx, S2x, 													/* матожидание, дисперсия, ср. кв. отклонение, несмещенная дисперсия */
+	mx_sum, Dx_sum,
+	mn_ti, sDn_ti, Dn_ti,
+	st, s, s_l, answ], s_l : [],
+	debug_start_function("selection_rv_empirical_characteristics", [fp_high_level, fp_solver]),
+	v_l : get_val_by_alias(prs, "v_list"),
+	x_nm : get_val_by_alias(prs, "x_name", "x"),
+	al_pr : get_val_by_alias(prs, "alpha", 0.95),
+	n : length(v_l),
+	st : printf(false, 
+		"По данной выборке случайной величины ~{ $~a$, ~} вычислить её эмпирические характеристики: матожидание, дисперсию, несмещенную дисперсию, ср. кв. отклонение.~2%", 
+		map(totex, v_l)),
+	/* Математическое ожидание */
+	debuglog(printf(false, "Expected value")),
+	append_to_s_l("Математическое ожидание:~2%"),
+	[s, mx_sum] : totex_calc_val_formula(lambda([pvl], sum(pvl[i], i, 1, n)), [v_l]),
+	mx : float(mx_sum/n),
+	append_to_s_l(
+		"$\\sum^{n}_{i=1} {~a}_i=$ ~a~2%",
+		x_nm, s),
+	append_to_s_l(
+		"$m_{~a}=\\frac{1}{n}\\sum^{n}_{i=1} {~a}_i=\\frac{~a}{~a}=~a$~2%",
+		x_nm, x_nm, totex(mx_sum), totex(n), totex(mx)),
+	/* Дисперсия */
+	debuglog(printf(false, "Dispersion")),
+	append_to_s_l("Дисперсия:~2%"),
+	[s, Dx_sum] : totex_calc_val_formula(lambda([pvl], sum((pvl[i]-mx)^2, i, 1, n)), [v_l]),
+	append_to_s_l(
+		"$\\sum^{n}_{i=1} ({~a}_i-m_{~a})^2=$ ~a~2%",
+		x_nm, x_nm, s),
+	Dx : float(Dx_sum/n),
+	append_to_s_l(
+		"$D_{~a}=\\frac{1}{n}\\sum^{n}_{i=1} ({~a}_i-m_{~a})^2=\\frac{~a}{~a}=~a$~2%",
+		x_nm, x_nm, x_nm, totex(Dx_sum), totex(n), totex(Dx)),
+	/* Среднее квадратичное отклонение */
+	debuglog(printf(false, "SQO")),
+	append_to_s_l("Среднее квадратичное отклонение:~2%"),
+	sDx : float(sqrt(Dx)),
+	append_to_s_l(
+		"$\\sigma_{~a}=\\sqrt{D_{~a}}=\\sqrt{~a}=~a$~2%",
+		x_nm, x_nm, totex(Dx), totex(sDx)),
+	/* Несмещенная дисперсия */
+	debuglog(printf(false, "Nontransp dispersion")),
+	append_to_s_l("Несмещенная дисперсия:~2%"),
+	S2x : (n/(n-1))*Dx,
+	append_to_s_l(
+		"$S^2_{~a}=\\frac{n}{n-1}{D_{~a}}=~a\\cdot\\frac{~a}{~a}=~a$~2%",
+		x_nm, x_nm, totex(Dx), totex(n), totex(n-1), totex(S2x)),
+	/* Доверительный интервал для математического ожидания */
+	debuglog(printf(false, "Trusted interval for expected value")),
+	append_to_s_l("Доверительный интервал для математического ожидания:~2%"),
+	al_t : float(inverse_erf(al_pr)*sqrt(2)),
+	append_to_s_l("$2\\Phi(t)=~a$; $\\Phi(t)=~a$; $t=~a$~2%", totex(al_pr), totex(al_pr/2), totex(al_t)),
+	al_dlt : float(al_t*sDx/sqrt(n)),
+	append_to_s_l(
+		"$\\delta=\\frac{t\\cdot \\sigma}{\\sqrt{n}}=\\frac{~a\\cdot ~a}{\\sqrt{~a}}=~a$~2%", 
+		totex(al_t), totex(sDx), totex(n), totex(al_dlt)),
+	mn_ti : ts_simple_interval(mx-al_dlt, mx+al_dlt),
+	append_to_s_l(
+		"$(m_{~a}-\\delta; m_{~a}+\\delta)=$ $~a$~2%", 
+		x_nm, x_nm, totex(mn_ti)),
+	/* Доверительный интервал для дисперсии */
+	debuglog(printf(false, "Trusted interval for dispersion")),
+	append_to_s_l("Доверительный интервал для дисперсии:~2%"),
+	al_q1 : float(quantile_chi2((1+al_pr)/2, n-1)),
+	al_q2 : float(quantile_chi2((1-al_pr)/2, n-1)),
+	append_to_s_l(
+		"По таблице найдем значение квантилей распределения хи-квадрат: $q_1=\\chi_{~a;~a}=~a$; $q_2=\\chi_{~a;~a}=~a$~2%", 
+		totex((1-al_pr)/2), totex(n-1), totex(al_q1), totex((1+al_pr)/2), totex(n-1), totex(al_q2)),
+	Dn_ti : ts_simple_interval((n-1)*Dx/al_q1, (n-1)*Dx/al_q2),
+	append_to_s_l(
+		"$(\\frac{(n-1)D_{~a}}{q_1}; \\frac{(n-1)D_{~a}}{q_2})=$ $~a$ --- доверительный интервал для дисперсии;~2%", 
+		x_nm, x_nm, totex(Dn_ti)),
+	/* Ответ */
+	answ : [
+		[type = ts_single_value, ts_name = "математическое ожидание", ts_caption="$m_x$", ts_alias = "expected value x", value = mx],
+		[type = ts_single_value, ts_name = "дисперсия", ts_caption="$D_x$", ts_alias = "dispersion x", value = Dx]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ===================================== */
+/* Построить дискретный вариационный ряд */
+/* ===================================== */
+debuglog("build_discrete_variation_series", debug_message_func_load)$
+build_discrete_variation_series(prs) := block(
+	[res, 
+	xpn_tbl, xF_tbl,
+	n, nn, x_l, n_l, p_l, F_l,
+	x_nm, X_nm, 
+	psm, n, e_v, calc_expr, calc_ch, st, s, s_l, answ], s_l : [],
+	debug_start_function("build_discrete_variation_series", [fp_high_level, fp_solver]),
+	v_l : get_val_by_alias(prs, "v_list"),
+	n : length(v_l),
+	st : printf(false, 
+		"Построить дискретный вариационный ряд для совокупности ~{ $~a$, ~}.~2%", 
+		map(totex, v_l)),
+	x_l : unique(v_l),
+	nn : length(x_l),
+	debuglog(printf(false, "nn=~a, x_l=~a", nn, x_l)),
+	append_to_s_l("В данной совокупности $~a$ вариант: ~{ $~a$, ~}.~2%", totex(length(x_l)), map(totex, x_l)),
+	n_l : makelist(0, length(x_l)),
+	p_l : makelist(0, length(x_l)),
+	for i : 1 thru length(x_l) do block([c],
+		c : 0,
+		for v in v_l do if v=x_l[i] then c : c+1,
+		n_l[i] : c, p_l[i] : float(c/n)),
+	debuglog(printf(false, "n_l=~a, p_l=~a", n_l, p_l)),
+	append_to_s_l("Они появляются с частотами ~{ $~a$, ~} соответственно.~2%", map(totex, n_l)),
+	/* Таблица xpn */
+	s : to_tex_table([x_l, p_l, n_l], [ts_left_captions=["$x_i$", "$p_i$", "$n_i$"]]),
+	append_to_s_l("~a", s),
+	/* График xpn */
+	s : printf(false, "~2%\\begin{tikzpicture}~2%\\begin{axis}"),
+	s : printf(false, "~a[~%xlabel = {$x$},ylabel = {$n$}]~%", s),
+	s : printf(false, "~a~2%\\addplot coordinates {~2%", s),
+	for i : 1 thru nn do
+		s : printf(false, "~a(~a,~a) ", s, x_l[i], n_l[i]),
+	append_to_s_l("~a~2%};~2%\\end{axis}~2%\\end{tikzpicture}~2%", s),
+	/* Таблица xF */
+	F_l : makelist(sum(p_l[k], k, 1, i), i, 1, length(p_l)),
+	s : to_tex_table([x_l, F_l], [ts_left_captions=["$x_i$", "$F_i$"]]),
+	append_to_s_l("~a", s),
+	/* График xF */
+	s : printf(false, "~2%\\begin{tikzpicture}~2%\\begin{axis}"),
+	s : printf(false, "~a[~%xlabel = {$x$},ylabel = {$F$}]~%", s),
+	s : printf(false, "~a~2%\\addplot coordinates {~2%", s),
+	for i : 1 thru nn do
+		s : printf(false, "~a(~a,~a) ", s, x_l[i], F_l[i]),
+	append_to_s_l("~a~2%};~2%\\end{axis}~2%\\end{tikzpicture}", s),
+	/* Ответ */
+	xpn_tbl : matrix(x_l, p_l, n_l),
+	xF_tbl : matrix(x_l, F_l),
+	answ : [
+		[type = ts_matrix_value, ts_name = "статистическая таблица", ts_caption="xpn_tbl", ts_alias = "statistical table", value = xpn_tbl],
+		[type = ts_matrix_value, ts_name = "таблица распределения", ts_caption="xF_tbl", ts_alias = "F table", value = xF_tbl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ======================================= */
+/* Построить интервальный вариационный ряд */
+/* ======================================= */
+debuglog("build_interval_variation_series", debug_message_func_load)$
+build_interval_variation_series(prs) := block(
+	[res, xpn_tbl, xF_tbl,
+	v_l, vmax, vmin, dv, ni, n, nn, 
+	x_l, n_l, p_l, F_l,
+	x_nm, X_nm, psm, e_v, calc_expr, calc_ch, st, s, s_l, answ], s_l : [],
+	debug_start_function("build_interval_variation_series", [fp_high_level, fp_solver]),
+	v_l : get_val_by_alias(prs, "v_list"),			/* получаем выборку */
+	ni : get_val_by_alias(prs, "ni", 0),			/* получаем число интервалов разбиения */
+	n : length(v_l),
+	st : printf(false, 
+		"Построить интервальный вариационный ряд для совокупности ~{ $~a$; ~}~2%", 
+		map(totex, v_l)),
+	append_to_s_l("В данной совокупности $~a$ вариант:\\\\ ~{ $~a$; ~}~2%", totex(length(v_l)), map(totex, v_l)),
+	if ni = 0 then (
+		ni : floor(log(n)/log(2)+1),
+		append_to_s_l(
+			"По формуле Стерджесса совокупность надо разделить на $[1 + 3.322\\cdot\\log_2(~a)] = ~a$ групп.~2%", 
+			totex(n), totex(ni))),
+	debuglog(printf(false, "ni=~a", ni)),
+	vmax : lmax(v_l), vmin : lmin(v_l), dv : (vmax-vmin)/ni,
+	debuglog(printf(false, "vmax=~a, vmin=~a, ni=~a", vmax, vmin, ni)),
+	append_to_s_l( 
+		"Максимальное значение равно $~a$, минимальное значение равно $~a$, ширина интервала равна $\\frac{~a-~a}{~a}=~a$.~2%", 
+		totex(vmax), totex(vmin), totex(vmax), totex(vmin), totex(ni), totex(dv)),
+	x_l : makelist(0, ni),
+	/* Интервалы */
+	for i : 1 thru ni do block([di],
+		if i = ni then di : [true, true] else di : [true, false],
+		x_l[i] : ts_simple_interval(vmin+(i-1)*dv, vmin+i*dv, [true, false])),
+	debuglog(printf(false, "x_l=~a", x_l)),
+	append_to_s_l(
+		"Разобьем множество возможных значений на интервалы\\\\ ~{$~a$; ~}~2%", 
+		map(totex, x_l)),
+	n_l : makelist(0, ni),
+	/* Сортировка */
+	for i : 1 thru ni do for j : 1 thru n do
+		if val_in_interval_p(v_l[j], x_l[i]) then n_l[i] : n_l[i] + 1,
+	debuglog(printf(false, "n_l=~a", n_l)),
+	p_l : n_l/n,
+	debuglog(printf(false, "p_l=~a", p_l)),
+	/* Таблица */
+	s : to_tex_table([x_l, p_l, n_l], [ts_left_captions=["$x_i$", "$p_i$", "$n_i$"]]),
+	append_to_s_l("~a", s),
+	/* График */
+	s : printf(false, "~2%\\begin{tikzpicture}~2%\\begin{axis}"),		/* ломаная */
+	s : printf(false, "~a[~%xlabel = {$x$},ylabel = {$n$}]~%", s),
+	s : printf(false, "~a~2%\\addplot coordinates {~2%", s),
+	for i : 1 thru ni do block([xs, xe, xc],
+		xs : first(x_l[i]), xe : second(x_l[i]), xc : float((xs+xe)/2),
+		s : printf(false, "~a(~a,~a) ", s, xc, n_l[i])),
+	s : printf(false, "~a~2%};~%\\end{axis}~2%\\end{tikzpicture}", s),
+	s : printf(false, "~a~2%\\begin{tikzpicture} \\begin{axis}", s),			/* гистограмма */
+	s : printf(false, "~a[ybar interval, xtick=data, xticklabel interval boundaries, x tick label style= {rotate=90,anchor=east}] ", s),
+	s : printf(false, "~a\\addplot coordinates {~2%", s),
+	for i : 1 thru ni do block([xs, xe, xc],
+		xs : first(x_l[i]), xe : second(x_l[i]), xc : float((xs+xe)/2),
+		s : printf(false, "~a(~a,~a) ", s, xs, n_l[i]),
+		if i=ni then s : printf(false, "~a(~a,~a) ", s, xe, n_l[i])),
+	s : printf(false, "~a~2%};~%", s),
+	append_to_s_l("~a \\end{axis} \\end{tikzpicture}", s),
+	/* Ответ */
+	xpn_tbl : matrix(x_l, p_l, n_l),
+	answ : [
+		[type = ts_matrix_value, ts_name = "статистическая таблица", ts_caption = "xpn_tbl", ts_alias = "statistical table", value = xpn_tbl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ============================================================================== */
+/* Линейная аппроксимация методом наименьших квадратов функции одного переменного */
+/* ============================================================================== */
+debuglog("linear_approximation_least_squares_method_1_var", debug_message_func_load)$
+linear_approximation_least_squares_method_1_var(prs) := block(
+	[res, 																/* результат функции */
+	xy_tbl, n, 
+	x_l, y_l, yy_l,
+	a, b, dltx,
+	sum_x, sum_x2, sum_y, sum_y2, sum_xy, yt,							/* вспомогательные величины - суммы */
+	sum_ymyy2,
+	r_xy,																/* коэффициент корреляции */
+	calc_expr, calc_ch, calc_sym, calc_sym1, calc_sym2, 
+	rs, rs_ans, rs_prs,
+	st, s, ss, s_l, answ], s_l : [],
+	debug_start_function("linear_approximation_least_squares_method_1_var", [fp_high_level, fp_solver]),
+	xy_tbl : get_val_by_alias(prs, "xy_table"),
+	x_l : xy_tbl[1], y_l : xy_tbl[2], n : length(x_l),
+	st : printf(false, 
+		"Найти линейную аппроксимацию вида $\\tilde{y}=a\\cdot x+b$ методом наименьших квадратов функции одного переменного, заданной таблицей значений:~2%~a~2%", 
+		to_tex_table([x_l, y_l], [ts_left_captions=["$x_i$", "$y_i$"]])),
+	debuglog(printf(false, "x_l=~a, y_l=~a", x_l, y_l)),
+	[s, sum_x] : totex_calc_val_formula(								/* сумма x */
+		lambda([pxl], sum(pxl[i], i, 1, n)), [x_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}x_i=$ ~a~2%", totex(n), s), 
+	[s, sum_x2] : totex_calc_val_formula(								/* сумма x^2 */
+		lambda([pxl], sum(pxl[i]^2, i, 1, n)), [x_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}(x_i)^2=$ ~a~2%", totex(n), s),
+	[s, sum_y] : totex_calc_val_formula(								/* Сумма y */
+		lambda([pyl], sum(pyl[i], i, 1, n)), [y_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}y_i=$ ~a~2%", totex(n), s),
+	[s, sum_xy] : totex_calc_val_formula(								/* Сумма xy */
+		lambda([pxl, pyl], sum(pxl[i]*pyl[i], i, 1, n)), [x_l, y_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}x_iy_i=$ ~a~2%", totex(n), s),
+	/* Решаем систему */
+	s : printf(false, "Чтобы найти неизвестные коэффициенты $a$ и $b$ нужно решить систему~%"),
+	s : printf(false, "~a$$\\left\\{\\begin{array}{l}~%", s),
+	s : printf(false, "~a a\\sum_{i=1}^{n}(x_i)^2+b\\sum_{i=1}^{n}x_i=\\sum_{i=1}^{n}x_iy_i\\\\~%", s),
+	s : printf(false, "~a a\\sum_{i=1}^{n}x_i+bn=\\sum_{i=1}^{n}y_i\\\\~%", s),
+	append_to_s_l("~a\\end{array}\\right.$$~%", s),
+	rs_prs : [
+		[alias = "M", value = matrix([sum_x2, sum_x, sum_xy], [sum_x, n, sum_y])], 
+		[alias = "x_names", value = ["a", "b"]]],
+	rs : solve_linear_system_kramer(rs_prs),
+	append_to_s_l("~a", getprop(rs, solution_title)),
+	append_to_s_l("~a", getprop(rs, solution)),
+	rs_ans : getprop(rs, answer),
+	rs_ans : getprop(rs_ans[1], value),
+	[a, b] : rs_ans,
+	yt : a * x + b,
+	append_to_s_l("Получаем аппроксимацию в виде $\\tilde{y}=~a$~2%", totex(yt)),
+	/* График */
+	dltx : lmax(x_l)-lmin(x_l),
+	s : printf(false, "~2%\\begin{tikzpicture}~2%\\begin{axis}"),
+	s : printf(false, "~a[~%xlabel = {$x$},ylabel = {$y$},xmin=~a,xmax=~a,domain=~a:~a]~%", 
+		s, float(lmin(x_l)-0.1*dltx), float(lmax(x_l)+0.1*dltx), float(lmin(x_l)-0.1*dltx), float(lmax(x_l)+0.1*dltx)),
+	s : printf(false, "~a~%\\addplot[blue, samples=50] {~a};~%", s, float(yt)),
+	s : printf(false, "~a~%\\addplot[only marks] coordinates {~%", s),
+	for i : 1 thru n do
+		s : printf(false, "~a(~a,~a) ", s, float(x_l[i]), float(y_l[i])),
+	append_to_s_l("~a~%};~%\\end{axis}~%\\end{tikzpicture}~2%", s),
+	/* Коэффициент корреляции */
+	append_to_s_l("Найдем коэффициент корреляции $r$:~2%"),
+	[s, sum_y2] : totex_calc_val_formula(								/* сумма y^2 */
+		lambda([pyl], sum(pyl[i]^2, i, 1, n)), [y_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}(y_i)^2=$ ~a~2%", totex(n), s),
+	append_to_s_l("$r_{xy}=\\frac{n\\cdot\\sum(x_i\\cdot y_i)-\\sum x_i\\cdot\\sum y_i}{\\sqrt{\\left(n\\cdot\\sum(x_i)^2-\\sum(x_i^2)\\right)\\cdot\\left(n\\cdot\\sum(y_i)^2-\\sum(y_i^2)\\right)}}=$ "),
+	[s, r_xy] : totex_calc_val(											/* вычисляем коэффициент корреляции */
+		(pn * psumxy - psumx * psumy)/sqrt((pn * psumx2 - psumx^2) * (pn * psumy2 - psumy^2)), 
+		[pn = n, psumx = sum_x, psumy = sum_y, psumxy = sum_xy, psumx2 = sum_x2, psumy2 = sum_y2]),
+	append_to_s_l("~a~2%", s),
+	/* Невязки */
+	append_to_s_l("Найдем сумму квадратов невязок:~2%"),
+	yy_l : makelist(0, n),
+	for i : 1 thru n do (
+		[s, yy_l[i]] : totex_calc_val_formula(lambda([px, pa, pb], pa*px+pb), [x_l[i], a, b]),
+		append_to_s_l("$\\tilde{y}(x_{~a})=\\tilde{y}(~a)=$ ~a~2%", totex(i), totex(x_l[i]), s)),
+	[s, sum_ymyy2] : totex_calc_val_formula(lambda([pyl, pyyl], sum((pyl[i]-pyyl[i])^2, i, 1, n)), [y_l, yy_l]),
+	append_to_s_l("$\\sigma=\\sum_{i=1}^{~a}(y_i-\\tilde{y}_i)^2=$ ~a~2%", totex(n), s),
+	/* Ответ */
+	answ : [[type = ts_value, 
+		ts_name = "аппроксимирующая функция", 
+		ts_caption="\\tilde{y}", 
+		ts_alias = "yt", 
+		value = yt]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================================================== */
+/* Квадратичная аппроксимация методом наименьших квадратов функции одного переменного */
+/* ================================================================================== */
+debuglog("quadratic_approximation_least_squares_method_1_var", debug_message_func_load)$
+quadratic_approximation_least_squares_method_1_var(prs) := block(
+	[res, xy_tbl, n, 
+	x_l, y_l, yy_l,														/* списки значений аргумента, функции и аппроксимирующей функции */
+	a, b, c, dltx,
+	sum_x, sum_x2, sum_x3, sum_x4, sum_y, sum_xy, sum_x2y, yt,
+	sum_ymyy2,															/* сумма квадратов невязок */
+	calc_expr, calc_ch, calc_sym, calc_sym1, calc_sym2, 
+	rs, rs_ans, rs_prs,
+	st, s, ss, s_l, answ], s_l : [],
+	debug_start_function("quadratic_approximation_least_squares_method_1_var", [fp_high_level, fp_solver]),
+	xy_tbl : get_val_by_alias(prs, "xy_table"),
+	x_l : xy_tbl[1], y_l : xy_tbl[2], n : length(x_l),
+	st : printf(false, 
+		"Найти квадратичную аппроксимацию вида $\\tilde{y}=a\\cdot x^2+b\\cdot x+c$ методом наименьших квадратов функции одного переменного, заданной таблицей значений:~2%~a~2%", 
+		to_tex_table([x_l, y_l], [ts_left_captions=["$x_i$", "$y_i$"]])),
+	debuglog(printf(false, "x_l=~a, y_l=~a", x_l, y_l)),
+	/* Сумма x */
+	[s, sum_x] : totex_calc_val_formula(lambda([pxl], sum(pxl[i], i, 1, n)), [x_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}x_i=$ ~a~2%", totex(n), s),
+	/* Сумма x^2 */
+	[s, sum_x2] : totex_calc_val_formula(lambda([pxl], sum(pxl[i]^2, i, 1, n)), [x_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}(x_i)^2=$ ~a~2%", totex(n), s),
+	/* Сумма x^3 */
+	[s, sum_x3] : totex_calc_val_formula(lambda([pxl], sum(pxl[i]^3, i, 1, n)), [x_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}(x_i)^3=$ ~a~2%", totex(n), s),
+	/* Сумма x^4 */
+	[s, sum_x4] : totex_calc_val_formula(lambda([pxl], sum(pxl[i]^4, i, 1, n)), [x_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}(x_i)^4=$ ~a~2%", totex(n), s),
+	/* Сумма y */
+	[s, sum_y] : totex_calc_val_formula(lambda([pyl], sum(pyl[i], i, 1, n)), [y_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}y_i=$ ~a~2%", totex(n), s),
+	/* Сумма xy */
+	[s, sum_xy] : totex_calc_val_formula(lambda([pxl, pyl], sum(pxl[i]*pyl[i], i, 1, n)), [x_l, y_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}x_iy_i=$ ~a~2%", totex(n), s),
+	/* Сумма x2y */
+	[s, sum_x2y] : totex_calc_val_formula(lambda([pxl, pyl], sum(pxl[i]^2*pyl[i], i, 1, n)), [x_l, y_l]),
+	append_to_s_l("$\\sum_{i=1}^{~a}(x_i)^2y_i=$ ~a~2%", totex(n), s),
+	/* Решаем систему */
+	s : printf(false, "Чтобы найти неизвестные коэффициенты $a$, $b$ и $c$ нужно решить систему~%"),
+	s : printf(false, "~a$$\\left\\{\\begin{array}{l}~%", s),
+	s : printf(false, "~a a\\sum_{i=1}^{n}(x_i)^4+b\\sum_{i=1}^{n}(x_i)^3+c\\sum_{i=1}^{n}(x_i)^2=\\sum_{i=1}^{n}(x_i)^2y_i\\\\~%", s),
+	s : printf(false, "~a a\\sum_{i=1}^{n}(x_i)^3+b\\sum_{i=1}^{n}(x_i)^2+c\\sum_{i=1}^{n}x_i=\\sum_{i=1}^{n}x_iy_i\\\\~%", s),
+	s : printf(false, "~a a\\sum_{i=1}^{n}(x_i)^2+b\\sum_{i=1}^{n}x_i+c\\cdot n=\\sum_{i=1}^{n}y_i\\\\~%", s),
+	append_to_s_l("~a\\end{array}\\right.$$~%", s),
+	rs_prs : [
+		[alias = "M", value = matrix([sum_x4, sum_x3, sum_x2, sum_x2y], [sum_x3, sum_x2, sum_x, sum_xy], [sum_x2, sum_x, n, sum_y])], 
+		[alias = "x_names", value = ["a", "b", "c"]]],
+	rs : solve_linear_system_kramer(rs_prs),
+	append_to_s_l("~a", getprop(rs, solution_title)),
+	append_to_s_l("~a", getprop(rs, solution)),
+	rs_ans : getprop(rs, answer),
+	rs_ans : getprop(rs_ans[1], value),
+	[a, b, c] : rs_ans,
+	yt : a*x^2+b*x+c,
+	append_to_s_l("Получаем аппроксимацию в виде $\\tilde{y}=~a$~2%", totex(yt)),
+	/* График */
+	dltx : lmax(x_l)-lmin(x_l),
+	s : printf(false, "~2%\\begin{tikzpicture}~2%\\begin{axis}"),
+	s : printf(false, "~a[~%xlabel = {$x$},ylabel = {$y$},xmin=~a,xmax=~a,domain=~a:~a]~%", 
+		s, float(lmin(x_l)-0.1*dltx), float(lmax(x_l)+0.1*dltx), float(lmin(x_l)-0.1*dltx), float(lmax(x_l)+0.1*dltx)),
+	s : printf(false, "~a~%\\addplot[blue, samples=50] {~a};~%", s, float(yt)),
+	s : printf(false, "~a~%\\addplot[only marks] coordinates {~%", s),
+	for i : 1 thru n do
+		s : printf(false, "~a(~a,~a) ", s, float(x_l[i]), float(y_l[i])),
+	append_to_s_l("~a~%};~%\\end{axis}~%\\end{tikzpicture}~2%", s),
+	/* Невязки */
+	append_to_s_l("Найдем сумму квадратов невязок:~2%", s),
+	yy_l : makelist(0, n),
+	for i : 1 thru n do (
+		[s, yy_l[i]] : totex_calc_val_formula(lambda([px, pa, pb, pc], pa*px^2+pb*px+pc), [x_l[i], a, b, c]),
+		append_to_s_l("$\\tilde{y}(x_{~a})=\\tilde{y}(~a)=$ ~a~2%", totex(i), totex(x_l[i]), s)),
+	[s, sum_ymyy2] : totex_calc_val_formula(lambda([pyl, pyyl], sum((pyl[i]-pyyl[i])^2, i, 1, n)), [y_l, yy_l]),
+	append_to_s_l("$\\sigma=\\sum_{i=1}^{~a}(y_i-\\tilde{y}_i)^2=$ ~a~2%", totex(n), s),
+	/* Ответ */
+	answ : [[type = ts_value, 
+		ts_name = "аппроксимирующая функция", 
+		ts_caption="\\tilde{y}", 
+		ts_alias = "yt", 
+		value = yt]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$

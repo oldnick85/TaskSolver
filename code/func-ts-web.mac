@@ -1,0 +1,708 @@
+/* ================================================== */
+/* @begin webpage_start_string */
+/* @type variable */
+/* @brief Начало HTML-кода для веб-страниц */
+/* @details Строка, содержащая HTML-код, с которого начинаются веб-страницы проекта. */
+/* @end */
+/* ================================================== */
+webpage_start_string : printf(false, "<!DOCTYPE html>~%<html>~%<head>~%<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">~%")$
+webpage_start_string : printf(false, "~a<meta http-equiv=\"Content-Language\" content=\"ru\">~%</head>~%<body>~%<SCRIPT SRC=\"/jsmath/easy/load.js\"></SCRIPT>~%", webpage_start_string)$
+/* ================================================== */
+/* @begin webpage_end_string */
+/* @type variable */
+/* @brief Конец HTML-кода для веб-страниц */
+/* @details Строка, содержащая HTML-код, которым заканчиваются веб-страницы проекта. */
+/* @end */
+/* ================================================== */
+webpage_end_string : printf(false, "~%</body>~%</html>")$
+/* ================================================== */
+/* @begin make_standart_pattern_web_page */
+/* @type function */
+/* @brief Генерирует HTML-код стандартной странички с менюшками */
+/* @details Генерирует HTML-код стандартной странички с менюшками из переданных строк-параметров.  */
+/*          Код менюшек берется из файла "web_text_menu_string.dat". */
+/*          Шаблон для странички берется из файла "web_pattern.dat". */
+/* @param s_tit --- строка заголовка */
+/* @param s_met --- строка метапараметров */
+/* @param s_body --- строка тела */
+/* @result Возвращает полный текст страницы для сохранения в файл */
+/* @end */
+/* ================================================== */
+debuglog("make_standart_pattern_web_page", debug_message_func_load)$
+make_standart_pattern_web_page(s_tit, s_met, s_body) := block([res, web_ptrn],
+	if (atom(webpage_menu_string) or (slength(webpage_menu_string) = 0)) then
+		webpage_menu_string : load_text_from_file("./web_server/text_data/web_text_menu_string.dat"),
+	web_ptrn : load_text_from_file("./web_server/text_data/web_pattern.dat"),
+	debuglog("printf for res..."),
+	res : printf(false, web_ptrn, 
+		s_met, s_tit, sconcat(webpage_menu_string, latex_string_to_latex_html(s_body))),
+	debuglog("... got res"),
+	res)$
+/* ================================================== */
+/* @begin generate_webpages */
+/* @type function */
+/* @brief Создать все веб-страницы для сайта */
+/* @details Создать все веб-страницы для сайта. */
+/* @end */
+/* ================================================== */
+debuglog("generate_webpages", debug_message_func_load)$
+generate_webpages() := block([res, fnm, fl, s], 
+	debug_start_function("generate_webpages", [fp_high_level, fp_common]),
+	printf(true, "Generating web-pages project info...~%"),
+	generate_webpages_project_info(),
+	printf(true, "Generating web-page all informaltasks...~%"),
+	generate_webpage_informaltasks_all(),								/* веб-страница со списком всех решаемых заданий */
+	printf(true, "Generating web-pages informaltasks by categories...~%"),
+	generate_webpages_informaltasks_by_categories(),					/* веб-страницы со списком решаемых заданий для всех категорий */
+	printf(true, "Generating web-pages informaltasks...~%"),
+	generate_webpage_informaltasks(),									/* веб-страницы для каждого из всех решаемых заданий */
+	printf(true, "Done generating web-pages.~%"),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin generate_webpages_project_info */
+/* @type function */
+/* @brief Создать веб-страницы с информацией о проекте */
+/* @details Создать веб-страницы с информацией о проекте. */
+/* @end */
+/* ================================================== */
+debuglog("generate_webpages_project_info", debug_message_func_load)$
+generate_webpages_project_info() := block(
+	[res, 
+	fnm, 																/* имя файла */
+	fl, 																/* поток файла */
+	s, 																	/* тело страницы */
+	s_m, 																/* метаданные страницы */
+	s_t																	/* заголовок страницы */
+	], 
+	debug_start_function("generate_webpages_project_info", [fp_high_level, fp_common]),
+	/* Правила ввода параметров */
+	s_t : "Правила ввода параметров",
+	s_m : printf(false, 
+		"<meta name =\"description\" content=\"Правила ввода параметров\">~%"),			/* метаданные страницы */
+	s_m : printf(false, 
+		"~a<meta name =\"keywords\" content=\"онлайн-калькулятор; решить задание; правила ввода параметров\">", 
+		s_m),
+	s : load_text_from_file("./web_server/text_data/web_text_input_rules.dat"),
+	fnm : "./web_server/input_rules.html",
+	debuglog("open file..."),
+	fl : openw(fnm),
+	printf(fl, "~a", make_standart_pattern_web_page(s_t, s_m, s)),
+	close(fl),
+	debuglog("...close file"),
+	/* Главная страница */
+	s_t : "Главная страница",
+	s_m : printf(false, 
+		"<meta name =\"description\" content=\"Главная страница\">~%"),	/* метаданные страницы */
+	s_m : printf(false, 
+		"~a<meta name =\"keywords\" content=\"онлайн-калькулятор; решить задание; главная страница\">", 
+		s_m),
+	s : load_text_from_file("./web_server/text_data/web_text_index.dat"),
+	fnm : "./web_server/index.html",
+	fl : openw(fnm),
+	printf(fl, "~a", make_standart_pattern_web_page(s_t, s_m, s)),
+	close(fl),
+	/* Внешние ссылки */
+	s_t : "Внешние ссылки",
+	s_m : printf(false, 
+		"<meta name =\"description\" content=\"Внешние ссылки\">~%"),	/* метаданные страницы */
+	s_m : printf(false, 
+		"~a<meta name =\"keywords\" content=\"онлайн-калькулятор; решить задание; главная страница\">", 
+		s_m),
+	s : load_text_from_file("./web_server/text_data/web_text_external_links.dat"),
+	fnm : "./web_server/external_links.html",
+	fl : openw(fnm),
+	printf(fl, "~a", make_standart_pattern_web_page(s_t, s_m, s)),
+	close(fl),
+	/* Контакты */
+	s_t : "Контакты",
+	s_m : printf(false, 
+		"<meta name =\"description\" content=\"Контакты\">~%"),			/* метаданные страницы */
+	s_m : printf(false, 
+		"~a<meta name =\"keywords\" content=\"онлайн-калькулятор; решить задание; контакты\">", 
+		s_m),
+	s : load_text_from_file("./web_server/text_data/web_text_contacts.dat"),
+	fnm : "./web_server/contacts.html",
+	fl : openw(fnm),
+	printf(fl, "~a", make_standart_pattern_web_page(s_t, s_m, s)),
+	close(fl),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin generate_webpage_informaltasks_all */
+/* @type function */
+/* @brief Создать веб-страницу со списком всех решаемых заданий */
+/* @details Создать веб-страницу со списком всех решаемых заданий. */
+/* @end */
+/* ================================================== */
+debuglog("generate_webpage_informaltasks_all", debug_message_func_load)$
+generate_webpage_informaltasks_all() := block(
+	[res, 
+	fnm, 																/* имя файла */
+	fl,  																/* поток файла */
+	s], 
+	debug_start_function("generate_webpage_informaltasks_all", [fp_high_level, fp_common]),
+	fnm : "./web_server/informaltasks_all.html",
+	fl : openw(fnm),
+	s : generate_web_informaltasks_all(ts_html_links),
+	printf(fl, "~a", make_standart_pattern_web_page("", "", s)),
+	close(fl),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin generate_webpages_informaltasks_by_categories */
+/* @type function */
+/* @brief Создать веб-страницы со списком решаемых заданий для всех категорий */
+/* @details Создать веб-страницы со списком решаемых заданий для всех категорий. */
+/* @end */
+/* ================================================== */
+debuglog("generate_webpages_informaltasks_by_categories", debug_message_func_load)$
+generate_webpages_informaltasks_by_categories() := block([res, fnm, fl, s, c_s_en, c_s_ru], 
+	debug_start_function("generate_webpages_informaltasks_by_categories", [fp_high_level, fp_common]),
+	/* for it_cat_elt in ts_inftasks_categories_metadata do block([c_cat],
+		c_cat : assoc(ts_category, it_cat_elt),
+		if (c_cat = false) 
+		then printf(true, "!!! WARNING: empty category !!!~%")
+		else (
+			printf(true, "Generating web-page category ~a...~%", c_cat), 
+			generate_webpage_informaltasks_by_category(c_cat))), */
+	for it_cat_elt in ts_inftasks_categories_metadata do 
+		generate_webpage_informaltasks_by_category(it_cat_elt),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin generate_webpage_informaltasks_by_category */
+/* @type function */
+/* @brief Создает веб-страницу со списком решаемых заданий для категории */
+/* @details Создает веб-страницу со списком решаемых заданий для категории */
+/* @param c --- имя категории или ассоциативный список метаданных для категории */
+/* @end */
+/* ================================================== */
+debuglog("make_webpage_informaltasks_by_category", debug_message_func_load)$
+generate_webpage_informaltasks_by_category(c) := block(
+	[res, 
+	fnm, fl, 															/* имя и поток файла */
+	s, 																	/* строка с кодом страницы */
+	c_s_en, c_s_ru], 													/* имя и описание категории */
+	debug_start_function("make_webpage_informaltasks_by_category", [fp_high_level, fp_common]),
+	debuglog(printf(false, "c=~a", c)),
+	if atom(c) 
+	then block([],
+		debuglog(printf(false, "c is atom")),
+		[c_s_en, c_s_ru] : string_descriptions_for_category(c),			/* инициализация строк, соответствующих категориям */
+		debuglog(printf(false, "c_s_en=~a; c_s_ru=~a", c_s_en, c_s_ru)))	
+	else block([],
+		debuglog(printf(false, "c is list")),
+		c_s_en : assoc(ts_name, c),
+		c_s_ru : assoc(ts_title, c),
+		debuglog(printf(false, "c_s_en=~a; c_s_ru=~a", c_s_en, c_s_ru))),
+	fnm : printf(false, "./web_server/informaltasks_~a.html", 			/* создание файла */
+			c_s_en),
+	fl : openw(fnm),
+	if (fl = false) then go(tag_exit),
+	s : generate_web_informaltasks_by_category(c, ts_html_links),
+	printf(fl, "~a", make_standart_pattern_web_page("", "", s)),
+	close(fl),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin generate_webpage_informaltasks */
+/* @type function */
+/* @brief Создает веб-страницы всех заданий */
+/* @details Создает веб-страницы для каждого из всех решаемых заданий. */
+/* @end */
+/* ================================================== */
+debuglog("make_webpage_informaltasks", debug_message_func_load)$
+generate_webpage_informaltasks() := block(
+	[res, 
+	it_i_l, 															/* список (готовых) неформальных заданий */
+	fnm, fl,  															/* имя файля и его дескриптор */
+	cntr,																/* счетчик циклов */
+	s_t, s_m, s_b], 
+	debug_start_function("make_webpage_informaltasks", [fp_high_level, fp_common]),
+	it_i_l : get_inftasks_nums_by_predicate(lambda([i_t], if (getprop(i_t, readiness) = ts_full_readiness) then true else false)),
+	cntr : 0,
+	for it_i in it_i_l do block([i_t, it_sn],
+		cntr : cntr + 1,
+		if (mod(cntr, 10) = 0) then
+			printf(true, "."),
+		i_t : informaltasks[it_i],
+		it_sn : getprop(i_t, shortname),
+		fnm : printf(false, "./web_server/informaltask_~a.html", it_sn),
+		fl : openw(fnm),
+		[s_t, s_m, s_b] : generate_web_informaltask([ts_shortname = it_sn]),
+		printf(fl, "~a", make_standart_pattern_web_page(s_t, s_m, s_b)),
+		close(fl)),
+	printf(true, "~%"),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin generate_web_informaltasks_by_category */
+/* @type function */
+/* @brief Генерирует код для веб-страницы со списком заданий для категории */
+/* @details Генерирует код для веб-страницы со списком заданий для категории */
+/* @param c --- имя категории или ассоциативный список метаданных для категории */
+/* @param p --- список дополнительных параметров. */
+/* @result строка --- код для страницы */
+/* @end */
+/* ================================================== */
+debuglog("generate_web_informaltasks_by_category", debug_message_func_load)$
+generate_web_informaltasks_by_category(c, [p]) := block(
+	[res, 
+	c_cat,																/* категория */
+	it_i_l, 															/* список номеров неформальных заданий */
+	c_s_en, c_s_ru], 
+	debug_start_function("generate_web_informaltasks_by_category", [fp_high_level, fp_common]),
+	if atom(c) 
+	then block([],
+		c_cat : c,
+		[c_s_en, c_s_ru] : string_descriptions_for_category(c),			/* инициализация строк, соответствующих категориям */
+		debuglog(printf(false, "c_s_en=~a; c_s_ru=~a", c_s_en, c_s_ru)))	
+	else block([],
+		c_cat : assoc(ts_category, c),
+		c_s_en : assoc(ts_name, c),
+		c_s_ru : assoc(ts_title, c),
+		debuglog(printf(false, "c_s_en=~a; c_s_ru=~a", c_s_en, c_s_ru))),
+	res : printf(false, "<H1>Решаемые задания. ~a.</H1>~%", c_s_ru),
+	it_i_l : get_inftasks_nums_by_predicate(lambda([i_t], 
+		if ((getprop(i_t, readiness) = ts_full_readiness) and member(c_cat, getprop(i_t, category))) then true else false)),
+	if atom(c) then	for it_i in it_i_l do block(
+		[i_t, 															/* неформальное задание */
+		it_sn, 															/* короткое имя залания */
+		it_sd], 														/* краткое описание задания */
+		i_t : informaltasks[it_i],
+		it_sn : getprop(i_t, shortname),
+		it_sd : getprop(i_t, short_description),
+		if (length(p) = 0)
+			then res : printf(false, "~a <p><a href=\"ts_web.php?wcmd=show_informaltask\&sname=~a\">~a </a></p>~%", res, it_sn, it_sd)
+			else res : printf(false, "~a <p><a href=\"informaltask_~a.html\">~a </a></p>~%", res, it_sn, it_sd)),
+	if listp(c) then block([c_scat_l],
+		c_scat_l : assoc(ts_subcategories, c, []),						/* список подкатегорий */
+		for c_scat in c_scat_l do block(								/* идем по подкатегориям */
+			[s, s_tt, c_sc],
+			s : "",
+			s_tt : assoc(ts_title, c_scat),
+			c_sc : assoc(ts_subcategory, c_scat),
+			for it_i in it_i_l do block(
+				[i_t, i_t_sc, it_sn, it_sd],
+				i_t : informaltasks[it_i],
+				i_t_sc : assoc(ts_subcategory, i_t),
+				it_sn : getprop(i_t, shortname),
+				it_sd : getprop(i_t, short_description),
+				if (c_sc = i_t_sc) then
+					s : printf(false, "~a <p><a href=\"informaltask_~a.html\">~a </a></p>~%", s, it_sn, it_sd)),
+				if (slength(s) > 0) then
+					s : printf(false, " <p><H3>~a </H3></p>~%~a", s_tt, s),
+				res : printf(false, "~a ~a", res, s)),
+		if (slength(res) > 85) then
+			res : printf(false, "~a <p><H3>Разное:</H3></p>~%", res),
+		for it_i in it_i_l do block(
+			[i_t, i_t_sc, it_sn, it_sd],
+			i_t : informaltasks[it_i],
+			i_t_sc : assoc(ts_subcategory, i_t),
+			it_sn : getprop(i_t, shortname),
+			it_sd : getprop(i_t, short_description),
+			if (i_t_sc = false) then
+				res : printf(false, "~a <p><a href=\"informaltask_~a.html\">~a </a></p>~%", res, it_sn, it_sd))
+		),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin generate_web_informaltasks_all */
+/* @type function */
+/* @brief Код веб-страницы со списком всех заданий */
+/* @details Генерирует код для веб-страницы со списком всех решаемых заданий. */
+/* @param p --- список параметров: если параметров нет, то создаются ссылки на */
+/*              динамические страницы, в противном случае - на статические. */
+/* @result строка --- код для страницы */
+/* @end */
+/* ================================================== */
+debuglog("generate_web_informaltasks_all", debug_message_func_load)$
+generate_web_informaltasks_all([p]) := block(
+	[res, it_i_l], 
+	debug_start_function("generate_web_informaltasks_all", [fp_high_level, fp_common]),
+	res : printf(false, "<H1>Все решаемые задания</H1>~%"),
+	it_i_l : get_inftasks_nums_by_predicate(lambda([i_t], if getprop(i_t, readiness) = ts_full_readiness then true else false)),
+	for it_i in it_i_l do block([i_t, it_sn, it_sd],
+		i_t : informaltasks[it_i],
+		it_sn : getprop(i_t, shortname),
+		it_sd : getprop(i_t, short_description),
+		if (length(p) = 0 )
+			then res : printf(false, "~a <p><a href=\"ts_web.php?wcmd=show_informaltask\&sname=~a\">~a </a></p>~%", res, it_sn, it_sd)
+			else res : printf(false, "~a <p><a href=\"informaltask_~a.html\">~a </a></p>~%", res, it_sn, it_sd)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin generate_web_informaltask */
+/* @type function */
+/* @brief Код веб-страницы для задания */
+/* @details Генерирует код для веб-страницы для конкретного задания. */
+/* @param wscmd - команда, список параметров. */
+/* @result список из трех строк - заголовка, мето и тела */
+/* @end */
+/* ================================================== */
+debuglog("generate_web_informaltask", debug_message_func_load)$
+generate_web_informaltask(wscmd) := block(
+	[res, s_t, s_m, s_b,												/* результат */
+	i_t, it_sn, it_sd, it_notes, it_t, it_tprs, 						/* параметры задания */
+	pf_s,																/* строка-шаблон для printf */
+	inftask_text,														/* описание и текст задания */
+	slv_js, 														 	/* строка со скриптом для решения */
+	slv_js_var, 												 		/* объявление переменных для скрипта решения */
+	slv_js_post															/* передача переменных для скрипта решения */
+	],
+	debug_start_function("generate_web_informaltask", [fp_high_level, fp_common]),
+	i_t : false, res : "",
+	inftask_text : "", slv_js : "", slv_js_var : "", slv_js_post : "",
+	pf_s : load_text_from_file("./web_server/text_data/web_pattern_informaltask.dat"),
+	/* Описание и текст задания */
+	it_sn : getprop(wscmd, ts_shortname),								/* получаем короткое имя задания */
+	if (it_sn = false) then 											/* если короткое имя не получено */
+		(inftask_text : printf(false, 									/* то выводим ошибку и выходим */
+			"~a<p>Не указано короткое имя задания</p>", 
+			inftask_text), 
+		go(tag_exit)),
+	for i in informaltasks while (i_t = false) do block([sn],			/* ищем соответствующее неформальное задание */
+		sn : getprop(i, shortname),
+		if (sn = it_sn) then i_t : i),
+	if (i_t = false) then 												/* если неформальное задание не найдено */
+		(inftask_text : printf(false, 									/* то выводим ошибку и выходим */
+			"~a<p>Задания с коротким именем ~a не найдено</p>", 
+			inftask_text, it_sn), 
+		go(tag_exit)),
+	it_sd : getprop(i_t, short_description),							/* получаем краткое описание неформального задания */
+	it_t : getprop(i_t, text),											/* получаем текст неформального задания */
+	it_notes : getprop(i_t, ts_notes),									/* получаем примечания неформального задания */
+	if (it_notes = false) 												/* формируем текст примечания */
+		then it_notes : "" 
+		else it_notes : printf(false, "<p><u>Замечание:</u> <em>~a</em></p>", it_notes),
+	inftask_text : printf(false, 										/* формируем текст задания */
+		"~a<p><b>~a</b></p>~%<p>~a</p>~%~a", 
+		inftask_text, it_sd, it_t, it_notes),
+	/* Параметры задания и скрипт решения */
+	it_tprs : getprop(i_t, taskparams),									/* получаем метаданные параметров задания */
+	slv_js_var : "", 
+	slv_js_post : printf(false, "\"ts_shortname=~a\"", it_sn),
+	for it_tp in it_tprs do block(										/* проходим по метаданным параметров задания */
+		[tp_pn, tp_cp, tp_pt, tp_al, 
+		tp_pt_sh, tp_pt_s, tp_dv, tp_dv_s, tp_ht, tp_ht_s],
+		tp_pn : getprop(it_tp, pr_name),								/* получаем имя параметра */
+		if (tp_pn = false) then tp_pn : getprop(it_tp, parname),
+		tp_cp : getprop(it_tp, pr_caption),								/* получаем надпись параметра */
+		if (tp_cp = false) then tp_cp : tp_pn,
+		tp_al : getprop(it_tp, alias),									/* получаем алиас параметра */
+		tp_pt : getprop(it_tp, pr_type),								/* получаем тип параметра */
+		tp_ht : getprop(it_tp, pr_hint),								/* получаем описание-подсказку параметра */
+		if (tp_ht = false) 
+			then tp_ht_s : ""
+			else tp_ht_s : printf(false, " title=\"~a\"", tp_ht),
+		tp_pt_sh : getprop(tp_pt, tp_shape),
+		tp_dv_s : make_web_parameter_defvalue_string(it_tp),			/* строка с дефолтным значением параметра */
+		if (slength(tp_dv_s) > 0) then
+			tp_dv_s : printf(false, " value=\"~a\"", tp_dv_s),
+		slv_js_var : printf(false, 										/* добавляем переменную в скрипте */
+			"~a var ~a = document.getElementById(\"~a\").value;~%", 
+			slv_js_var, tp_pn, tp_pn),
+		slv_js_post : printf(false, 									/* добавляем переменную в сумму */
+			"~a ~a \",~a=\" + ~a + \"\"", 
+			slv_js_post, if (slength(slv_js_post) = 0) then "" else "+", tp_al, tp_pn),
+		tp_pt_s : generate_parameter_type_description(tp_pt),
+		/* !TODO! if (tp_pt_sh = ts_matrix) then "textarea" else "text" */
+		inftask_text : printf(false, 									/* добавляем область ввода для параметра */
+			"~a $~a=$ <input type=\"text\" name=\"~a\" id=\"~a\"~a~a /><FONT COLOR=\"gray\">~a</FONT>~%<br />~%", 
+			inftask_text, tp_cp, tp_pn, tp_pn, tp_dv_s, tp_ht_s, tp_pt_s)),
+	slv_js_var : printf(false, "~a var all_params;~%", slv_js_var),
+	/* !TODO! */
+	tag_exit,
+	s_t : it_sd,														/* титул страницы */
+	s_m : printf(false, 
+		"<meta name =\"description\" content=\"~a\">~%", it_t),			/* метаданные страницы */
+	s_m : printf(false, "~a<meta name =\"keywords\" content=\"онлайн-калькулятор; решить задание; ~a\">", s_m, it_sd),
+	s_b : printf(false, 												/* тело страницы */
+		pf_s, 
+		slv_js_var, slv_js_post, slv_js_var, slv_js_post, inftask_text),
+	res : [s_t, s_m, s_b],
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin solve_web_informaltask */
+/* @type function */
+/* @brief Решить задание, полученное через web */
+/* @details Генерирует решение для задания, параметры которого получены */
+/*          от сайта в интернете. */
+/* @param wscmd - команда, список параметров. */
+/* @result ассоциативный список - результат решения */
+/* @end */
+/* ================================================== */
+debuglog("solve_web_informaltask", debug_message_func_load)$
+solve_web_informaltask(wscmd) := block(
+	[res, 																/* результат */
+	wscmd_pars,
+	i_t, 																/* неформальное задание */
+	it_sn, 																/* короткое имя этого задания */
+	it_sd, 																/* короткое описание этого задания */
+	it_prms,													 		/* параметры задания */
+	it_slvr,															/* решатель задания */
+	it_res,																/* результат решения */
+	p_e,
+	it_p 																/* параметры, которые будут переданы решателю */
+	],
+	debug_start_function("solve_web_informaltask", [fp_high_level, fp_common]),
+	i_t : false, res : "", p_e : true,
+	wscmd_pars : getprop(wscmd, ts_parameters),							/* получаем параметры для задания */
+	wscmd_pars : strim(" ", wscmd_pars),								/* Обрезаем пробелы справа и слева */
+	if (wscmd_pars = false) then wscmd_pars : getprop(wscmd, "ts_parameters"),
+	if (wscmd_pars = false) then (
+		res : printf(false, "~a<p>Не указаны параметры задания</p>", res),
+		go(tag_exit)),
+	if stringp(wscmd_pars) then block([w_p, wp_ps_l],					/* если параметр - строка, то разбиваем ее на части */
+		w_p : [],
+		wscmd_pars : strim(" [],.", wscmd_pars),
+		wp_ps_l : split(wscmd_pars, ","),
+		for wp_ps in wp_ps_l do block([ps_s_l, w_e],
+			ps_s_l : split(wp_ps, "="),
+			w_e : (strim(" ", ps_s_l[1]) = strim(" ", ps_s_l[2])),
+			w_p : append(w_p, [w_e])),
+		wscmd_pars : w_p),
+	it_sn : getprop(wscmd_pars, "ts_shortname"),						/* получаем из них короткое имя задания */
+	if (it_sn = false) then 
+		it_sn : getprop(wscmd_pars, ts_shortname),
+	if (it_sn = false) then (
+		res : printf(false, 
+			"~a<p>Не указано короткое имя задания</p><pre>~a;~a</pre>", 
+			res, wscmd, wscmd_pars), 
+		go(tag_exit)),
+	/* printf(true, "~2%~a - ~a~2%", wscmd_pars, stringp(wscmd_pars)), */
+	/* printf(true, "~2%~a - ~a~2%", it_sn, stringp(it_sn)), */
+	for i in informaltasks while (i_t = false) do block([sn],			/* ищем задание по короткому имени */
+		sn : getprop(i, shortname),
+		if sequal(sn, it_sn) then (i_t : i)),
+	if (i_t = false) then 												/* если задание не найдено */
+		(res : printf(false, 
+			"~a<p>Задания с коротким именем ~a не найдено</p>", 
+			res, it_sn), 
+		go(tag_exit)),
+	it_prms : getprop(i_t, taskparams),									/* метаданные параметров задания */
+	it_p : [],
+	for it_prm in it_prms while (p_e = true) do block(					/* проходим по параметрам, которые должны быть */
+		[p_n, p_a, p_v, s_p],
+		p_n : getprop(it_prm, parname),									/* имя параметра */
+		if (p_n = false) then 
+			p_n : getprop(it_prm, pr_caption),
+		p_a : getprop(it_prm, alias),									/* алиас параметра */
+		s_p : assoc(p_a, wscmd_pars),									/* вынимаем строку, соответствующую имени параметра */
+		if ((s_p = false) or (stringp(s_p) and (slength(s_p) = 0))) 
+			then p_e : printf(false, "~a<p>Не указан параметр задания</p><pre>~a</pre>", res, p_n)
+			else [p_v, p_e] : get_parameter_value_from_string(it_prm, s_p),
+		if (p_e = true) then											/* если в строке со значением параметра нет ошибки */
+			it_p : append(it_p, [[alias = p_a, value = p_v]])),
+	if (p_e # true) then (res : p_e, go(tag_exit)),
+	it_slvr : getprop(i_t, solver),										/* получаем решатель задания */
+	it_res : apply(it_slvr, [it_p]),									/* и передаем ему парметры для решения */
+	res : it_res,
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin get_parameter_value_from_string */
+/* @type function */
+/* @brief Значения параметра из строки */
+/* @details Получение значения параметра из строки. */
+/* @param prm - метаданные параметра. */
+/* @param s - строка. */
+/* @result список, первый элемент - значение, второй - текст ошибки или true */
+/* @end */
+/* ================================================== */
+debuglog("get_parameter_value_from_string", debug_message_func_load)$
+get_parameter_value_from_string(prm, s) := block(
+	[res, p_tp, t_sh, t_pt, r_v, r_e], 
+	r_v : false, r_e : true,
+	debug_start_function("get_parameter_value_from_string", [fp_high_level, fp_common]),
+	p_tp : getprop(prm, pr_type), 										/* получаем тип параметра */
+	/* Чтение параметра */
+	t_sh : getprop(p_tp, tp_shape),										/* получаем форму типа (одиночное значение, матрица и т.д.) */
+	if (t_sh = false) then t_sh : getprop(t, "shape"),
+	if (t_sh = false) then t_sh : ts_single,
+	t_pt : getprop(p_tp, tp_part),										/* получаем предикаты типа для внутренних значений */
+	if (t_pt = false) then t_pt : getprop(prm, "part"),
+	if (t_pt = false) then t_pt : [],
+	/* Различные варианты форм: */
+	/* Одиночное значение */
+	if (t_sh = ts_single) then block([v],
+		v : value_for_string_with_predicate_list(t_pt, s),
+		if stringp(v) then r_e : v else r_v : v),
+	/* Векторное значение */
+	if (t_sh = ts_vector) then block([vv, s_l],
+		vv : [],
+		s : ssubst(" ", ";", s),										/* в качестве разделителя элементов используется точка с запятой */
+		s_l: split(s),													/* или пробел */
+		for ss in s_l while (r_e = true) do block([v],
+			v : value_for_string_with_predicate_list(t_pt, ss),
+			if stringp(v) then r_e : v else vv : append(vv, [v])),
+		if (r_e = true) then r_v : vv),
+	/* Матричное значение */
+	if ((t_sh = ts_matrix) or (t_sh = ts_square_matrix)) then block([l_l, s_r_l, mw],
+		l_l : [],														/* будущий список списков элементов матрицы по строкам */
+		mw : false,
+		s : ssubst("#", printf(false, "~%"), s),						/* в качестве разделителя строк используется перевод строки или решетка */
+		s : strim(" #", s),
+		s_r_l : split(s, "#"),											/* разбиваем строки на подстроки соответствующие строкам матрицы */
+		/* printf(true, "~2%s_r_l = ~a~2%", s_r_l), */
+		for s_r in s_r_l while (r_e = true) do block(					/* проходим по строкам со строками матрицы */
+			[ss_r, ss, s_v_l, l],
+			/* printf(true, "~2%s_r = ~a~2%", s_r), */
+			l : [],
+			ss_r : scopy(s_r),
+			ss_r : strim(" ;", ss_r),
+			/* printf(true, "~2%ss_r = ~a~2%", ss_r), */
+			ss : ssubst(" ", ";", ss_r),								/* в качестве разделителя элементов используется точка с запятой */
+			s_v_l: split(ss),											/* или пробел */
+			/* printf(true, "~2%s_v_l = ~a~2%", s_v_l), */
+			for s_v in s_v_l while (r_e = true) do block([v],
+				v : value_for_string_with_predicate_list(t_pt, s_v),
+				if stringp(v) then r_e : v else l : append(l, [v])),
+			l_l : append(l_l, [l])),
+		if (r_e = true) then r_v : apply(matrix, l_l)),
+	res : [r_v, r_e],
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin proceed_web_server_command */
+/* @type function */
+/* @brief Обработка команды сервера */
+/* @details Функция обработки команды сервера. */
+/* @result строка - описание результата выполнения */
+/* @end */
+/* ================================================== */
+proceed_web_server_command() := block(
+	[res, 
+	cpu_la,																/* средняя загрузка процессора */
+	wcmd, 																/* команда веб-сервера */
+	s], 
+	res : true,
+	printf(true, "proceed web server command~%"),
+	kill_lingering_web_processes(),										/* убиваем зависшие процессы */
+	printf(true, "lingering web processes killed~%"),
+	if atom(ts_web_server_command) then (
+		printf(true, "(str-html)Внутренняя ошибка: в функцию ничего не передано(end-html)"),
+		go(tag_exit)),
+	wcmd : getprop(ts_web_server_command, ts_command),					/* получаем команду веб-сервера, что нужно делать */
+	printf(true, "wcmd=~a~%", wcmd),
+	if wcmd = false then wcmd : getprop(ts_web_server_command, "ts_command"),
+	if wcmd = false then (
+		printf(true, "(str-html)Внутренняя ошибка: в обработчик не передано ни одной веб-команды(end-html)"),
+		go(tag_exit)),
+	if ((wcmd = kill_lingering_web_processes) or (wcmd = "kill_lingering_web_processes")) then (
+		res : kill_lingering_web_processes(), 
+		printf(true, "(str-html)<body>~a</body>(end-html)", res),
+		go(tag_exit)),
+	if ((wcmd = ts_show_informaltasks_all) or (wcmd = "show_informaltasks_all")) then (
+		res : generate_web_informaltasks_all(), 
+		printf(true, "(str-html)<body>~a</body>(end-html)", res),
+		go(tag_exit)),
+	if ((wcmd = ts_show_informaltask) or (wcmd = "show_informaltask")) then (
+		res : generate_web_informaltask(ts_web_server_command), 
+		printf(true, "(str-html)<body>~a</body>(end-html)", latex_string_to_latex_html(res)),
+		go(tag_exit)),
+	if ((wcmd = ts_solve_informaltask) or (wcmd = "solve_informaltask")) then (
+		printf(true, "wcmd = ts_solve_informaltask~%"),
+		cpu_la : cpu_load_average(),
+		printf(true, "cpu_la = ~a~%", cpu_la),
+		if (cpu_la > 2) then (											/* если в очереди больше двух процессов, то не будем решать */
+			res : printf(false, "Нагрузка на сервер слишком велика (~a), попробуйте решить задание через несколько минут", cpu_la),
+			printf(true, "(str-html)~a(end-html)", res),
+			go(tag_exit)),
+		printf(true, "start solve_web_informaltask~%"),
+		res : solve_web_informaltask(ts_web_server_command), 
+		printf(true, "end solve_web_informaltask~%"),
+		s : res,
+		printf(true, "res = ~a~%", res),
+		if stringp(res) then s : printf(false, "Ошибка: ~a", res),
+		if listp(res) then block([r_a, r_s, r_ts, fnm, ss, sr, s_dt],	/* если задание решено, то генерируем pdf-документ */
+			r_s : getprop(res, solution),
+			r_ts : getprop(res, solution_title),
+			ss : printf(false, "\\textbf{~a}~2%~a", r_ts, r_s),
+			s_dt : tokens(timedate())[1],								/* текущая дата */
+			fnm : printf(false, "solution_~a_~8x", s_dt, random(16^8)),	/* имя файла */
+			printf(true, "make tex file...~%"),
+			make_tex_file(fnm, ss, "/var/www/html/solutions/"),			/* создаем ТеХ-файл... */
+			printf(true, "compile tex file...~%"),
+			compile_tex_file(fnm, "/var/www/html/solutions/"),			/* ...и компилируем его */
+			r_a : getprop(res, answer),
+			if can_solve_p(r_a) 
+				then sr : "Задание решено." 
+				else sr : "Извините, это задание решить не получилось.",
+			s : printf(false, 
+				"~a <a href=\"./solutions/~a.pdf\" target=\"_blank\">Текст решения</a>", 
+				sr, fnm)),
+		printf(true, "(str-html)~a(end-html)", latex_string_to_latex_html(s)),
+		go(tag_exit)),
+	printf(true, "(str-html)Внутренняя ошибка: передана команда неизвестного типа ~a(end-html)", wcmd),
+	tag_exit,
+	res)$
+/* ================================================== */
+/* @begin latex_string_to_latex_html */
+/* @type function */
+/* @brief Строка ЛаТеХ в форму для веб-страницы */
+/* @details Перевод строки ЛаТеХ в форму для веб-страницы. */
+/* @param s --- строка ЛаТеХ */
+/* @result строка, пригодная для веб-страницы */
+/* @end */
+/* ================================================== */
+latex_string_to_latex_html(s) := block([res, s1, s2, b],
+	res : scopy(s),
+	s1 : "\\(", s2 : "\\)",												/* метки начала и конца формулы */
+	b : true,															/* булеан - начало формулы или конец */
+	tag_step,															/* метка цикла */
+	if (b = true) 
+		then res : ssubstfirst(s1, "$", res) 
+		else res : ssubstfirst(s2, "$", res),
+	b : not(b),
+	if (ssearch("$", res) # false) then go(tag_step),
+	res : ssubst("x", "\\x", res),
+	res)$
+/* ================================================== */
+/* @begin make_web_parameter_defvalue_string */
+/* @type function */
+/* @brief Строка с дефолтным значением параметра для веб-страниц */
+/* @details Генерация строки с дефолтным значением параметра для веб страницы. */ 
+/* Эти значения представляются в том виде, в котором должны вводиться на веб-странице. */
+/* @param prm --- метаданные параметра */
+/* @result строка со значением для веб-страницы */
+/* @end */
+/* ================================================== */
+debuglog("make_web_parameter_defvalue_string", debug_message_func_load)$
+make_web_parameter_defvalue_string(prm) := block([res, p_tp, p_dv, t_sh],
+	debug_start_function("make_web_parameter_defvalue_string", [fp_high_level, fp_common]),
+	res : "",
+	p_dv : getprop(prm, ts_default_value),
+	if (p_dv = false) then go(tag_exit),
+	p_tp : getprop(prm, pr_type), 										/* получаем тип параметра */
+	/* Чтение параметра */
+	t_sh : getprop(p_tp, tp_shape),										/* получаем форму типа (одиночное значение, матрица и т.д.) */
+	if (t_sh = false) then t_sh : getprop(t, "shape"),
+	if (t_sh = false) then t_sh : ts_single,
+	/* Различные варианты форм: */
+	/* Одиночное значение */
+	if (t_sh = ts_single) then res : printf(false, "~a", p_dv),
+	/* Векторное значение */
+	if (t_sh = ts_vector) then res : printf(false, "~{~a ~}", p_dv),
+	/* Матричное значение */
+	if ((t_sh = ts_matrix) or (t_sh = ts_square_matrix)) then 
+		res : printf(false, "~{~{~a ~}# ~}", p_dv),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin ts_web_main */
+/* @type function */
+/* @brief Главная функция веб-сервера */
+/* @details Функция, вызываемая для решения задач на веб-сервере. */
+/* @result ??? */
+/* @end */
+/* ================================================== */
+ts_web_main() := block([res],
+	printf(true, "start web main~%"),
+	res : proceed_web_server_command(),
+	res)$

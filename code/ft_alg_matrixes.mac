@@ -1,0 +1,1118 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ====================== Алгебра ===================== */
+/* ====================== Матрицы ===================== */
+/* ==================================================== */
+debuglog("ft_alg_matrixes.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ================================== */
+/* Найти собственные значения матрицы */
+/* ================================== */
+debuglog("algebra_matrix_eigenvalues", debug_message_func_load)$
+algebra_matrix_eigenvalues(prs) := block(
+	[res, 
+	mh, mw, mn,
+	M, d,
+	M_n,																/* имя матрицы */
+	rs, rs_s, rs_ans, rs_v,
+	s, s_l, st, answ],
+	debug_start_function("algebra_matrix_eigenvalues", [fp_mid_level, fp_solver]),
+	debuglog(printf(false, "prs=~a", prs)),
+	s_l : [],
+	M : get_matrix_from_prs(prs, "M", "a"),
+	if (M = false) then (
+		append_to_s_l("Матрица не задана, поэтому найти ее собственные значения нельзя.~2%"),
+		answ : [[type = cant_find_solution, value = "Задание не может быть решено"]],
+		go(tag_exit)),
+	M_n : get_val_by_alias(prs, "M name"),
+	if (M_n = false) then M_n : "M",
+	st : printf(false,
+		"Найти собственные значения матрицы $~a$~2%",
+		totex(M)),
+	[mh, mw] : matrix_size(M), 
+	if (mh # mw) then (
+		append_to_s_l("Матрица не является квадратной, поэтому найти ее собственные значения нельзя.~2%"),
+		answ : [[type = cant_find_solution, value = "Задание не может быть решено"]],
+		go(tag_exit)),
+	mn : mw,
+	/* !TODO! */
+	append_to_s_l("Найдем с помощью алгебраических дополнений матрицу, обратную к матрице $$~a=~a$$~2%", 
+		M_n, totex(M)),
+	pr : [[alias = "M", value = M]],
+	rs : matrix_determinant(pr),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("$\\det{~a}=$ ~a~2%", M_n, rs_s),
+	rs_ans : getprop(rs, answer),
+	d : getprop(rs_ans[1], value),
+	if (d = 0) then (
+		append_to_s_l("Определитель матрицы равен нулю, следовательно найти обратную к ней невозможно."),
+		answ : [[type = no_solution, value = "Решения не существует"]],
+		go(tag_exit)),
+	tM : transpose(M),
+	append_to_s_l("~2%Запишем матрицу $\\mathop{adj}({~a}^{T})$, присоединенную матрицу для матрицы ${~a}^{T}=~a$.~2%Для этого найдем алгебраические дополнения исходной матрицы.~2%",
+				M_n, M_n, totex(tM)),
+	aM : zeromatrix(mn, mn),
+	for i : 1 thru mn do for j : 1 thru mn do (
+		aMsgn : (-1)^(i + j),
+		tMs : submatrix(i, tM, j), 
+		pr : [[alias = "M", value = tMs]],
+		rs : matrix_determinant(pr),
+		rs_s : getprop(rs, solution),
+		rs_ans : getprop(rs, answer), 
+		rs_v : getprop(rs_ans[1], value),
+		aM[i, j] : aMsgn*rs_v,
+		if (aMsgn = 1) 
+			then (append_to_s_l("$\\mathop{adj}({~a}^{T})_{~a~a}=$ ~a~2%", M_n, totex(i), totex(j), rs_s))
+			else (append_to_s_l("$-\\mathop{adj}({~a}^{T})_{~a~a}=$ ~a $\\Rightarrow \\mathop{adj}({~a}^{T})_{~a~a}=~a$~2%", 
+				M_n, totex(i), totex(j), rs_s, M_n, totex(i), totex(j), totex(aM[i, j])))),
+	append_to_s_l("$\\mathop{adj}({~a}^{T})=~a$~%~%", M_n, totex(aM)),
+	iM : aM/d,
+	append_to_s_l("${~a}^{-1}=\\frac{\\mathop{adj}({~a}^{T})}{\\det{~a}}=~a$~2%", 
+		M_n, M_n, M_n, totex(iM)),
+	answ : [[type = ts_matrix, value = iM]],
+	debuglog(printf(false, "inv=~a", iM)),  
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	/* !TODO! */
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ======================================================== */
+/* Найти собственные значения и собственные векторы матрицы */
+/* ======================================================== */
+debuglog("algebra_matrix_eigenvalues_eigenvectors", debug_message_func_load)$
+algebra_matrix_eigenvalues_eigenvectors(prs) := block(
+	[res, 
+	mh, mw, mn,
+	M, d,
+	M_n,																/* имя матрицы */
+	rs, rs_s, rs_ans, rs_v,
+	eig_vals, eig_vals_m, eig_vecs,
+	s_eig_vecs_norm,
+	s, s_l, st, answ],
+	debug_start_function("algebra_matrix_eigenvalues_eigenvectors", [fp_mid_level, fp_solver]),
+	debuglog(printf(false, "prs=~a", prs)),
+	s_l : [],
+	M : get_matrix_from_prs(prs, "M", "a"),
+	if (M = false) then (
+		append_to_s_l("Матрица не задана, поэтому найти ее собственные значения и векторы нельзя.~2%"),
+		answ : [[type = cant_find_solution, value = "Задание не может быть решено"]],
+		go(tag_exit)),
+	M_n : get_val_by_alias(prs, "M name"),
+	if (M_n = false) then M_n : "M",
+	st : printf(false,
+		"Найти собственные значения и собственные векторы матрицы $~a$~2%",
+		totex(M)),
+	[mh, mw] : matrix_size(M), 
+	if (mh # mw) then (
+		append_to_s_l("Матрица не является квадратной, поэтому найти ее собственные значения и векторы нельзя.~2%"),
+		answ : [[type = cant_find_solution, value = "Задание не может быть решено"]],
+		go(tag_exit)),
+	mn : mw,
+	/* !TODO! */
+	[[eig_vals, eig_vals_m], eig_vecs] : eigenvectors(M),
+	s_eig_vals : "",
+	for i : 1 thru length(eig_vals) do block([eig_val, eig_val_m],
+		eig_val : eig_vals[i],
+		eig_val_m : eig_vals_m[i],
+		s_eig_vals : printf(false, "~a собственное значение $\\lambda_{~a}=~a$ кратности $~a$;~2%", 
+			s_eig_vals, totex(i), totex(eig_val), totex(eig_val_m))),
+	append_to_s_l("Собственнные значения:~2% ~a", s_eig_vals),
+	s_eig_vecs : "", s_eig_vecs_norm : "",
+	for i : 1 thru length(eig_vecs) do block([eig_vec],
+		eig_vec : eig_vecs[i][1],
+		s_eig_vecs : printf(false, "~a собственный вектор $\\vec{v}_{~a}=~a$;~2%", 
+			s_eig_vecs, totex(i), to_tex_vector_rb(eig_vec)),
+		pr : [[alias = "v", value = eig_vec], 
+			[alias = "v name", value = printf(false, "\\vec{v}_{~a}", totex(i))],
+			[alias = "v norm name", value = printf(false, "\\vec{e}_{~a}", totex(i))]],
+		rs : vector_normalize(pr),
+		rs_ans : getprop(rs, answer),
+		rs_s : getprop(rs, solution),
+		s_eig_vecs_norm : printf(false, "~a~a~2%", s_eig_vecs_norm, rs_s),
+		rs_ans : getprop(rs, answer),
+		eig_vecs_norm : append(eig_vecs_norm, [getprop(rs_ans[1], value)])),
+	append_to_s_l("Собственнные векторы:~2% ~a", s_eig_vecs),
+	append_to_s_l("Нормируем полученные собственые векторы:~2% ~a", s_eig_vecs_norm),
+	append_to_s_l("${~a}^{-1}=\\frac{\\mathop{adj}({~a}^{T})}{\\det{~a}}=~a$~2%", 
+		M_n, M_n, M_n, totex(iM)),
+	answ : [[type = ts_vector, value = eig_vals], 
+		[type = ts_vector, value = eig_vals_m],
+		[type = ts_vector, value = eig_vecs]], 
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	/* !TODO! */
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================================== */
+/* Найти обратную матрицу с помощью матрицы алгебраических дополнений */
+/* ================================================================== */
+debuglog("algebra_invert_matrix_cofactors", debug_message_func_load)$
+algebra_invert_matrix_cofactors(prs) := block(
+	[res, 
+	mh, mw, mn,
+	M, d,
+	M_n,																/* имя матрицы */
+	tM,																	/* транспонированная матрица */
+	tMs,																/* подматрица транспонированной матрицы */
+	aM,																	/* присоединенная матрица */
+	aMsgn,																/* знак алгебраического дополнения */
+	iM,																	/* обратная матрица */
+	rs, rs_s, rs_ans, rs_v,
+	s, s_l, st, answ],
+	debug_start_function("algebra_invert_matrix_cofactors", [fp_mid_level, fp_solver]),
+	debuglog(printf(false, "prs=~a", prs)),
+	s_l : [],
+	M : get_matrix_from_prs(prs, "M", "a"),
+	if (M = false) then (
+		append_to_s_l("Матрица не задана, поэтому найти обратную для нее нельзя.~2%"),
+		answ : [[type = cant_find_solution, value = "Задание не может быть решено"]],
+		go(tag_exit)),
+	M_n : get_val_by_alias(prs, "M name"),	
+	if (M_n = false) then M_n : "M",
+	st : printf(false,
+		"Найти матрицу, обратную к матрице $~a$  с помощью матрицы алгебраических дополнений~2%",
+		totex(M)),
+	[mh, mw] : matrix_size(M), 
+	if (mh # mw) then (
+		append_to_s_l("Матрица не является квадратной, поэтому найти обратную для нее нельзя.~2%"),
+		answ : [[type = cant_find_solution, value = "Задание не может быть решено"]],
+		go(tag_exit)),
+	mn : mw,
+	append_to_s_l("Найдем с помощью алгебраических дополнений матрицу, обратную к матрице $$~a=~a$$~2%", 
+		M_n, totex(M)),
+	pr : [[alias = "M", value = M]],
+	rs : matrix_determinant(pr),
+	rs_s : getprop(rs, solution),
+	append_to_s_l("$\\det{~a}=$ ~a~2%", M_n, rs_s),
+	rs_ans : getprop(rs, answer),
+	d : getprop(rs_ans[1], value),
+	if (d = 0) then (
+		append_to_s_l("Определитель матрицы равен нулю, следовательно найти обратную к ней невозможно."),
+		answ : [[type = no_solution, value = "Решения не существует"]],
+		go(tag_exit)),
+	tM : transpose(M),
+	append_to_s_l("~2%Запишем матрицу $\\mathop{adj}({~a}^{T})$, присоединенную матрицу для матрицы ${~a}^{T}=~a$.~2%Для этого найдем алгебраические дополнения исходной матрицы.~2%",
+				M_n, M_n, totex(tM)),
+	aM : zeromatrix(mn, mn),
+	for i : 1 thru mn do for j : 1 thru mn do (
+		aMsgn : (-1)^(i + j),
+		tMs : submatrix(i, tM, j), 
+		pr : [[alias = "M", value = tMs]],
+		rs : matrix_determinant(pr),
+		rs_s : getprop(rs, solution),
+		rs_ans : getprop(rs, answer), 
+		rs_v : getprop(rs_ans[1], value),
+		aM[i, j] : aMsgn*rs_v,
+		if (aMsgn = 1) 
+			then (append_to_s_l("$\\mathop{adj}({~a}^{T})_{~a~a}=$ ~a~2%", M_n, totex(i), totex(j), rs_s))
+			else (append_to_s_l("$-\\mathop{adj}({~a}^{T})_{~a~a}=$ ~a $\\Rightarrow \\mathop{adj}({~a}^{T})_{~a~a}=~a$~2%", 
+				M_n, totex(i), totex(j), rs_s, M_n, totex(i), totex(j), totex(aM[i, j])))),
+	append_to_s_l("$\\mathop{adj}({~a}^{T})=~a$~%~%", M_n, totex(aM)),
+	iM : aM/d,
+	append_to_s_l("${~a}^{-1}=\\frac{\\mathop{adj}({~a}^{T})}{\\det{~a}}=~a$~2%", 
+		M_n, M_n, M_n, totex(iM)),
+	answ : [[type = ts_matrix, value = iM]],
+	debuglog(printf(false, "inv=~a", iM)),  
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ============================================= */
+/* Найти обратную матрицу методом Гаусса-Жордана */
+/* ============================================= */
+debuglog("algebra_invert_matrix_gauss", debug_message_func_load)$
+algebra_invert_matrix_gauss(prs) := block(
+	[res,
+	M,																	/* исходная матрица */
+	MM,																	/* дополненная матрица */
+	Mr,
+	Mi,																	/* обратная матрица */
+	mh, mw, mn,															/* ширина и высота исходной матрицы */
+	mr,																	/* ранг матрицы */
+	rs, rs_ans,
+	st, s, s_l, answ],
+	debug_start_function("algebra_invert_matrix_gauss", [fp_mid_level, fp_solver]),
+	M : get_val_by_alias(prs, "M"),
+	s_l : [],
+	if (M = false) then block(
+		[a11, a12, a13, b1, 
+		a21, a22, a23, b2, 
+		a31, a32, a33, b3],
+		[a11, a12, a13, a21, a22, a23, a31, a32, a33] : get_vals_by_aliases(prs, ["a11","a12","a13","a21","a22","a23","a31","a32","a33"]),
+		debuglog(printf(false,
+			"a11=~a, a12=~a, a13=~a, a21=~a, a22=~a, a23=~a, a31=~a, a32=~a, a33=~a;",
+			a11, a12, a13, a21, a22, a23, a31, a32, a33)),
+		M : matrix([a11, a12, a13], [a21, a22, a23], [a31, a32, a33])),
+	st : printf(false, "Найти методом Гаусса-Жордану матрицу, обратную данной:~%$$~a$$~2%", totex(M)),
+	[mh, mw] : matrix_size(M), 
+	if (mh # mw) then (
+		append_to_s_l("Матрица не является квадратной, поэтому найти обратную для нее нельзя.~2%"),
+		answ : [[type = cant_find_solution, value = "Задание не может быть решено"]],
+		go(tag_exit)),
+	mn : mw,
+	MM : zeromatrix(mn, 2*mn),
+	for i : 1 thru mn do for j : 1 thru mn do MM[i, j] : M[i, j],
+	for i : 1 thru mn do MM[i, i + mn] : 1,
+	append_to_s_l("Дополним исходную матрицу справа единичной матрицей того же размера:~%$$~a$$~2%", totex(MM)),
+	rs : matrix_to_upper_unidiagonal_form([[alias = "M", value = MM]]),	/* приводим расширенную матрицу к унидиагональному виду */
+	rs_ans : getprop(rs, answer),
+	s : getprop(rs, solution),
+	s_l : append(s_l, [s]),
+	Mr : getprop(rs_ans[1], value),
+	mr : getprop(rs_ans[1], ts_matrix_rank),
+	if (mr # mn) then (
+		append_to_s_l("Ранг матрицы меньше ее размерности, поэтому для нее не существует обратной матрицы.~2%"),
+		answ : [[type = cant_find_solution, value = "Задание не может быть решено"]],
+		go(tag_exit)),
+	Mi : zeromatrix(mn, mn),
+	for i : 1 thru mn do for j : 1 thru mn do Mi[i, j] : Mr[i, j + mn],
+	append_to_s_l("Правая часть дополненной матрицы является обратной матрицей для исходной:~%$${~a}^{-1}=~a$$~2%", 
+		totex(M), totex(Mi)),
+	answ : [[type = ts_matrix, value = Mi]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* ====================================================== */
+/* Решение системы линейных уравнений 3x3 методом Крамера */
+/* ====================================================== */
+debuglog("algebra_solve_linear_system_3x3_kramer", debug_message_func_load)$
+algebra_solve_linear_system_3x3_kramer(prs) := block(
+	[res,
+	M, M0, M1, M2, M3,
+	st, s, s_l,
+	dl, dlres, dl1, dl1res, dl2, dl2res, dl3, dl3res,
+	x1, x2, x3,
+	answ],
+	debug_start_function("algebra_solve_linear_system_3x3_kramer", [fp_mid_level, fp_solver]),
+	M : get_val_by_alias(prs, "M"),
+	s_l : [],
+	if (M = false) then block([a11, a12, a13, b1, a21, a22, a23, b2, a31, a32, a33, b3],
+		[a11,a12,a13,a21,a22,a23,a31,a32,a33,b1,b2,b3] : get_vals_by_aliases(prs, ["a11","a12","a13","a21","a22","a23","a31","a32","a33","b1","b2","b3"]),
+		debuglog(printf(false,
+			"a11=~a, a12=~a, a13=~a, b1=~a, a21=~a, a22=~a, a23=~a, b2=~a, a31=~a, a32=~a, a33=~a, b3=~a;",
+			a11, a12, a13, b1, a21, a22, a23, b2, a31, a32, a33, b3)),
+		M : matrix([a11, a12, a13, b1], [a21, a22, a23, b2], [a31, a32, a33, b3])),
+	st : printf(false, "Решить методом Крамера систему линейных алгебраических уравнений~2%"),
+	st : printf(false, "~a $$\\left\\{\\begin{array}{l}", st),
+	st : printf(false, "~a ~a\\\\ ", st, totex(M[1,1]*"\\xx{1}"+M[1,2]*"\\xx{2}"+M[1,3]*"\\xx{3}"=M[1,4])),
+	st : printf(false, "~a ~a\\\\ ", st, totex(M[2,1]*"\\xx{1}"+M[2,2]*"\\xx{2}"+M[2,3]*"\\xx{3}"=M[2,4])),
+	st : printf(false, "~a ~a\\\\ ", st, totex(M[3,1]*"\\xx{1}"+M[3,2]*"\\xx{2}"+M[3,3]*"\\xx{3}"=M[3,4])),   
+	st : printf(false, "~a \\end{array}\\right.$$ ~%~%", st),
+	M0 : submatrix(M, 4),
+	dlres : matrix_determinant_3x3([[alias = "M", value = M0]]),
+	debuglog(printf(false, "dlres=~a", dlres)),
+	dl : getprop(getprop(dlres,answer)[1], value),
+	debuglog(printf(false, "dl=~a", dl)),
+	push(printf(false,"$\\Delta=$ ~a~%~%", getprop(dlres,solution)), s_l),
+	if (dl = 0) then block(push(printf(false,"~%~% Определитель матрицы равен нулю, следовательно решить систему невозможно."), s_l),
+						answ : [[type = no_solution, value = "Система не может быть решена методом Крамера"]]),
+	if (dl = 0) then go(tag_zerodet),
+	M1 : columnswap(M, 1, 4),
+	M1 : submatrix(M1, 4),
+	dlres1 : matrix_determinant_3x3([[alias = "M", value = M1]]),
+	debuglog(printf(false, "dlres1=~a", dlres1)),
+	dl1 : getprop(getprop(dlres1,answer)[1], value),
+	debuglog(printf(false, "dl1=~a", dl1)),
+	push(printf(false,"$\\Delta_1=$ ~a~%~%", getprop(dlres1,solution)), s_l),
+	M2 : columnswap(M, 2, 4),
+	M2 : submatrix(M2, 4),
+	dlres2 : matrix_determinant_3x3([[alias = "M", value = M2]]),
+	debuglog(printf(false, "dlres2=~a", dlres2)),
+	dl2 : getprop(getprop(dlres2,answer)[1], value),
+	debuglog(printf(false, "dl2=~a", dl2)),
+	push(printf(false,"$\\Delta_2=$ ~a~%~%", getprop(dlres2,solution)), s_l),
+	M3 : columnswap(M, 3, 4),
+	M3 : submatrix(M3, 4),
+	dlres3 : matrix_determinant_3x3([[alias = "M", value = M3]]),
+	debuglog(printf(false, "dlres3=~a", dlres3)),
+	dl3 : getprop(getprop(dlres3,answer)[1],value),
+	debuglog(printf(false, "dl3=~a", dl3)),
+	push(printf(false,"$\\Delta_3=$ ~a~%~%", getprop(dlres3,solution)), s_l),
+	x1 : dl1/dl, x2 : dl2/dl, x3 : dl3/dl,
+	answ : [[type = vector_3, value = [x1, x2, x3]]],
+	push(printf(false, "$\\xx{1}=\\frac{\\Delta_1}{\\Delta}=\\frac{~a}{~a}=~a$~%~%", dl1, dl, x1), s_l),
+	push(printf(false, "$\\xx{2}=\\frac{\\Delta_2}{\\Delta}=\\frac{~a}{~a}=~a$~%~%", dl2, dl, x2), s_l),
+	push(printf(false, "$\\xx{3}=\\frac{\\Delta_3}{\\Delta}=\\frac{~a}{~a}=~a$~%~%", dl3, dl, x3), s_l),
+	tag_zerodet,
+	s_l : reverse(s_l),
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* ============================================== */
+/* Привести матрицу к верхнеунидиагональному виду */
+/* ============================================== */
+debuglog("matrix_to_upper_unidiagonal_form", debug_message_func_load)$
+matrix_to_upper_unidiagonal_form(prs) := block(
+	[res, 																/* результат функции */
+	M, tM, mh, mw, mn,													/* матрица, ее размерности, наименьшая размерность */
+	m_rank,																/* ранг матрицы */
+	num_of_permut,														/* число перестановок строк */
+	st, s, s_l, 														/* строки с текстом решения */
+	rs, rs_an,
+	answ],																/* ответ */
+	debug_start_function("matrix_to_upper_unidiagonal_form", [fp_mid_level, fp_solver]),
+	s_l : [], 
+	tM : get_val_by_alias(prs, "M"),
+	if matrixp(tM) then M : copymatrix(tM) else M : false,
+	debuglog(printf(false, "prs=~a", prs)),
+	debuglog(printf(false, "M=~a", M)),
+	st : printf(false,
+		"Привести к диагональному виду матрицу $\\left(~a\\right)$~2%", 
+		to_tex_matr_arr(M)),
+	rs : matrix_to_upper_unitriangular_form(prs),
+	s : getprop(rs, solution),
+	s_l : append(s_l, [s]),
+	rs_an : getprop(rs, answer),
+	M : getprop(rs_an[1], value),
+	num_of_permut : getprop(rs_an[1], ts_number_of_permutations),
+	[mh, mw] : matrix_size(M), mn : min(mh, mw),						/* получаем размеры матрицы */
+	if (M[1, 1] = 0) then m_rank : 0 else m_rank : 1,
+	for i : mn step -1 thru 2 do block([],								/* номер вычитаемой строки */
+		s : "",
+		if (M[i, i] = 0) then go(tag_next_step),
+		m_rank : m_rank + 1,
+		for j : 1 thru (i - 1) do block([],								/* номер строки, из которой вычитается */
+			if M[j, i] # 0 then (										/* если соответствующий элемент в уменьшаемой строке не ноль, то вычитаем */
+				s : printf(false, "~aВычитаем из ~a строки ~a строку, умноженную на $~a$. ", s, j, i, totex(M[j,i])),
+				M[j] : M[j]-M[i]*M[j, i])),
+		if (slength(s) > 0) then (										/* если было хоть одно вычитание, то выводим новый вид матрицы */
+			s : printf(false, "~a~2%", s),
+			s_l : append(s_l, [s]),
+			s : printf(false, "$\\left(~a\\right)$~2%", to_tex_matr_arr(M)),
+			s_l : append(s_l, [s])),
+		tag_next_step),
+	answ : [[type = tp_matrix, 
+		value = M, 
+		ts_matrix_rank = m_rank, 
+		ts_number_of_permutations = num_of_permut]],
+	debuglog(printf(false, "M=~a", M)),
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* ============================================= */
+/* Привести матрицу к верхнеунитреугольному виду */
+/* ============================================= */
+debuglog("matrix_to_upper_unitriangular_form", debug_message_func_load)$
+matrix_to_upper_unitriangular_form(prs) := block(
+	[res, 																/* результат функции */
+	M, mh, mw, mn,														/* матрица, ее размерности, наименьшая размерность */
+	num_of_permut,														/* число перестановок строк */
+	st, s, s_l, 														/* строки с текстом решения */
+	rs, rs_an,
+	answ],																/* ответ */
+	debug_start_function("matrix_to_upper_unitriangular_form", [fp_mid_level, fp_solver]),
+	s_l : [], 
+	M : get_val_by_alias(prs, "M"),
+	debuglog(printf(false, "prs=~a", prs)),
+	debuglog(printf(false, "M=~a", M)),
+	st : printf(false,
+		"Привести к верхнетреугольному виду матрицу $\\left(~a\\right)$~2%", 
+		to_tex_matr_arr(M)),
+	rs : matrix_to_upper_triangular_form(prs),
+	s : getprop(rs, solution),
+	s_l : append(s_l, [s]),
+	rs_an : getprop(rs, answer),
+	M : getprop(rs_an[1], value),
+	num_of_permut : getprop(rs_an[1], ts_number_of_permutations),
+	[mh, mw] : matrix_size(M), mn : min(mh, mw),		/* получаем размеры матрицы */
+	s : "",
+	for i : 1 thru mn do block([],
+		if ((M[i,i] # 0) and (M[i,i] # 1)) then block([],
+			s : printf(false, "~aДелим ~a строку на $~a$. ", s, i, totex(M[i,i])),
+			M[i] : M[i]/M[i,i])),
+	s : printf(false, "~a~2%", s),
+	s_l : append(s_l, [s]),
+	s : printf(false, "$\\left(~a\\right)$~2%", to_tex_matr_arr(M)),
+	s_l : append(s_l, [s]),
+	answ : [[type = tp_matrix, value = M, ts_number_of_permutations = num_of_permut]],
+	debuglog(printf(false, "M=~a", M)),
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* ========================================== */
+/* Привести матрицу к верхнетреугольному виду */
+/* ========================================== */
+debuglog("matrix_to_upper_triangular_form", debug_message_func_load)$
+matrix_to_upper_triangular_form(prs) := block(
+	[res, 																/* результат функции */
+	tM, M, mh, mw, mn,													/* матрица, ее размерности, наименьшая размерность */
+	num_of_permut,														/* число перестановок строк */
+	st, s, s_l, 														/* строки с текстом решения */
+	answ],																/* ответ */
+	debug_start_function("matrix_to_upper_triangular_form", [fp_mid_level, fp_solver]),
+	s_l : [], num_of_permut : 0,
+	M : get_matrix_from_prs(prs, "M", "a"),
+	debuglog(printf(false, "prs=~a", prs)),
+	debuglog(printf(false, "M=~a", M)),
+	[mh, mw] : matrix_size(M), mn : min(mh, mw),						/* получаем размеры матрицы */
+	st : printf(false,
+		"Привести к верхнетреугольному виду матрицу $\\left(~a\\right)$~2%", 
+		to_tex_matr_arr(M)),
+	s : printf(false, "$\\left(~a\\right)$~2%", to_tex_matr_arr(M)),
+	push(s, s_l),
+	for i : 1 thru mn do block([nn_i], nn_i : false,					/* идем по столбцам но только до максимально возможного ранга */
+		for j : i thru mh while (nn_i = false) do 
+			if (M[j][i] # 0) then nn_i : j,								/* ищем ненулевой элемент в столбце */
+		if (nn_i # false) then block([],								/* если ненулевой элемент найден */
+			if (nn_i # i) then block([],								/* если это не первый элемент столбца... */
+				s : printf(false, "~2% Меняем местами строки ~a и ~a~2%", i, nn_i),
+				push(s, s_l),
+				[M[i], M[nn_i]] : [M[nn_i], M[i]],						/* то меняем эту строку с первой местами */
+				num_of_permut : num_of_permut + 1,
+				s : printf(false, "$\\left(~a\\right)$~2%", to_tex_matr_arr(M)),
+				push(s, s_l)),
+			s : "",
+			for j : i + 1 thru mh do if (M[j,i] # 0) then block([],
+				s : printf(false, "~a~% Вычитаем из ~a строки ~a строку, умноженную на $~a$. ", s, j, i, totex(M[j,i]/M[i,i])),
+				M[j] : ratsimp(M[j]-M[i]*M[j,i]/M[i,i])),
+			s : printf(false, "~a~2%", s),
+			push(s, s_l),
+			if (slength(s) > 6) then block([],							/* проверяем выполнялись ли вычитания строк (костыль, 6 заведомо больше двух переводов строки, но меньше минимального описания) */
+				s : printf(false, "$\\left(~a\\right)$~2%", to_tex_matr_arr(M)),
+				push(s, s_l)))),
+	s_l : reverse(s_l),
+	answ : [[type = tp_matrix, value = M, ts_number_of_permutations = num_of_permut]],
+	debuglog(printf(false, "M=~a", M)),
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* ================================= */
+/* Найти определитель матрицы 2 на 2 */
+/* ================================= */
+debuglog("matrix_determinant_2x2", debug_message_func_load)$
+matrix_determinant_2x2(prs) := block([res, A, st, s_l, s, d, answ],
+	debug_start_function("matrix_determinant_2x2", [fp_mid_level, fp_solver]),
+	s_l : [],
+	A : get_matrix_from_prs(prs, "M", ["a", "m"]),
+	debuglog(printf(false, "prs=~a", prs)),
+	st : printf(false,
+		"Найдем определитель матрицы $\\left(~a\\right)$~%~%", 
+		to_tex_matr_arr(A)),
+	push(printf(false, "$\\left|~a\\right|=$ ", to_tex_matr_arr(A)), s_l),
+	[s, d] : totex_calc_val(aa11*aa22-aa12*aa21,
+		[aa11 = A[1,1], aa12 = A[1,2], aa21 = A[2,1], aa22 = A[2,2]]),
+	push(s, s_l),
+	s_l : reverse(s_l),
+	answ : [[type = root, value = d]],
+	debuglog(printf(false, "determinant=~a", d)),
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================= */
+/* Найти определитель матрицы 3 на 3 */
+/* ================================= */
+debuglog("matrix_determinant_3x3", debug_message_func_load)$
+matrix_determinant_3x3(prs) := block([res, M, st, s_l, s, d, answ], s_l : [],
+	debug_start_function("matrix_determinant_3x3", [fp_mid_level, fp_solver]),
+	M : get_matrix_from_prs(prs, "M", ["a", "m"]),
+	debuglog(printf(false, "prs=~a", prs)),
+	st : printf(false,
+		"Найдем определитель матрицы $~a$~2%", 
+		to_tex_matr_arr_rb(M)),
+	s : printf(false,
+		"$\\left|~a\\right|=$ ",
+		to_tex_matr_arr(M)),
+	s_l : append(s_l, [s]),
+	[s, d] : totex_calc_val(aa11*aa22*aa33+aa12*aa23*aa31+aa13*aa21*aa32-aa13*aa22*aa31-aa23*aa32*aa11-aa33*aa12*aa21,
+		[aa11 = M[1,1], aa12 = M[1,2], aa13 = M[1,3], 
+		 aa21 = M[2,1], aa22 = M[2,2], aa23 = M[2,3], 
+		 aa31 = M[3,1], aa32 = M[3,2], aa33 = M[3,3]]),
+	s_l : append(s_l, [s]),
+	answ : [[type = root, value = d]],
+	debuglog(printf(false, "determinant=~a", d)),
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* =============================== */
+/* Найти собственные числа матрицы */
+/* =============================== */
+debuglog("matrix_eigenvalues", debug_message_func_load)$
+matrix_eigenvalues(prs) := block([res, tM, M, ME, Ml, mh, mw, perm_num, rs, rs_ans, calc_expr, calc_ch, st, s_l, s, d, answ],
+	debug_start_function("matrix_eigenvalues", [fp_mid_level, fp_solver]),
+	st : "", s_l : [],
+	M : get_matrix_from_prs(prs, "M", ["a", "m"]),
+	debuglog(printf(false, "prs=~a", prs)),
+	st : printf(false,
+		"Найти собственные числа матрицы $\\left(~a\\right)$~%~%", 
+		to_tex_matr_arr(M)),
+	[mh, mw] : matrix_size(M),											/* получаем размеры матрицы */
+	if mh # mw then (
+		s : printf(false, "Определитель матрицы найти невозможно, поскольку высота матрицы ($~a$) не равна ее ширине ($~a$).", mh, mw),
+		s_l : append(s_l, [s]),
+		answ : [[type = cant_find_solution, value = "Определитель матрицы найти невозможно"]],
+		go(tag_exit)),
+	/* Определитель матрицы */
+	ME : ident(mh),
+	Ml : M + x * ME,
+	rs : matrix_determinant([[alias = "M", value = Ml]]),
+	rs_ans : getprop(rs, answer),
+	detM : getprop(rs_ans[1], value),
+	detM : ratsimp(detM),
+	s : getprop(rs, solution),
+	s_l : append(s_l, [s]),
+	/* Решение уравнения */
+	rs : find_polynome_roots_bezout_theorem([[alias = "P(x)", value = detM]]),
+	rs_ans : getprop(rs, answer),
+	evls : getprop(rs_ans[1], value),
+	s : getprop(rs, solution),
+	s_l : append(s_l, [s]),
+	answ : rs_ans,
+	/* !TODO! */
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	tag_quit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ======================================= */
+/* Найти определитель матрицы по свойствам */
+/* ======================================= */
+debuglog("matrix_determinant_by_properties", debug_message_func_load)$
+matrix_determinant_by_properties(prs) := block(
+	[res, tM, M, mh, mw, d, b,
+	rs, rs_ans, calc_expr, calc_ch, 
+	st, s_l, s, answ],
+	debug_start_function("matrix_determinant_by_properties", [fp_mid_level, fp_solver]),
+	st : "", s_l : [],
+	M : get_matrix_from_prs(prs, "M", ["a", "m"]),
+	debuglog(printf(false, "prs=~a", prs)),
+	st : printf(false,
+		"Найти определитель матрицы $\\left(~a\\right)$~%~%", 
+		to_tex_matr_arr(M)),
+	[mh, mw] : matrix_size(M),											/* получаем размеры матрицы */
+	if (mh # mw) then (
+		s : printf(false, "Определитель матрицы найти невозможно, поскольку высота матрицы ($~a$) не равна ее ширине ($~a$).", mh, mw),
+		s_l : append(s_l, [s]),
+		answ : [[type = cant_find_solution, value = "Определитель матрицы найти невозможно"]],
+		go(tag_exit)),
+	s : printf(false, "$\\left|~a\\right|=$ ", to_tex_matr_arr(M)),
+	s_l : append(s_l, [s]),
+	b : true,
+	/* Поиск нулевой строки */
+	for i : 1 thru mh while b do
+		if sum(M[i,j]^2, j, 1, mw) = 0 then (
+			s : printf(false, "$0$, т.\\,к. $~a$-я строка полностью состоит из нулей.~2%", i),
+			s_l : append(s_l, [s]),
+			answ : [[type = ts_value, value = 0]],
+			b : false),
+	if (b = false) then go(tag_exit),
+	/* Поиск нулевого столбца */
+	for j : 1 thru mw while b do
+		if (sum(M[i,j]^2, i, 1, mh) = 0) then (
+			s : printf(false, "$0$, т.\\,к. $~a$-й столбец полностью состоит из нулей.~2%", j),
+			s_l : append(s_l, [s]),
+			answ : [[type = ts_value, value = 0]],
+			b : false),
+	if (b = false) then go(tag_exit),
+	/* Поиск пропорциональных строк */
+	for i1 : 1 thru (mh - 1) do for i2 : (i1 + 1) thru mh while b do
+		if (rank(matrix(M[i1], M[i2])) < 2) then (
+			s : printf(false, "$0$, т.\\,к. $~a$-я и $~a$-я строки пропорциональны.~2%", i1, i2),
+			s_l : append(s_l, [s]),
+			answ : [[type = ts_value, value = 0]],
+			b : false),
+	if (b = false) then go(tag_exit),
+	/* Поиск пропорциональных столбцов */
+	tM : copymatrix(M),
+	tM : transpose(tM),
+	for j1 : 1 thru (mw - 1) do for j2 : (j1 + 1) thru mw while b do
+		if (rank(matrix(tM[j1], tM[j2])) < 2) then (
+			s : printf(false, "$0$, т.\\,к. $~a$-й и $~a$-й столбцы пропорциональны.~2%", j1, j2),
+			s_l : append(s_l, [s]),
+			answ : [[type = ts_value, value = 0]],
+			b : false),
+	if (b = false) then go(tag_exit),
+	/* Проверка на диагональность матрицы */
+	debuglog(printf(false, "b=~a", b)),
+	for i : 1 thru mh do for j : 1 thru mw while b do (
+		if ((i # j) and (not(equal(M[i, j], 0)))) then b : false,
+		debuglog(printf(false, "i=~a, j=~a, b=~a", i, j, b))),
+	debuglog(printf(false, "b=~a", b)),
+	if b then (
+		calc_expr : 1, calc_ch : [],
+		for i : 1 thru mh do block([p],
+			p : gensym("vv"),
+			calc_expr : calc_expr*p,
+			calc_ch : push(p = M[i, i], calc_ch)),
+		[s, d] : totex_calc_val(calc_expr, calc_ch),
+		s_l : append(s_l, [s]),
+		answ : [[type = ts_value, value = d]],
+		go(tag_exit)),
+	answ : [[type = cant_find_solution, value = "Определитель матрицы невозможно найти по его свойствам"]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ========================================================== */
+/* Найти определитель матрицы приведением к треугольному виду */
+/* ========================================================== */
+debuglog("matrix_determinant_by_triangle_form", debug_message_func_load)$
+matrix_determinant_by_triangle_form(prs) := block(
+	[res, 
+	tM, M, M1, 
+	mh, mw, 
+	perm_num, 
+	rs, rs_ans, 
+	calc_expr, calc_ch, 
+	st, s_l, s, d, answ],
+	debug_start_function("matrix_determinant_by_triangle_form", [fp_mid_level, fp_solver]),
+	st : "", s_l : [],
+	M : get_matrix_from_prs(prs, "M", ["a", "m"]),
+	debuglog(printf(false, "prs=~a", prs)),
+	st : printf(false,
+		"Найти определитель матрицы $\\left(~a\\right)$ приведением к треугольному виду~2%", 
+		to_tex_matr_arr(M)),
+	[mh, mw] : matrix_size(M),											/* получаем размеры матрицы */
+	M1 : copymatrix(M),
+	if (mh # mw) then (
+		s : printf(false, "Определитель матрицы найти невозможно, поскольку высота матрицы ($~a$) не равна ее ширине ($~a$).", mh, mw),
+		s_l : append(s_l, [s]),
+		answ : [[type = cant_find_solution, value = "Определитель матрицы найти невозможно"]],
+		go(tag_exit)),
+	s : printf(false, 
+		"Приведем матрицу к треугольному виду:~2%"),
+	s_l : append(s_l, [s]),
+	rs : matrix_to_upper_triangular_form(prs),
+	rs_ans : getprop(rs, answer),
+	s : getprop(rs, solution),
+	s_l : append(s_l, [s]),
+	M : getprop(rs_ans[1], value),
+	perm_num : getprop(rs_ans[1], ts_number_of_permutations),
+	append_to_s_l("Было сделано $~a$ перестановок строк матрицы.~2%$\\left|~a\\right|=(-1)^{~a}\\left|~a\\right|=$ ", 
+		totex(perm_num), to_tex_matr_arr(M1), totex(perm_num), to_tex_matr_arr(M)),
+	calc_expr : (-1)^perm_num,
+	calc_ch : [],
+	for i : 1 thru mh do block([p],
+		p : gensym("vv"),
+		calc_expr : calc_expr*p,
+		calc_ch : push(p = M[i, i], calc_ch)),
+	[s, d] : totex_calc_val(calc_expr,
+		calc_ch),
+	s_l : append(s_l, [s]),
+	answ : [[type = ts_value, value = d]],
+	debuglog(printf(false, "d=~a", d)),
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	tag_quit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ========================== */
+/* Найти определитель матрицы */
+/* ========================== */
+debuglog("matrix_determinant", debug_message_func_load)$
+matrix_determinant(prs) := block([res, tM, M, mh, mw, perm_num, rs, rs_ans, calc_expr, calc_ch, st, s_l, s, d, answ],
+	debug_start_function("matrix_determinant", [fp_mid_level, fp_solver]),
+	st : "", s_l : [],
+	M : get_matrix_from_prs(prs, "M", ["a", "m"]),
+	debuglog(printf(false, "prs=~a", prs)),
+	st : printf(false,
+		"Найти определитель матрицы $\\left(~a\\right)$~%~%", 
+		to_tex_matr_arr(M)),
+	[mh, mw] : matrix_size(M),											/* получаем размеры матрицы */
+	if (mh # mw) then (
+		s : printf(false, "Определитель матрицы найти невозможно, поскольку высота матрицы ($~a$) не равна ее ширине ($~a$).", mh, mw),
+		s_l : append(s_l, [s]),
+		answ : [[type = cant_find_solution, value = "Определитель матрицы найти невозможно"]],
+		go(tag_exit)),
+	/* Проверка свойств */
+	debuglog(printf(false, "properties")),
+	rs : matrix_determinant_by_properties([[alias = "M", value = M]]),
+	rs_ans : getprop(rs, answer),
+	if (getprop(rs_ans[1], type) # cant_find_solution) then (
+		res : rs,
+		go(tag_quit)),
+	/* Случаи малых размерностей */
+	debuglog(printf(false, "small dim")),
+	if (mh = 2) then (
+		res : matrix_determinant_2x2([[alias = "M", value = M]]),
+		go(tag_quit)),
+	if (mh = 3) then (
+		res : matrix_determinant_3x3([[alias = "M", value = M]]),
+		go(tag_quit)),
+	/* Приведение к треугольному виду */
+	debuglog(printf(false, "triangle form")),
+	rs : matrix_determinant_by_triangle_form([[alias = "M", value = M]]),
+	rs_ans : getprop(rs, answer),
+	if (getprop(rs_ans[1], type) # cant_find_solution) then (
+		res : rs,
+		go(tag_quit)),
+	/* Если ничего не помогло */
+	answ : [[type = cant_find_solution, value = "Определитель матрицы найти невозможно"]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	tag_quit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ============================= */
+/* Найти обратную матрицу 3 на 3 */
+/* ============================= */
+debuglog("matrix_invert_3x3", debug_message_func_load);
+matrix_invert_3x3(prs) := block([res, A, AT, ATadj, ATM, AI, aa, dres, d, pr2, r2, s, s_l, st, answ],
+	debug_start_function("matrix_invert_3x3", [fp_mid_level, fp_solver]),
+	debuglog(printf(false, "prs=~a", prs)),
+	s_l : [],
+	A : get_matrix_from_prs(prs, "M", "a"),
+	st : printf(false,
+				"Найти матрицу, обратную к матрице $\\left(~a\\right)$~2%",
+				to_tex_matr_arr(A)),
+	push(printf(false, "Найдем матрицу, обратную к матрице $\\M=\\left(~a\\right)$~2%", to_tex_matr_arr(A)), s_l),
+	dres : matrix_determinant_3x3([[alias = "M", value = A]]),
+	d : getprop(getprop(dres, answer)[1], value),
+	push(getprop(dres, solution), s_l),
+	if (d = 0) then block([],
+		push(printf(false, " Определитель матрицы равен нулю, следовательно найти обратную к ней невозможно."), s_l),
+		answ : [[type = no_solution, value = "Решения не существует"]]),
+	if (d = 0) then go(tag_zerodet),
+	AT : transpose(A),
+	push(printf(false,
+				"~2%Запишем матрицу $\\mathop{adj}(\\M^{T})$, присоединенную матрицу для матрицы $\\M^{T}=\\left(~a\\right)$.~2%Для этого найдем алгебраические дополнения исходной матрицы.~2%",
+				to_tex_matr_arr(AT)), s_l),
+	ATadj : zeromatrix(3, 3),
+	/*---*/
+	ATM : submatrix(1, AT, 1), pr2 : [[alias = "M", value = ATM]],
+	r2 : matrix_determinant_2x2(pr2),
+	s : getprop(r2, solution),
+	a2 : getprop(r2, answer), a2 : getprop(a2[1], value),
+	ATadj[1,1] : a2,
+	push(printf(false, "$\\MM{11}=$ ~a~2%", s), s_l),
+	/*---*/
+	ATM : submatrix(1, AT, 2), pr2 : [[alias = "M", value = ATM]],
+	r2 : matrix_determinant_2x2(pr2),
+	s : getprop(r2, solution),
+	a2 : getprop(r2, answer), a2 : getprop(a2[1], value),
+	ATadj[1,2] : -a2,
+	push(printf(false, "$-\\MM{12}=$ ~a $\\Rightarrow\\MM{12}=~a$~2%", s, totex(-a2)), s_l),
+	/*---*/
+	ATM : submatrix(1, AT, 3), pr2 : [[alias = "M", value = ATM]],
+	r2 : matrix_determinant_2x2(pr2),
+	s : getprop(r2, solution),
+	a2 : getprop(r2, answer), a2 : getprop(a2[1], value),
+	ATadj[1,3] : a2,
+	push(printf(false, "$\\MM{13}=$ ~a~2%", s), s_l),
+	/*---*/
+	ATM : submatrix(2, AT, 1), pr2 : [[alias = "M", value = ATM]],
+	r2 : matrix_determinant_2x2(pr2),
+	s : getprop(r2, solution),
+	a2 : getprop(r2, answer), a2 : getprop(a2[1], value),
+	ATadj[2,1] : -a2,
+	push(printf(false, "$-\\MM{21}=$ ~a $\\Rightarrow\\MM{21}=~a$~2%", s, totex(-a2)), s_l),
+	/*---*/
+	ATM : submatrix(2, AT, 2), pr2 : [[alias = "M", value = ATM]],
+	r2 : matrix_determinant_2x2(pr2),
+	s : getprop(r2, solution),
+	a2 : getprop(r2, answer), a2 : getprop(a2[1], value),
+	ATadj[2,2] : a2,
+	push(printf(false, "$\\MM{22}=$ ~a~2%", s), s_l),
+	/*---*/
+	ATM : submatrix(2, AT, 3), pr2 : [[alias = "M", value = ATM]],
+	r2 : matrix_determinant_2x2(pr2),
+	s : getprop(r2, solution),
+	a2 : getprop(r2, answer), a2 : getprop(a2[1], value),
+	ATadj[2,3] : -a2,
+	push(printf(false, "$-\\MM{23}=$ ~a $\\Rightarrow\\MM{23}=~a$~2%", s, totex(-a2)), s_l),
+	/*---*/
+	ATM : submatrix(3, AT, 1), pr2 : [[alias = "M", value = ATM]],
+	r2 : matrix_determinant_2x2(pr2),
+	s : getprop(r2, solution),
+	a2 : getprop(r2, answer), a2 : getprop(a2[1], value),
+	ATadj[3,1] : a2,
+	push(printf(false, "$\\MM{31}=$ ~a~2%", s), s_l),
+	/*---*/
+	ATM : submatrix(3, AT, 2), pr2 : [[alias = "M", value = ATM]],
+	r2 : matrix_determinant_2x2(pr2),
+	s : getprop(r2, solution),
+	a2 : getprop(r2, answer), a2 : getprop(a2[1], value),
+	ATadj[3,2] : -a2,
+	push(printf(false, "$-\\MM{32}=$ ~a $\\Rightarrow\\MM{32}=~a$~2%", s, totex(-a2)), s_l),
+	/*---*/
+	ATM : submatrix(3, AT, 3), pr2 : [[alias = "M", value = ATM]],
+	r2 : matrix_determinant_2x2(pr2),
+	s : getprop(r2, solution),
+	a2 : getprop(r2, answer), a2 : getprop(a2[1], value),
+	ATadj[3,3] : a2,
+	push(printf(false, "$\\MM{33}=$ ~a~2%", s), s_l),
+	/*---*/
+	push(printf(false, "$\\mathop{adj}(\\M^{T})=\\left(~a\\right)$~%~%", to_tex_matr_arr(ATadj)), s_l),
+	AI : ATadj/d,
+	push(printf(false, "$\\M^{-1}=\\frac{\\mathop{adj}(\\M^{T})}{\\det \\M}=\\left(~a\\right)$~2%", to_tex_matr_arr(AI)), s_l),
+	answ : [[type = matrix_3x3, value = AI]],
+	debuglog(printf(false, "inv=~a", AI)),  
+	tag_zerodet,
+	s_l : reverse(s_l),
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ===================================== */
+/* Найти произведение двух матриц 3 на 3 */
+/* ===================================== */
+debuglog("matrix_multiplication_3x3", debug_message_func_load);
+matrix_multiplication_3x3(prs) := block([res, A, B, AB, st, s1, s2, answ],
+	debug_start_function("matrix_multiplication_3x3", [fp_high_level, fp_solver]),
+	debuglog(printf(false, "prs=~a", prs)),
+	A : get_matrix_from_prs(prs, "A", "a"),
+	B : get_matrix_from_prs(prs, "B", "b"),
+	st : printf(false,
+		"Найти произведение матриц $\\left(~a\\right)$ и $\\left(~a\\right)$.~%~%",
+		to_tex_matr_arr(A), to_tex_matr_arr(B)),
+	s1 : printf(false,
+		"$A\cdot B=\\left(~a\\right)\cdot\\left(~a\\right)=$ ",
+		to_tex_matr_arr(A), to_tex_matr_arr(B)),
+	AB : A . B,
+	s2 : printf(false,
+		"$\\left(\\begin{array}{ccc}~%~a\cdot~a + ~a\cdot~a + ~a\cdot~a & ~a\cdot~a + ~a\cdot~a + ~a\cdot~a & ~a\cdot~a + ~a\cdot~a + ~a\cdot~a \\\\~% ~a\cdot~a + ~a\cdot~a + ~a\cdot~a & ~a\cdot~a + ~a\cdot~a + ~a\cdot~a & ~a\cdot~a + ~a\cdot~a + ~a\cdot~a \\\\~% ~a\cdot~a + ~a\cdot~a + ~a\cdot~a & ~a\cdot~a + ~a\cdot~a + ~a\cdot~a & ~a\cdot~a + ~a\cdot~a + ~a\cdot~a~%\\end{array}\\right)$ ",
+		totex(A[1,1]), totex(B[1,1]), totex(A[1,2]), totex(B[2,1]), totex(A[1,3]), totex(B[3,1]),    
+		totex(A[1,1]), totex(B[1,2]), totex(A[1,2]), totex(B[2,2]), totex(A[1,3]), totex(B[3,2]),    
+		totex(A[1,1]), totex(B[1,3]), totex(A[1,2]), totex(B[2,3]), totex(A[1,3]), totex(B[3,3]),
+		totex(A[2,1]), totex(B[1,1]), totex(A[2,2]), totex(B[2,1]), totex(A[2,3]), totex(B[3,1]),    
+		totex(A[2,1]), totex(B[1,2]), totex(A[2,2]), totex(B[2,2]), totex(A[2,3]), totex(B[3,2]),   
+		totex(A[2,1]), totex(B[1,3]), totex(A[2,2]), totex(B[2,3]), totex(A[2,3]), totex(B[3,3]),
+		totex(A[3,1]), totex(B[1,1]), totex(A[3,2]), totex(B[2,1]), totex(A[3,3]), totex(B[3,1]),    
+		totex(A[3,1]), totex(B[1,2]), totex(A[3,2]), totex(B[2,2]), totex(A[3,3]), totex(B[3,2]),    
+		totex(A[3,1]), totex(B[1,3]), totex(A[3,2]), totex(B[2,3]), totex(A[3,3]), totex(B[3,3])),
+	answ : [[type=matrix_3x3, value=AB]],
+	debuglog(printf(false, "AB=~a", AB)),  
+	res : [solution_title = st,
+			solution = sconcat(s1, s2),
+			solution_steps = [s1, s2],
+			answer = answ],
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ========================== */
+/* Решить СЛАУ методом Гаусса */
+/* ========================== */
+debuglog("solve_linear_system_gauss", debug_message_func_load);
+solve_linear_system_gauss(prs) := block([
+	res, 																/* результат решателя */
+	M, 																	/* расширенная матрица системы */
+	M1,
+	A, B, 																/* основная матрица и матрица свободных коэффициентов */
+	mh, mw, mr,															/* высота, ширина, ранг расширенной матрицы */
+	rs, rs_ans,															/* результат и ответ других решателей */
+	st, s_l, s, s1, rts, answ],
+	debug_start_function("solve_linear_system_gauss", [fp_mid_level, fp_solver]),
+	st : "", s_l : [],
+	debuglog(printf(false, "prs=~a", prs)),
+	M : get_matrix_from_prs(prs, "M", ["a", "m"]),
+	if (M = false) then (
+		A : get_val_by_alias(prs, "A"),
+		B : get_val_by_alias(prs, "B"),
+		if ((A # false) and (B # false)) then 
+			M : addcol(A, col(B, 1))),
+	if (matrixp(M) = false) then (
+		answ : [[type = cant_find_solution, value = "Систему решить невозможно"]],
+		go(tag_exit)),
+	st : printf(false,
+		"Решить СЛАУ, заданную расширенной матрицей $~a$ методом Гаусса~2%", 
+		to_tex_matr_arr_rb(M)),
+	[mh, mw] : matrix_size(M),											/* получаем размеры матрицы */
+	M1 : copymatrix(M),
+	if ((mh+1) # mw) then (
+		s : printf(false, "Система не является определенной, поскольку высота расширенной матрицы системы ($~a$) не меньше ее ширины ($~a$) на единицу.", mh, mw),
+		s_l : append(s_l, [s]),
+		answ : [[type = cant_find_solution, value = "Систему решить невозможно"]],
+		go(tag_exit)),
+	s : printf(false, 
+		"Приведем матрицу к диагональному виду:~2%"),
+	s_l : append(s_l, [s]),
+	rs : matrix_to_upper_unidiagonal_form([[alias = "M", value = M]]),	/* приводим расширенную матрицу к унидиагональному виду */
+	rs_ans : getprop(rs, answer),
+	s : getprop(rs, solution),
+	s_l : append(s_l, [s]),
+	M : getprop(rs_ans[1], value),
+	mr : getprop(rs_ans[1], ts_matrix_rank),
+	debuglog(printf(false, "M=~a, mr=~a", M, mr)),
+	if (mr < (mw - 1)) then (
+		s : printf(false, 
+			"Ранг системы ($~a$) меньше числа ее неизвестных ($~a$), поэтому решить ее невозможно.~2%", 
+			mr, mw - 1),
+		s_l : append(s_l, [s]),
+		answ : [[type = cant_find_solution, value = "Однозначного решения этой системы нет"]],
+		go(tag_exit)),
+	rts : [],
+	s : "Решения системы: $",
+	s1 : "",
+	for i : 1 thru mh do block([p],
+		debuglog(printf(false, "i=~a", i)),
+		rts : append(rts, [M[i, mw]]),
+		if (M[i,i] = 0) 
+			then s1 : printf(false, "~a для переменной $\\x_{~a}$ значение не может быть определено", s1, i)
+			else s : printf(false, "~a \\x_{~a}=~a;", s, i, totex(M[i, mw]))
+		),
+	s : printf(false, "~a$~2%", s),
+	s_l : append(s_l, [s]),
+	debuglog(printf(false, "ending")),
+	answ : [[type = ts_vector, value = rts]],
+	debuglog(printf(false, "rts=~a", rts)),
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	tag_quit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =========================== */
+/* Решить СЛАУ методом Крамера */
+/* =========================== */
+debuglog("solve_linear_system_kramer", debug_message_func_load);
+solve_linear_system_kramer(prs) := block(
+	[res, tM, M, MM, A, B, d, d_l, x_l, x_names, s, st, s_l, rs, rs_ans, answ],
+	debug_start_function("solve_linear_system_kramer", [fp_mid_level, fp_solver]),
+	st : "", s_l : [],
+	M : get_matrix_from_prs(prs, "M", ["a", "m"]),
+	if (M = false) then (
+		A : get_val_by_alias(prs, "A"),
+		B : get_val_by_alias(prs, "B"),
+		if ((A # false) and (B # false)) then 
+			M : addcol(A, col(B, 1))),
+	debuglog(printf(false, "prs=~a", prs)),
+	st : printf(false,
+		"Решим СЛАУ, заданную расширенной матрицей $~a$ методом Крамера~2%", 
+		to_tex_matr_arr_rb(M)),
+	[mh, mw] : matrix_size(M),			/* получаем размеры матрицы */
+	if ((mh+1) # mw) then (
+		s : printf(false, "Система не является определенной, поскольку высота матрицы ($~a$) не меньше ее ширины ($~a$) на единицу.", mh, mw),
+		s_l : append(s_l, [s]),
+		answ : [[type = cant_find_solution, value = "Систему решить невозможно"]],
+		go(tag_exit)),
+	x_names : get_val_by_alias(prs, "x_names"),
+	if (x_names = false) then x_names : makelist(printf(false, "x_{~a}", i), i, 1, mh),
+	if atom(x_names) 
+		then x_names : makelist(printf(false, "{~a}_{~a}", x_names, i), i, 1, mh)
+		else (if length(x_names)<mh then 
+			x_names : makelist(printf(false, "{~a}_{~a}", if i<=length(x_names) then x_names[i] else "x", i), i, 1, mh)),
+	d_l : makelist(0, mw-1),
+	MM : submatrix(M, mw),
+	rs : matrix_determinant([[alias="M", value=MM]]),
+	rs_ans : getprop(rs, answer),
+	d : getprop(rs_ans[1], value),
+	s : getprop(rs, solution),
+	s : printf(false, "Найдем значение $\\Delta$:~2% ~a;~2%$\\Delta=~a$;~2%", s, totex(d)),
+	s_l : append(s_l, [s]),
+	if d=0 then (
+		s : printf(false, "Определитель основной матрицы СЛАУ равен нулю, поэтому решить ее методом Крамера невозможно."),
+		s_l : append(s_l, [s]),
+		answ : [[type = cant_find_solution, value = "Систему решить невозможно"]],
+		go(tag_exit)),
+	for i : 1 thru (mw - 1) do block([ts],
+		MM : copymatrix(M),
+		MM : columnswap(MM, i, mw),
+		MM : submatrix(MM, mw),
+		rs : matrix_determinant([[alias = "M", value = MM]]),
+		rs_ans : getprop(rs, answer),
+		d_l[i] : getprop(rs_ans[1], value),
+		ts : getprop(rs, solution),
+		s : printf(false, "Найдем значение $\\Delta_{~a}$:~2% ~a;~2%$\\Delta_{~a}=~a$;~2%", i, ts, i, totex(d_l[i])),
+		s_l : append(s_l, [s])),
+	s : "", x_l : makelist(0, mw - 1),
+	for i : 1 thru mw-1 do (
+		x_l[i] : d_l[i]/d,
+		s : printf(false, 
+			"~a$~a=\\frac{\\Delta_{~a}}{\\Delta}=\\frac{~a}{~a}=~a$~2%", 
+			s, x_names[i], i, totex(d_l[i]), totex(d), totex(x_l[i]))),
+	s_l : append(s_l, [s]),
+	answ : [[type = ts_vector, value = x_l]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* ============================== */
+/* Найти произведение двух матриц */
+/* ============================== */
+debuglog("matrix_multiplication", debug_message_func_load)$
+matrix_multiplication(prs) := block(
+	[res, 
+	tA, tB, 
+	A, B, 
+	A_n, B_n, 
+	aw, ah, bw, bh, 
+	AB, 
+	mk_sm_s, mk_sm_e, 
+	st, s, s1, s2, s_l, 
+	answ],
+	debug_start_function("matrix_multiplication", [fp_high_level, fp_solver]),
+	s_l : [],
+	debuglog(printf(false, "prs=~a", prs)),
+	A : get_matrix_from_prs(prs, "A", "a"),
+	B : get_matrix_from_prs(prs, "B", "b"),
+	A_n : get_val_by_alias(prs, "A name", "A"),
+	B_n : get_val_by_alias(prs, "B name", "B"),
+	st : printf(false,
+		"Найти произведение матриц $~a=~a$ и $~a=~a$.~2%",
+		A_n, to_tex_matr_arr_rb(A), B_n, to_tex_matr_arr_rb(B)),
+	[ah, aw] : matrix_size(A),
+	[bh, bw] : matrix_size(B),
+	if aw # bh then (
+		s : printf(false, 
+			"Ширина матрицы $~a$ ($~a$) не равна высоте матрицы $~a$ ($~a$), поэтому их нельзя перемножить.",
+			A_n, aw, B_n, bh),
+		s_l : append(s_l, [s]),
+		answ : [[type = cant_find_solution, value = "Матрицы нельзя перемножить"]],
+		go(tag_exit)),
+	append_to_s_l("$~a\\cdot ~a=~a\\cdot~a=$\\\\ ",	A_n, B_n, to_tex_matr_arr_rb(A), to_tex_matr_arr_rb(B)),
+	AB : A . B,
+	if ((bw * bh) >= 25) 
+		then [mk_sm_s, mk_sm_e] : ["", ""] 
+		else [mk_sm_s, mk_sm_e] : ["{\\small", "}"],					/* строки, уменьшающие шрифт для слишком больших матриц */
+	s : smake(bw, "c"),													/* строка-директива для массива - все по центру */
+	s : printf(false, "~a $\\left(\\begin{array}{~a}~%", mk_sm_s, s),	/* заголовок массива */
+	for i : 1 thru ah do
+		for j : 1 thru bw do (
+			for k : 1 thru aw do
+				s : printf(false, 
+					"~a ~a ~a\\cdot ~a", 
+					s, if k = 1 then " " else "+", totex(A[i, k], "prbim" = true), totex(B[k, j], "prbim" = true)),
+			s : printf(false, "~a ~[ \\\\ ~; & ~]", 
+					s, if j = bw then 1 else 2)),
+	append_to_s_l("~a\\end{array}\\right)=$~a ", s, mk_sm_e),
+	append_to_s_l("~2%$~a$", to_tex_matr_arr_rb(AB)),
+	answ : [[type = ts_matrix, 											/* создаем ответ к заданию */
+		value = AB]],
+	debuglog(printf(false, "AB=~a", AB)),  
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ===================================================================== */
+/* Функция вынимает матрицу из списка параметров по определенным алиасам */
+/* m_als, me_als - алиасы (или их списки) матрицы или ее элементов       */
+/* порядок проверки - так как задано                                     */
+/* ===================================================================== */
+debuglog("get_matrix_from_prs", debug_message_func_load)$
+get_matrix_from_prs(prs, m_als, me_als) := block([res, M],
+	debug_start_function("get_matrix_from_prs", [fp_mid_level]),
+	debuglog(printf(false, "prs=~a", prs)),
+	debuglog(printf(false, "m_als=~a; me_als=~a", m_als, me_als)),
+	if not(listp(m_als)) then m_als : [m_als],							/* если одиночное значение, то делаем его списком */
+	for m_a in m_als while not(matrixp(M)) do (							/* и идем по списку пока не получим матрицу */
+		debuglog(printf(false, "m_a=~a", m_a)),
+		M : get_val_by_alias(prs, m_a)),
+	if matrixp(M) then go(tag_exit),									/* если матрица есть, то идем на выход */
+	if not(listp(me_als)) then me_als : [me_als],
+	for me_a in me_als while not(matrixp(M)) do block(
+		[me_an, tM, tvl, b],
+		tM : zeromatrix(3, 3),
+		b : true,
+		for i : 1 thru 3 do for j : 1 thru 3 do (
+			me_an : printf(false, "~a~a~a", me_a, i, j),
+			tvl : get_val_by_alias(prs, me_an),
+			debuglog(printf(false, "prs=~a", prs)),
+			debuglog(printf(false, "me_an=~a; slength=~a; tvl=~a", me_an, slength(me_an), tvl)),
+			if (tvl = false) then b : false,
+			tM[i, j] : tvl),
+		if b then M : tM),
+	tag_exit,
+	if matrixp(M) then res : copymatrix(M) else res : false,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$

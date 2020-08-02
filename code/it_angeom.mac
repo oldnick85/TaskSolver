@@ -1,0 +1,654 @@
+/* ====================================================== */
+/* ================ Неформальные задания ================ */
+/* ============== Аналитическая геометрия =============== */
+/* ====================================================== */
+debuglog("it_angeom.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* =================== */
+/* Нормировать вектор */
+/* =================== */
+informaltask_vector_normalize : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "vector_normalize",
+	shortname = "mg_vn",
+	readiness = ts_full_readiness,
+	short_description = "Нормировать вектор",
+	text = "Нормировать вектор $\\vec{v}$",
+	taskparams = [[parname = "v", pr_name = "v", pr_caption = "v", alias = "v", pr_type = type_v_real,
+			pr_hint = "Координаты вектора",
+			ts_default_value = [1, -2, 0, 3, 1, 1]]], 
+	ts_parameters_extra = [
+		[parname = "v_name", pr_name = "v_name", pr_caption = "v_name", alias = "v name", pr_type = type_v_string, 
+			pr_hint = "Имя вектора",
+			ts_default_value = "\\vec{v}"]],
+	solver = vector_normalize]$
+push(informaltask_vector_normalize, informaltasks)$
+/* ======================== */
+/* Нахождение длины вектора */
+/* ======================== */
+informaltask_vector_length : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "vector_length",
+	shortname = "mg_vl",
+	readiness = ts_full_readiness,
+	short_description = "Найти длину вектора",
+	text = "Найти длину вектора $\\vec{v}$",
+	taskparams = [[parname = "v", pr_name = "v", pr_caption = "v", alias = "v", pr_type = type_v_real,
+			pr_hint = "Координаты вектора",
+			ts_default_value = [10, 11, 12]]], 
+	ts_parameters_extra = [
+		[parname = "v_name", pr_name = "v_name", pr_caption = "v_name", alias = "v name", pr_type = type_v_string, 
+			pr_hint = "Имя вектора",
+			ts_default_value = "\\vec{v}"]],
+	solver = vector_length]$
+push(informaltask_vector_length, informaltasks)$
+/* ================================================ */
+/* Нахождение скалярного произведения двух векторов */
+/* ================================================ */
+informaltask_vector_scalar_product : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "vector_scalar_product",
+	shortname = "mg_vsp",
+	readiness = ts_full_readiness,
+	short_description = "Найти скалярное произведение двух векторов",
+	text = "Найти скалярное произведение векторов $\\vec{v}$ и $\\vec{w}$",
+	taskparams = [
+		[parname = "v", pr_name = "v", pr_caption = "v", alias = "v", pr_type = type_v_real, 
+			pr_hint = "Координаты первого вектора",
+			ts_default_value = [11, 12, 13]],
+		[parname = "w", pr_name = "w", pr_caption = "w", alias = "w", pr_type = type_v_real, 
+			pr_hint = "Координаты второго вектора",
+			ts_default_value = [24, 25, 26]]], 
+	solver = vector_scalar_product]$
+push(informaltask_vector_scalar_product, informaltasks)$
+/* ============================================== */
+/* Нахождение косинуса угла между двумя векторами */
+/* ============================================== */
+informaltask_vectors2_angle_cosinus : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "vectors2_angle_cosinus",
+	shortname = "mg_v2ac",
+	readiness = ts_full_readiness,
+	short_description = "Найти косинус угла между двумя векторами",
+	text = "Найти косинус угла между векторами $\\vec{v}$ и $\\vec{w}$",
+	taskparams = [
+		[parname = "v", pr_name = "v", pr_caption = "v", alias = "v", pr_type = type_v_real, 
+			pr_hint = "Координаты первого вектора",
+			ts_default_value = [11, 12, 13]],
+		[parname = "w", pr_name = "w", pr_caption = "w", alias = "w", pr_type = type_v_real, 
+			pr_hint = "Координаты второго вектора",
+			ts_default_value = [24, 25, 26]]], 
+	solver = vectors2_angle_cosinus]$
+push(informaltask_vectors2_angle_cosinus, informaltasks)$
+/* =============================================================== */
+/* Нахождение векторного произведения двух векторов в пространстве */
+/* =============================================================== */
+informaltask_vector_vector_product : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "vector_vector_product",
+	shortname = "mg_vvp",
+	readiness = ts_full_readiness,
+	short_description = "Найти векторное произведение двух векторов в пространстве",
+	text = "Найти векторное произведение векторов $\\vec{v}(v_1,v_2,v_3)$ и $\\vec{w}(w_1,w_2,w_3)$ в пространстве",
+	taskparams = [
+		[parname = "v_1", pr_name = "v_1", pr_caption = "v_1", alias = "v1", pr_type = type_s_real, 
+			pr_hint = "Первая координата первого вектора",
+			ts_default_value =  11],
+		[parname = "v_2", pr_name = "v_2", pr_caption = "v_2", alias = "v2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата первого вектора",
+			ts_default_value =  12],
+		[parname = "v_3", pr_name = "v_3", pr_caption = "v_3", alias = "v3", pr_type = type_s_real, 
+			pr_hint = "Третья координата первого вектора",
+			ts_default_value =  13],
+		[parname = "w_1", pr_name = "w_1", pr_caption = "w_1", alias = "w1", pr_type = type_s_real, 
+			pr_hint = "Первая координата второго вектора",
+			ts_default_value =  24],
+		[parname = "w_2", pr_name = "w_2", pr_caption = "w_2", alias = "w2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата второго вектора",
+			ts_default_value =  25],
+		[parname = "w_3", pr_name = "w_3", pr_caption = "w_3", alias = "w3", pr_type = type_s_real, 
+			pr_hint = "Третья координата второго вектора",
+			ts_default_value =  26]], 
+	solver = vector_vector_product]$
+push(informaltask_vector_vector_product, informaltasks)$
+/* =============================================================== */
+/* Нахождение смешанного произведения трех векторов в пространстве */
+/* =============================================================== */
+informaltask_vector_mixed_product : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "vector_mixed_product",
+	shortname = "mg_vmp",
+	readiness = ts_full_readiness,
+	short_description = "Найти смешанное произведение трех векторов в пространстве",
+	text = "Найти векторное произведение векторов $\\vec{v}(v_1,v_2,v_3)$, $\\vec{w}(w_1,w_2,w_3)$ и $\\vec{u}(u_1,u_2,u_3)$ в пространстве",
+	taskparams = [
+		[parname = "v_1", pr_name = "v_1", pr_caption = "v_1", alias = "v1", pr_type = type_s_real, 
+			pr_hint = "Первая координата первого вектора",
+			ts_default_value =  11],
+		[parname = "v_2", pr_name = "v_2", pr_caption = "v_2", alias = "v2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата первого вектора",
+			ts_default_value =  12],
+		[parname = "v_3", pr_name = "v_3", pr_caption = "v_3", alias = "v3", pr_type = type_s_real, 
+			pr_hint = "Третья координата первого вектора",
+			ts_default_value =  13],
+		[parname = "w_1", pr_name = "w_1", pr_caption = "w_1", alias = "w1", pr_type = type_s_real, 
+			pr_hint = "Первая координата второго вектора",
+			ts_default_value =  21],
+		[parname = "w_2", pr_name = "w_2", pr_caption = "w_2", alias = "w2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата второго вектора",
+			ts_default_value =  22],
+		[parname = "w_3", pr_name = "w_3", pr_caption = "w_3", alias = "w3", pr_type = type_s_real, 
+			pr_hint = "Третья координата второго вектора",
+			ts_default_value =  23],
+		[parname = "u_1", pr_name = "u_1", pr_caption = "u_1", alias = "u1", pr_type = type_s_real, 
+			pr_hint = "Первая координата третьего вектора",
+			ts_default_value =  31],
+		[parname = "u_2", pr_name = "u_2", pr_caption = "u_2", alias = "u2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата третьего вектора",
+			ts_default_value =  32],
+		[parname = "u_3", pr_name = "u_3", pr_caption = "u_3", alias = "u3", pr_type = type_s_real, 
+			pr_hint = "Третья координата третьего вектора",
+			ts_default_value =  33]], 
+	solver = vector_mixed_product]$
+push(informaltask_vector_mixed_product, informaltasks)$
+/* ======================================================== */
+/* Найти площадь треугольника с данными координатами вершин */
+/* в пространстве с помощью векторного произведения         */
+/* ======================================================== */
+informaltask_triangle_area_3d_coordinates_vector_product : [
+	category = [ts_geometry],
+	ts_subcategory = ts_lines_planes,
+	name = "triangle_area_3d_coordinates_vector_product",
+	shortname = "mg_ta3cvp",
+	readiness = ts_full_readiness,
+	short_description = "Найти площадь треугольника с помощью векторного произведения",
+	text = "Найти площадь треугольника с вершинами $A(x_1,y_1,z_1)$, $B(x_2,y_2,z_2)$ и $C(x_3,y_3,z_3)$ с помощью векторного произведения",
+	taskparams = [
+		[parname = "x_1", pr_name = "x_1", pr_caption = "x_1", alias = "A1", pr_type = type_s_real, 
+			pr_hint = "Первая координата первой вершины",
+			ts_default_value =  11],
+		[parname = "y_1", pr_name = "y_1", pr_caption = "y_1", alias = "A2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата первой вершины",
+			ts_default_value =  12],
+		[parname = "z_1", pr_name = "z_1", pr_caption = "z_1", alias = "A3", pr_type = type_s_real, 
+			pr_hint = "Третья координата первой вершины",
+			ts_default_value =  13],
+		[parname = "x_2", pr_name = "x_2", pr_caption = "x_2", alias = "B1", pr_type = type_s_real, 
+			pr_hint = "Первая координата второй вершины",
+			ts_default_value =  21],
+		[parname = "y_2", pr_name = "y_2", pr_caption = "y_2", alias = "B2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата второй вершины",
+			ts_default_value =  22],
+		[parname = "z_2", pr_name = "z_2", pr_caption = "z_2", alias = "B3", pr_type = type_s_real, 
+			pr_hint = "Третья координата второй вершины",
+			ts_default_value =  23],
+		[parname = "x_3", pr_name = "x_3", pr_caption = "x_3", alias = "C1", pr_type = type_s_real, 
+			pr_hint = "Первая координата третьей вершины",
+			ts_default_value =  31],
+		[parname = "y_3", pr_name = "y_3", pr_caption = "y_3", alias = "C2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата третьей вершины",
+			ts_default_value =  32],
+		[parname = "z_3", pr_name = "z_3", pr_caption = "z_3", alias = "C3", pr_type = type_s_real, 
+			pr_hint = "Третья координата третьей вершины",
+			ts_default_value =  33]],  
+	solver = triangle_area_3d_coordinates_vector_product]$
+push(informaltask_triangle_area_3d_coordinates_vector_product, informaltasks)$
+/* =================================================== */
+/* Найти объем тетраэдра с данными координатами вершин */
+/* в пространстве с помощью смешанного произведения    */
+/* =================================================== */
+informaltask_tetrahedron_volume_3d_coordinates_mixed_product : [
+	category = [ts_geometry],
+	ts_subcategory = ts_lines_planes,
+	name = "tetrahedron_volume_3d_coordinates_mixed_product",
+	shortname = "mg_tv3cmp",
+	readiness = ts_full_readiness,
+	short_description = "Найти объем тетраэдра с помощью векторного произведения",
+	text = "Найти объем тетраэдра с вершинами $A(x_1,y_1,z_1)$, $B(x_2,y_2,z_2)$, $C(x_3,y_3,z_3)$ и $D(x_4,y_4,z_4)$ с помощью векторного произведения",
+	taskparams = [
+		[parname = "x_1", pr_name = "x_1", pr_caption = "x_1", alias = "A1", pr_type = type_s_real, 
+			pr_hint = "Первая координата первой вершины",
+			ts_default_value =  11],
+		[parname = "y_1", pr_name = "y_1", pr_caption = "y_1", alias = "A2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата первой вершины",
+			ts_default_value =  12],
+		[parname = "z_1", pr_name = "z_1", pr_caption = "z_1", alias = "A3", pr_type = type_s_real, 
+			pr_hint = "Третья координата первой вершины",
+			ts_default_value =  13],
+		[parname = "x_2", pr_name = "x_2", pr_caption = "x_2", alias = "B1", pr_type = type_s_real, 
+			pr_hint = "Первая координата второй вершины",
+			ts_default_value =  21],
+		[parname = "y_2", pr_name = "y_2", pr_caption = "y_2", alias = "B2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата второй вершины",
+			ts_default_value =  22],
+		[parname = "z_2", pr_name = "z_2", pr_caption = "z_2", alias = "B3", pr_type = type_s_real, 
+			pr_hint = "Третья координата второй вершины",
+			ts_default_value =  23],
+		[parname = "x_3", pr_name = "x_3", pr_caption = "x_3", alias = "C1", pr_type = type_s_real, 
+			pr_hint = "Первая координата третьей вершины",
+			ts_default_value =  31],
+		[parname = "y_3", pr_name = "y_3", pr_caption = "y_3", alias = "C2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата третьей вершины",
+			ts_default_value =  32],
+		[parname = "z_3", pr_name = "z_3", pr_caption = "z_3", alias = "C3", pr_type = type_s_real, 
+			pr_hint = "Третья координата третьей вершины",
+			ts_default_value =  33],
+		[parname = "x_4", pr_name = "x_4", pr_caption = "x_4", alias = "D1", pr_type = type_s_real, 
+			pr_hint = "Первая координата четвертой вершины",
+			ts_default_value =  41],
+		[parname = "y_4", pr_name = "y_4", pr_caption = "y_4", alias = "D2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата четвертой вершины",
+			ts_default_value =  42],
+		[parname = "z_4", pr_name = "z_4", pr_caption = "z_4", alias = "D3", pr_type = type_s_real, 
+			pr_hint = "Третья координата четвертой вершины",
+			ts_default_value =  43]], 
+	solver = tetrahedron_volume_3d_coordinates_mixed_product]$
+push(informaltask_tetrahedron_volume_3d_coordinates_mixed_product, informaltasks)$
+/* ==================================================== */
+/* Найти высоту тетраэдра с данными координатами вершин */
+/* в пространстве с помощью векторов                    */
+/* ==================================================== */
+informaltask_tetrahedron_height_3d_coordinates_by_vectors : [
+	category = [ts_geometry],
+	ts_subcategory = ts_lines_planes,
+	name = "tetrahedron_height_3d_coordinates_by_vectors",
+	shortname = "mg_th3cbv",
+	readiness = ts_full_readiness,
+	short_description = "Найти высоту тетраэдра с помощью векторов",
+	text = "Найти высоту, опущенную из вершины D, тетраэдра с вершинами $A(x_1,y_1,z_1)$, $B(x_2,y_2,z_2)$, $C(x_3,y_3,z_3)$ и $D(x_4,y_4,z_4)$ с помощью векторов",
+	taskparams = [
+		[parname = "x_1", pr_name = "x_1", pr_caption = "x_1", alias = "A1", pr_type = type_s_real, 
+			pr_hint = "Первая координата первой вершины",
+			ts_default_value =  11],
+		[parname = "y_1", pr_name = "y_1", pr_caption = "y_1", alias = "A2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата первой вершины",
+			ts_default_value =  12],
+		[parname = "z_1", pr_name = "z_1", pr_caption = "z_1", alias = "A3", pr_type = type_s_real, 
+			pr_hint = "Третья координата первой вершины",
+			ts_default_value =  13],
+		[parname = "x_2", pr_name = "x_2", pr_caption = "x_2", alias = "B1", pr_type = type_s_real, 
+			pr_hint = "Первая координата второй вершины",
+			ts_default_value =  21],
+		[parname = "y_2", pr_name = "y_2", pr_caption = "y_2", alias = "B2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата второй вершины",
+			ts_default_value =  22],
+		[parname = "z_2", pr_name = "z_2", pr_caption = "z_2", alias = "B3", pr_type = type_s_real, 
+			pr_hint = "Третья координата второй вершины",
+			ts_default_value =  23],
+		[parname = "x_3", pr_name = "x_3", pr_caption = "x_3", alias = "C1", pr_type = type_s_real, 
+			pr_hint = "Первая координата третьей вершины",
+			ts_default_value =  31],
+		[parname = "y_3", pr_name = "y_3", pr_caption = "y_3", alias = "C2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата третьей вершины",
+			ts_default_value =  32],
+		[parname = "z_3", pr_name = "z_3", pr_caption = "z_3", alias = "C3", pr_type = type_s_real, 
+			pr_hint = "Третья координата третьей вершины",
+			ts_default_value =  33],
+		[parname = "x_4", pr_name = "x_4", pr_caption = "x_4", alias = "D1", pr_type = type_s_real, 
+			pr_hint = "Первая координата четвертой вершины",
+			ts_default_value =  41],
+		[parname = "y_4", pr_name = "y_4", pr_caption = "y_4", alias = "D2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата четвертой вершины",
+			ts_default_value =  42],
+		[parname = "z_4", pr_name = "z_4", pr_caption = "z_4", alias = "D3", pr_type = type_s_real, 
+			pr_hint = "Третья координата четвертой вершины",
+			ts_default_value =  43]], 
+	solver = tetrahedron_height_3d_coordinates_by_vectors]$
+push(informaltask_tetrahedron_height_3d_coordinates_by_vectors, informaltasks)$
+/* ======================================================================== */
+/* Найти расстояние от точки до плоскости в пространстве с помощью векторов */
+/* ======================================================================== */
+informaltask_distance_from_point_to_plane_3d : [
+	category = [ts_geometry],
+	ts_subcategory = ts_lines_planes,
+	name = "distance_from_point_to_plane_3d",
+	shortname = "mg_dfptp3",
+	readiness = ts_full_readiness,
+	short_description = "Найти расстояние от точки до плоскости в пространстве",
+	text = printf(false, "~a~a",
+		"Найти расстояние от точки $M(x_1,y_1,z_1)$ до плоскости $\\alpha$, ",
+		"проходящей через точку $N(x_2,y_2,z_2)$ с вектором нормали $\\vec{n}(n_1,n_2,n_3)$, в пространстве."),
+	taskparams = [
+		[parname = "x_1", pr_name = "x_1", pr_caption = "x_1", alias = "M1", pr_type = type_s_real, 
+			pr_hint = "Первая координата точки, от которой ищется расстояние",
+			ts_default_value =  11],
+		[parname = "y_1", pr_name = "y_1", pr_caption = "y_1", alias = "M2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата точки, от которой ищется расстояние",
+			ts_default_value =  12],
+		[parname = "z_1", pr_name = "z_1", pr_caption = "z_1", alias = "M3", pr_type = type_s_real, 
+			pr_hint = "Третья координата точки, от которой ищется расстояние",
+			ts_default_value =  13],
+		[parname = "x_2", pr_name = "x_2", pr_caption = "x_2", alias = "N1", pr_type = type_s_real, 
+			pr_hint = "Первая координата точки, через которую проходит плоскость",
+			ts_default_value =  21],
+		[parname = "y_2", pr_name = "y_2", pr_caption = "y_2", alias = "N2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата точки, через которую проходит плоскость",
+			ts_default_value =  22],
+		[parname = "z_2", pr_name = "z_2", pr_caption = "z_2", alias = "N3", pr_type = type_s_real, 
+			pr_hint = "Третья координата точки, через которую проходит плоскость",
+			ts_default_value =  23],
+		[parname = "n_1", pr_name = "n_1", pr_caption = "n_1", alias = "n1", pr_type = type_s_real, 
+			pr_hint = "Первая координата вектора нормали плоскости",
+			ts_default_value =  31],
+		[parname = "n_2", pr_name = "n_2", pr_caption = "n_2", alias = "n2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата вектора нормали плоскости",
+			ts_default_value =  32],
+		[parname = "n_3", pr_name = "n_3", pr_caption = "n_3", alias = "n3", pr_type = type_s_real, 
+			pr_hint = "Третья координата вектора нормали плоскости",
+			ts_default_value =  33]], 
+	solver = distance_from_point_to_plane_3d]$
+push(informaltask_distance_from_point_to_plane_3d, informaltasks)$
+/* =================================================================== */
+/* Найти расстояние от точки до прямой на плоскости с помощью векторов */
+/* =================================================================== */
+informaltask_distance_from_point_to_line_2d : [
+	category = [ts_geometry],
+	ts_subcategory = ts_lines_planes,
+	name = "distance_from_point_to_line_2d",
+	shortname = "mg_dfptl2",
+	readiness = ts_full_readiness,
+	short_description = "Найти расстояние от точки до прямой на плоскости",
+	text = printf(false, "~a~a",
+		"Найти расстояние от точки $M(x_1,y_1)$ до прямой $l$, проходящей через точку $N(x_2,y_2)$ ",
+		"и с вектором нормали $\\vec{n}(n_1,n_2)$, на плоскости."),
+	taskparams = [
+		[parname = "x_1", pr_name = "x_1", pr_caption = "x_1", alias = "M1", pr_type = type_s_real, 
+			pr_hint = "Первая координата точки, от которой ищется расстояние",
+			ts_default_value =  11],
+		[parname = "y_1", pr_name = "y_1", pr_caption = "y_1", alias = "M2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата точки, от которой ищется расстояние",
+			ts_default_value =  12],
+		[parname = "x_2", pr_name = "x_2", pr_caption = "x_2", alias = "N1", pr_type = type_s_real, 
+			pr_hint = "Первая координата точки, через которую проходит прямая",
+			ts_default_value =  21],
+		[parname = "y_2", pr_name = "y_2", pr_caption = "y_2", alias = "N2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата точки, через которую проходит прямая",
+			ts_default_value =  22],
+		[parname = "n_1", pr_name = "n_1", pr_caption = "n_1", alias = "n1", pr_type = type_s_real, 
+			pr_hint = "Первая координата вектора нормали прямой",
+			ts_default_value =  31],
+		[parname = "n_2", pr_name = "n_2", pr_caption = "n_2", alias = "n2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата вектора нормали прямой",
+			ts_default_value =  32]], 
+	solver = distance_from_point_to_line_2d]$
+push(informaltask_distance_from_point_to_line_2d, informaltasks)$
+/* ===================================================================== */
+/* Найти расстояние от точки до прямой в пространстве с помощью векторов */
+/* ===================================================================== */
+informaltask_distance_from_point_to_line_3d : [
+	category = [ts_geometry],
+	ts_subcategory = ts_lines_planes,
+	name = "distance_from_point_to_line_3d",
+	shortname = "mg_dfptl3",
+	readiness = ts_full_readiness,
+	short_description = "Найти расстояние от точки до прямой в пространстве",
+	text = printf(false, "~a~a",
+		"Найти расстояние от точки $M(x_1,y_1,z_1)$ до прямой $l$, проходящей через точку $N(x_2,y_2,z_2)$ ",
+		"и с направляющим вектором $\\vec{a}(a_1,a_2,a_3)$, в пространстве."),
+	taskparams = [
+		[parname = "x_1", pr_name = "x_1", pr_caption = "x_1", alias = "M1", pr_type = type_s_real, 
+			pr_hint = "Первая координата точки, от которой ищется расстояние",
+			ts_default_value =  11],
+		[parname = "y_1", pr_name = "y_1", pr_caption = "y_1", alias = "M2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата точки, от которой ищется расстояние",
+			ts_default_value =  12],
+		[parname = "z_1", pr_name = "z_1", pr_caption = "z_1", alias = "M3", pr_type = type_s_real, 
+			pr_hint = "Третья координата точки, от которой ищется расстояние",
+			ts_default_value =  12],
+		[parname = "x_2", pr_name = "x_2", pr_caption = "x_2", alias = "N1", pr_type = type_s_real, 
+			pr_hint = "Первая координата точки, через которую проходит прямая",
+			ts_default_value =  21],
+		[parname = "y_2", pr_name = "y_2", pr_caption = "y_2", alias = "N2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата точки, через которую проходит прямая",
+			ts_default_value =  22],
+		[parname = "z_2", pr_name = "z_2", pr_caption = "z_2", alias = "N3", pr_type = type_s_real, 
+			pr_hint = "Третья координата точки, через которую проходит прямая",
+			ts_default_value =  22],
+		[parname = "a_1", pr_name = "a_1", pr_caption = "a_1", alias = "a1", pr_type = type_s_real, 
+			pr_hint = "Первая координата направляющего вектора прямой",
+			ts_default_value =  31],
+		[parname = "a_2", pr_name = "a_2", pr_caption = "a_2", alias = "a2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата направляющего вектора прямой",
+			ts_default_value =  32],
+		[parname = "a_3", pr_name = "a_3", pr_caption = "a_3", alias = "a3", pr_type = type_s_real, 
+			pr_hint = "Третья координата направляющего вектора прямой",
+			ts_default_value =  32]], 
+	solver = distance_from_point_to_line_3d]$
+push(informaltask_distance_from_point_to_line_3d, informaltasks)$
+/* =================================================== */
+/* Проверить, что два двумерных вектора образуют базис */
+/* =================================================== */
+informaltask_check_2_vectors_2d_basis : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "check_2_vectors_2d_basis",
+	shortname = "mg_c2v2db",
+	readiness = ts_full_readiness,
+	short_description = "Проверить, что два двумерных вектора образуют базис",
+	text = "Проверить, что векторы $\\vec{a}(a_1;a_2)$ и $\\vec{b}(b_1;b_2)$ образуют базис.",
+	taskparams = [
+		[parname = "a_1", pr_name = "a_1", pr_caption = "a_1", alias = "a1", pr_type = type_s_real, 
+			pr_hint = "Первая координата первого вектора",
+			ts_default_value =  1],
+		[parname = "a_2", pr_name = "a_2", pr_caption = "a_2", alias = "a2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата первого вектора",
+			ts_default_value =  2],
+		[parname = "b_1", pr_name = "b_1", pr_caption = "b_1", alias = "b1", pr_type = type_s_real, 
+			pr_hint = "Первая координата второго вектора",
+			ts_default_value =  -2],
+		[parname = "b_2", pr_name = "b_2", pr_caption = "b_2", alias = "b2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата второго вектора",
+			ts_default_value =  2]], 
+	ts_parameters_extra = [
+		[parname = "a_name", pr_name = "a_name", pr_caption = "a_name", alias = "a name", pr_type = type_v_string, 
+			pr_hint = "Имя первого вектора",
+			ts_default_value = "\\vec{a}"],
+		[parname = "b_name", pr_name = "b_name", pr_caption = "b_name", alias = "b name", pr_type = type_v_string, 
+			pr_hint = "Имя второго вектора",
+			ts_default_value = "\\vec{b}"]],
+	solver = check_2_vectors_2d_basis]$
+push(informaltask_check_2_vectors_2d_basis, informaltasks)$
+/* =================================================== */
+/* Проверить, что три трехмерных вектора образуют базис */
+/* =================================================== */
+informaltask_check_3_vectors_3d_basis : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "check_3_vectors_3d_basis",
+	shortname = "mg_c3v3db",
+	readiness = ts_full_readiness,
+	short_description = "Проверить, что три трехмерных вектора образуют базис",
+	text = "Проверить, что векторы $\\vec{a}(a_1;a_2;a_3)$, $\\vec{b}(b_1;b_2;b_3)$ и $\\vec{c}(c_1;c_2;c_3)$ образуют базис.",
+	taskparams = [
+		[parname = "a_1", pr_name = "a_1", pr_caption = "a_1", alias = "a1", pr_type = type_s_real, 
+			pr_hint = "Первая координата первого вектора",
+			ts_default_value =  1],
+		[parname = "a_2", pr_name = "a_2", pr_caption = "a_2", alias = "a2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата первого вектора",
+			ts_default_value =  2],
+		[parname = "a_3", pr_name = "a_3", pr_caption = "a_3", alias = "a3", pr_type = type_s_real, 
+			pr_hint = "Третья координата первого вектора",
+			ts_default_value =  2],
+		[parname = "b_1", pr_name = "b_1", pr_caption = "b_1", alias = "b1", pr_type = type_s_real, 
+			pr_hint = "Первая координата второго вектора",
+			ts_default_value =  -2],
+		[parname = "b_2", pr_name = "b_2", pr_caption = "b_2", alias = "b2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата второго вектора",
+			ts_default_value =  2],
+		[parname = "b_3", pr_name = "b_3", pr_caption = "b_3", alias = "b3", pr_type = type_s_real, 
+			pr_hint = "Третья координата второго вектора",
+			ts_default_value =  2],
+		[parname = "c_1", pr_name = "c_1", pr_caption = "c_1", alias = "c1", pr_type = type_s_real, 
+			pr_hint = "Первая координата третьего вектора",
+			ts_default_value =  -2],
+		[parname = "c_2", pr_name = "c_2", pr_caption = "c_2", alias = "c2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата третьего вектора",
+			ts_default_value =  2],
+		[parname = "c_3", pr_name = "c_3", pr_caption = "c_3", alias = "c3", pr_type = type_s_real, 
+			pr_hint = "Третья координата третьего вектора",
+			ts_default_value =  2]], 
+	ts_parameters_extra = [
+		[parname = "a_name", pr_name = "a_name", pr_caption = "a_name", alias = "a name", pr_type = type_v_string, 
+			pr_hint = "Имя первого вектора",
+			ts_default_value = "\\vec{a}"],
+		[parname = "b_name", pr_name = "b_name", pr_caption = "b_name", alias = "b name", pr_type = type_v_string, 
+			pr_hint = "Имя второго вектора",
+			ts_default_value = "\\vec{b}"],
+		[parname = "c_name", pr_name = "c_name", pr_caption = "c_name", alias = "c name", pr_type = type_v_string, 
+			pr_hint = "Имя третьго вектора",
+			ts_default_value = "\\vec{c}"]],
+	solver = check_3_vectors_3d_basis]$
+push(informaltask_check_3_vectors_3d_basis, informaltasks)$
+/* =================================================== */
+/* Проверить, что два двумерных вектора образуют базис */
+/* и найти координаты третьего вектора в этом базисе   */
+/* =================================================== */
+informaltask_check_2_vectors_2d_basis_and_find_coord_in_it : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "check_2_vectors_2d_basis_and_find_coord_in_it",
+	shortname = "mg_c2v2dbfcii",
+	readiness = ts_full_readiness,
+	short_description = "Проверить, что два двумерных вектора образуют базис и найти координаты третьего вектора в этом базисе",
+	text = printf(false, "~a~a",
+		"Проверить, что векторы $\\vec{a}(a_1;a_2)$ и $\\vec{b}(b_1;b_2)$ образуют базис ",
+		"и найти координаты вектора $\\vec{c}(c_1;c_2)$ в этом базисе."),
+	taskparams = [
+		[parname = "a_1", pr_name = "a_1", pr_caption = "a_1", alias = "a1", pr_type = type_s_real, 
+			pr_hint = "Первая координата первого вектора",
+			ts_default_value =  1],
+		[parname = "a_2", pr_name = "a_2", pr_caption = "a_2", alias = "a2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата первого вектора",
+			ts_default_value =  2],
+		[parname = "b_1", pr_name = "b_1", pr_caption = "b_1", alias = "b1", pr_type = type_s_real, 
+			pr_hint = "Первая координата второго вектора",
+			ts_default_value =  -2],
+		[parname = "b_2", pr_name = "b_2", pr_caption = "b_2", alias = "b2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата второго вектора",
+			ts_default_value =  2],
+		[parname = "c_1", pr_name = "c_1", pr_caption = "c_1", alias = "c1", pr_type = type_s_real, 
+			pr_hint = "Первая координата третьего вектора",
+			ts_default_value =  5],
+		[parname = "c_2", pr_name = "c_2", pr_caption = "c_2", alias = "c2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата третьего вектора",
+			ts_default_value =  0]], 
+	ts_parameters_extra = [
+		[parname = "a_name", pr_name = "a_name", pr_caption = "a_name", alias = "a name", pr_type = type_v_string, 
+			pr_hint = "Имя первого вектора",
+			ts_default_value = "\\vec{a}"],
+		[parname = "b_name", pr_name = "b_name", pr_caption = "b_name", alias = "b name", pr_type = type_v_string, 
+			pr_hint = "Имя второго вектора",
+			ts_default_value = "\\vec{b}"],
+		[parname = "c_name", pr_name = "c_name", pr_caption = "c_name", alias = "c name", pr_type = type_v_string, 
+			pr_hint = "Имя второго вектора",
+			ts_default_value = "\\vec{c}"]],
+	solver = check_2_vectors_2d_basis_and_find_coord_in_it]$
+push(informaltask_check_2_vectors_2d_basis_and_find_coord_in_it, informaltasks)$
+/* ===================================================== */
+/* Проверить, что три трехмерных вектора образуют базис  */
+/* и найти координаты четвертого вектора в этом базисе */
+/* ===================================================== */
+informaltask_check_3_vectors_3d_basis_and_find_coord_in_it : [
+	category = [ts_geometry],
+	ts_subcategory = ts_vectors,
+	name = "check_3_vectors_3d_basis_and_find_coord_in_it",
+	shortname = "mg_c3v3dbfcii",
+	readiness = ts_full_readiness,
+	short_description = "Проверить, что три трехмерных вектора образуют базис и найти координаты четвертого вектора в этом базисе",
+	text = printf(false, "~a~a",
+		"Проверить, что векторы $\\vec{a}(a_1;a_2;a_3)$, $\\vec{b}(b_1;b_2;b_3)$ и $\\vec{c}(c_1;c_2;c_3)$ ",
+		"образуют базис и найти координаты вектора $\\vec{d}(d_1;d_2;d_3)$ в этом базисе."),
+	taskparams = [
+		[parname = "a_1", pr_name = "a_1", pr_caption = "a_1", alias = "a1", pr_type = type_s_real, 
+			pr_hint = "Первая координата первого вектора",
+			ts_default_value =  1],
+		[parname = "a_2", pr_name = "a_2", pr_caption = "a_2", alias = "a2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата первого вектора",
+			ts_default_value =  2],
+		[parname = "a_3", pr_name = "a_3", pr_caption = "a_3", alias = "a3", pr_type = type_s_real, 
+			pr_hint = "Третья координата первого вектора",
+			ts_default_value =  2],
+		[parname = "b_1", pr_name = "b_1", pr_caption = "b_1", alias = "b1", pr_type = type_s_real, 
+			pr_hint = "Первая координата второго вектора",
+			ts_default_value =  -2],
+		[parname = "b_2", pr_name = "b_2", pr_caption = "b_2", alias = "b2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата второго вектора",
+			ts_default_value =  2],
+		[parname = "b_3", pr_name = "b_3", pr_caption = "b_3", alias = "b3", pr_type = type_s_real, 
+			pr_hint = "Третья координата второго вектора",
+			ts_default_value =  2],
+		[parname = "c_1", pr_name = "c_1", pr_caption = "c_1", alias = "c1", pr_type = type_s_real, 
+			pr_hint = "Первая координата третьего вектора",
+			ts_default_value =  -2],
+		[parname = "c_2", pr_name = "c_2", pr_caption = "c_2", alias = "c2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата третьего вектора",
+			ts_default_value =  2],
+		[parname = "c_3", pr_name = "c_3", pr_caption = "c_3", alias = "c3", pr_type = type_s_real, 
+			pr_hint = "Третья координата третьего вектора",
+			ts_default_value =  2],
+		[parname = "d_1", pr_name = "d_1", pr_caption = "d_1", alias = "d1", pr_type = type_s_real, 
+			pr_hint = "Первая координата четвертого вектора",
+			ts_default_value =  -3],
+		[parname = "d_2", pr_name = "d_2", pr_caption = "d_2", alias = "d2", pr_type = type_s_real, 
+			pr_hint = "Вторая координата четвертого вектора",
+			ts_default_value =  -2],
+		[parname = "d_3", pr_name = "d_3", pr_caption = "d_3", alias = "d3", pr_type = type_s_real, 
+			pr_hint = "Третья координата четвертого вектора",
+			ts_default_value =  0]], 
+	ts_parameters_extra = [
+		[parname = "a_name", pr_name = "a_name", pr_caption = "a_name", alias = "a name", pr_type = type_v_string, 
+			pr_hint = "Имя первого вектора",
+			ts_default_value = "\\vec{a}"],
+		[parname = "b_name", pr_name = "b_name", pr_caption = "b_name", alias = "b name", pr_type = type_v_string, 
+			pr_hint = "Имя второго вектора",
+			ts_default_value = "\\vec{b}"],
+		[parname = "c_name", pr_name = "c_name", pr_caption = "c_name", alias = "c name", pr_type = type_v_string, 
+			pr_hint = "Имя третьго вектора",
+			ts_default_value = "\\vec{c}"],
+		[parname = "d_name", pr_name = "d_name", pr_caption = "d_name", alias = "d name", pr_type = type_v_string, 
+			pr_hint = "Имя четвертого вектора",
+			ts_default_value = "\\vec{d}"]],
+	solver = check_3_vectors_3d_basis_and_find_coord_in_it]$
+push(informaltask_check_3_vectors_3d_basis_and_find_coord_in_it, informaltasks)$
+/* ===================================================== */
+/* Приведение квадрики к каноническому виду              */
+/* с помощью метода выделения полных квадратов.          */
+/* ===================================================== */
+informaltask_quadric_to_canonical_form_squares_method : [
+	category = [ts_geometry],
+	ts_subcategory = ts_multidim_geom,
+	name = "quadric_to_canonical_form_squares_method",
+	shortname = "mg_qtcfsm",
+	readiness = ts_full_readiness,
+	short_description = "Привести квадрику к каноническому виду методом выделения полных квадратов.",
+	text = printf(false, "Привести квадрику $q$ к каноническому виду методом выделения полных квадратов."),
+	taskparams = [
+		[parname = "q", pr_name = "q", pr_caption = "q", alias = "q", pr_type = type_s_expression, 
+			pr_hint = "Уравнение квадрики",
+			ts_default_value =  x1^2+2*x1*x2+2*x2^2]],
+	solver = quadric_to_canonical_form_squares_method]$
+push(informaltask_quadric_to_canonical_form_squares_method, informaltasks)$
+/* ================================================================== */
+/* Приведение квадрики к каноническому виду */
+/* с помощью ортогональных преобразований. */
+/* ================================================================== */
+informaltask_quadric_to_canonical_form_orthogonal_transformation : [
+	category = [ts_geometry],
+	ts_subcategory = ts_multidim_geom,
+	name = "quadric_to_canonical_form_orthogonal_transformation",
+	shortname = "mg_qtcfot",
+	readiness = ts_test_readiness,
+	short_description = "Привести квадрику к каноническому виду с помощью ортогональных преобразований.",
+	text = printf(false, "Привести квадрику $q$ к каноническому виду с помощью ортогональных преобразований."),
+	taskparams = [
+		[parname = "q", pr_name = "q", pr_caption = "q", alias = "q", pr_type = type_s_expression, 
+			pr_hint = "Уравнение квадрики",
+			ts_default_value =  x[1]^2+2*x[1]*x[2]+2*x[2]^2]],
+	solver = quadric_to_canonical_form_orthogonal_transformation]$
+push(informaltask_quadric_to_canonical_form_orthogonal_transformation, informaltasks)$

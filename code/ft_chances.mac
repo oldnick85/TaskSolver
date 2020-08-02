@@ -1,0 +1,458 @@
+/* ================ Формальные задания ================ */
+/* ================ Теория вероятностей =============== */
+debuglog("ft_chances.mac", debug_message_module_load)$
+/* ====================================================== */
+/* Математическое ожидание непрерывной случайной величины */
+/* заданной функцией плотности вероятности на промежутке  */
+/* ====================================================== */
+debuglog("chances_cont_rv_density_func_expect_val", debug_message_func_load)$
+chances_cont_rv_density_func_expect_val(prs) := block([res, t_prs, rs, fnct, fnct_tex, fnct1, a, b, a_tex, b_tex, answ, st, s, s_l],
+	debug_start_function("chances_cont_rv_density_func_expect_val", [fp_high_level, fp_solver]),
+	fnct : get_val_by_alias(prs, "f(x)"),
+	a : get_val_by_alias(prs, "a"),
+	b : get_val_by_alias(prs, "b"),
+	fnct_tex : totex(fnct), a_tex : totex(a), b_tex : totex(b),
+	s_l : [],
+	st : printf(false, "Найдем математическое ожидание непрерывной случайной величины, заданной функцией плотности вероятности $~a$ на промежутке $~a<x<~a$. ~2%", fnct_tex, a_tex, b_tex),
+	rs : integrate(fnct, x, a, b),
+	if (rs # 1) then
+		append_to_s_l("Интеграл от плотности по всему пространству не равен единице. Возможно данные введены некорректно. Дальнейшие вычисления могут не иметь смысла.~2%"),
+	fnct1 : x*fnct,
+	append_to_s_l("Математическое ожидание:~2%$M[X]=\\int_{-\\infty}^{\\infty}x\\cdot f_X(x)\\mathrm{d}x$ $=\\int_{~a}^{~a}x\\cdot(~a)\\mathrm{d}x$ $=\\int_{~a}^{~a}~a\\mathrm{d}x$.~2%", a_tex, b_tex, fnct_tex, a_tex, b_tex, totex(fnct1)),
+	t_prs : [[name = "f(x)", alias = "f(x)", value = fnct1],
+		[name = "a", alias = "a", value = a],
+		[name = "b", alias = "b", value = b]],
+	rs : matanaliz_find_definite_integral(t_prs),
+	append_to_s_l("~a", sconcat(getprop(rs, solution_title), getprop(rs, solution))),
+	answ : getprop(rs, answer),
+	res : [solution_title = st,
+			solution = apply(sconcat, s_l),
+			solution_steps = s_l,
+			answer = answ],
+	res)$
+/* ================================================================== */
+/* Математическое ожидание и дисперсия непрерывной случайной величины */
+/* заданной функцией плотности вероятности на промежутке              */
+/* ================================================================== */
+debuglog("chances_cont_rv_density_func_dispersion_and_expect_val", debug_message_func_load)$
+chances_cont_rv_density_func_dispersion_and_expect_val(prs) := block(
+	[res, t_prs, rs, ans, fnct, fnct_tex, fnct1, a, b, a_tex, b_tex, exp_val, dispers, answ, st, s, s_l],
+	debug_start_function("chances_cont_rv_density_func_dispersion_and_expect_val", [fp_high_level, fp_solver]),
+	fnct : get_val_by_alias(prs, "f(x)"),
+	a : get_val_by_alias(prs, "a"),
+	b : get_val_by_alias(prs, "b"),
+	fnct_tex : totex(fnct), a_tex : totex(a), b_tex : totex(b),
+	s_l : [],
+	st : printf(false, "Найдем математическое ожидание и дисперсию непрерывной случайной величины, заданной функцией плотности вероятности $~a$ на промежутке $~a<x<~a$. ~2%", fnct_tex, a_tex, b_tex),
+	rs : chances_cont_rv_density_func_expect_val(prs),					/* ищем матожидание */
+	ans : getprop(rs, answer),
+	if (getprop(ans[1], type) = cant_find_solution) 
+		then (answ : ans, go(tag_exit)),
+	exp_val : getprop(ans[1], value),
+	append_to_s_l("~a", getprop(rs, solution)),
+	fnct1 : ((x-exp_val)^2)*fnct,										/* функция для нахождения дисперсии */
+	append_to_s_l("~2% $D[X]=\\int_{-\\infty}^{+\\infty}(x-M[X])^2f_X(x)\\mathrm{d}\\x$ $=\\int_{~a}^{~a}(x-M[X])^2f(x)\\mathrm{d}\\x$~%", 
+		a_tex, b_tex),
+	append_to_s_l("$=\\int_{~a}^{~a}(x-~a)^2(~a)\\mathrm{d}\\x$ $=\\int_{~a}^{~a}~a\\mathrm{d}\\x$.~2%", 
+		a_tex, b_tex, totex(exp_val), fnct_tex, a_tex, b_tex, totex(fnct1)),
+	t_prs : [[name = "f(x)", alias = "f(x)", value = fnct1],
+		[name = "a", alias = "a", value = a],
+		[name = "b", alias = "b", value = b]],
+	rs : matanaliz_find_definite_integral(t_prs),						/* ищем определенный интеграл для дисперсии */
+	append_to_s_l("~a", sconcat(getprop(rs, solution_title), getprop(rs, solution))),
+	ans : getprop(rs, answer),
+	if getprop(ans[1], type)=cant_find_solution then (answ : ans, go(tag_exit)),
+	dispers : getprop(ans[1], value),
+	answ : [
+		[type = root, ts_name = "математическое ожидание", ts_alias = "expected value", value = exp_val],
+		[type = root, ts_name = "дисперсия", ts_alias = "dispersion", value = dispers]],
+	tag_exit,
+	res : [solution_title = st,
+			solution = apply(sconcat, s_l),
+			solution_steps = s_l,
+			answer = answ],
+	res)$
+/* =================================== */
+/* Интегральная теорема Муавра-Лапласа */
+/* =================================== */
+debuglog("integral_theorem_moivre_laplace", debug_message_func_load)$
+integral_theorem_moivre_laplace(prs) := block([res, n, p, q, m1, m2, x1, x2, x1f, x2f, sqdsr, prb, st, s_l, s], s_l : [],
+	debug_start_function("select_finite_set_with_2_variants", [fp_high_level, fp_solver]),
+	[n, p, m1, m2] : get_vals_by_aliases(prs, ["n", "p", "m1", "m2"]),
+	debuglog(printf(false, "n=~a; p=~a; m1=~a; m2=~a", n, p, m1, m2)),
+	if (m1 > m2) then [m1, m2] : [m2, m1],
+	q : 1 - p,
+	st : printf(false, "Найти вероятность того, что случайная величина, наступление которой имеет вероятность $~a$, в $~a$ испытаниях появится от $~a$ до $~a$ раз.", p, n, m1, m2),
+	sqdsr : sqrt(n*p*q),
+	if (sqdsr < 10) then 
+		append_to_s_l("\\textit{Внимание! Величина $\\sqrt{npq}$ слишком мала. Результат применения теоремы Муавра-Лапласа может быть неточным или некорректным.}~2%"),
+	append_to_s_l("$n=~a$ --- число испытаний;~2%", n),
+	append_to_s_l("$p=~a$, $q=~a$ --- вероятности успеха и неуспеха;~2%", p, q),
+	append_to_s_l("$m_1=~a$, $m_2=~a$ --- пределы числа успехов;~2%", m1, m2),
+	[s, x1] : totex_calc_val_approx((v_m1-v_n*v_p)/sqrt(v_n*v_p*v_q),
+		[v_m1 = m1, v_n = n, v_p = p, v_q = q]),
+	debuglog(printf(false, "x1=~a", x1)),
+	append_to_s_l("$x_1=\\frac{m_1-np}{\\sqrt{npq}}=$ ~a;~2%", s),
+	[s, x2] : totex_calc_val_approx((v_m2-v_n*v_p)/sqrt(v_n*v_p*v_q),
+		[v_m2 = m2, v_n = n, v_p = p, v_q = q]),
+	debuglog(printf(false, "x2=~a", x2)),
+	append_to_s_l("$x_2=\\frac{m_2-np}{\\sqrt{npq}}=$ ~a;~2%", s),
+	x1f : 0.5*erf(x1), x2f : 0.5*erf(x2), prb : x2f-x1f,
+	debuglog(printf(false, "x1, x2=~a, ~a", x1, x2)),
+	append_to_s_l("$P(m_1,m_2)=\\Phi(x_2)-\\Phi(x_1)=\\Phi(~a)-\\Phi(~a)=~a-~a=~a$;~2%", 
+		totex(x2), totex(x1), totex(x2f), totex(x1f, "prbim" = true), totex(prb)),
+	answ : [[type = ts_value, ts_name = "вероятность", ts_alias = "probability", value = prb]],
+	debuglog(printf(false, "answ=~a", answ)),
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ===================================================================== */
+/* Вероятность наступления события некоторое число раз по схеме Бернулли */
+/* ===================================================================== */
+debuglog("probability_occurrence_event_number_times_bernoulli_scheme", debug_message_func_load)$
+probability_occurrence_event_number_times_bernoulli_scheme(prs) := block(
+	[res, n, p, q, m1, m2, prb, tx_n, tx_m1, tx_m2, expr, sbst, st, s_l, s], 
+	s_l : [],
+	debug_start_function("probability_occurrence_event_number_times_bernoulli_scheme", [fp_high_level, fp_solver]),
+	[n, p, m1, m2] : get_vals_by_aliases(prs, ["n", "p", "m1", "m2"]),
+	if (m1 > m2) then [m1, m2] : [m2, m1],
+	q : 1 - p,
+	tx_n : totex(n), tx_m1 : totex(m1), tx_m2 : totex(m2),
+	st : printf(false, "Найти вероятность того, что случайная величина, наступление которой имеет вероятность $~a$, в $~a$ испытаниях появится от $~a$ до $~a$ раз.", p, n, m1, m2),
+	s : printf(false, "$n=~a$ --- число испытаний;~2%", n),
+	s : printf(false, "~a$p=~a$, $q=~a$ --- вероятности успеха и неуспеха;~2%", s, p, q),
+	s : printf(false, "~a$m_1=~a$, $m_2=~a$ --- пределы числа успехов;~2%", s, m1, m2),
+	s_l : append(s_l, [s]),
+	if (m1 # m2) 
+		then s : printf(false, "$P_{~a}(~a\\leq m\\leq ~a)=$ ", tx_n, tx_m1, tx_m2)
+		else s : printf(false, "$P_{~a}(m=~a)=$ ", tx_n, tx_m1),
+	s_l : append(s_l, [s]),
+	s : "$",
+	for i : m1 thru m2 do 
+		s : printf(false, "~aP_{~a}(~a)~a", s, tx_n, totex(i), if (i = m2) then "=$ " else "+"),
+	s_l : append(s_l, [s]),
+	s : "$",
+	for i : m1 thru m2 do 
+		s : printf(false, "~aC^{~a}_{~a}p^{~a}q^{~a}~a", s, totex(i), tx_n, totex(i), totex(n-i), if (i = m2) then "=$ " else "+"),
+	s_l : append(s_l, [s]),
+	s : "$",
+	for i : m1 thru m2 do 
+		s : printf(false, 
+			"~a\\frac{~a!}{~a!~a!}\\cdot{~a}^{~a}\\cdot{~a}^{~a}~a", 
+			s, tx_n, totex(i), totex(n-i), totex(p), totex(i), totex(q), totex(n-i), if (i = m2) then "=$ " else "+"),
+	s_l : append(s_l, [s]),
+	expr : 0, 
+	sbst : [],
+	for i : m1 thru m2 do block([pn, pi, pii, pp, pq],
+		pn : gensym("vn"), pi : gensym("vi"), pii : gensym("vii"), pp : gensym("vp"), pq : gensym("vq"),
+		expr : expr + ((pn!)/ (pi!*pii!))*(pp^pi)*(pq^pii),
+		sbst : append(sbst, [pn = n, pi = i, pii = n - i, pp = p, pq = q])),
+	[s, prb] : totex_calc_val(expr, sbst),
+	s_l : append(s_l, [s]),
+	answ : [[type = ts_value, ts_name = "вероятность", ts_alias = "probability", value = prb]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* Выбор из конечной совокупности с двумя вариантами */
+debuglog("select_finite_set_with_2_variants", debug_message_func_load)$
+select_finite_set_with_2_variants(prs) := block([res, n1, n2, vn1, vn2, cn1, cn2, pver, st, ss],
+	debug_start_function("select_finite_set_with_2_variants", [fp_high_level, fp_solver]),
+	n1 : get_val_by_alias(prs,"n1"),
+	n2 : get_val_by_alias(prs,"n2"),
+	vn1 : get_val_by_alias(prs,"vn1"),
+	vn2 : get_val_by_alias(prs,"vn2"),
+	cn1 : get_val_by_alias(prs,"cn1"),
+	cn2 : get_val_by_alias(prs,"cn2"),
+	ss : [],
+	debuglog(printf(false, "n1=~a, n2=~a", n1, n2)),
+	st : printf(false,"Найти вероятность выбора ~a штук из первого варианта и ~a штук из второго варианта.~%~%",cn1,cn2),
+	ss : push(printf(false,"$n_1=~a$ --- ~a~%~%", n1, vn1), ss),
+	ss : push(printf(false,"$n_2=~a$ --- ~a~%~%", n2, vn2), ss),
+	pver : ((n1!)/((n1-cn1)!))*((n2!)/((n2-cn2)!))/(((n1+n2)!)/((n1+n2-cn1-cn2)!)),
+	ss : push(
+		printf(false, "$p=\\frac{A^{~a}_{~a}\\,A^{~a}_{~a}}{A^{~a+~a}_{~a+~a}}=~a\\approx ~5f$~%~%", cn1, n1, cn2, n2, cn1, cn2, n1, n2, to_tex(pver), float(pver)), 
+		ss),
+	answ : [[type=root, value=pver]],
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ====================================================== */
+/* Математическое ожидание дискретной случайной величины, */
+/* заданной таблицей вероятностей                         */
+/* ====================================================== */
+debuglog("discrete_rv_density_table_expect_val", debug_message_func_load)$
+discrete_rv_density_table_expect_val(prs) := block(
+	[res, xp_tbl, x_l, p_l, x_nm, X_nm, psm, n, e_v, calc_expr, calc_ch, st, s, s_l, answ], s_l : [],
+	debug_start_function("discrete_rv_density_table_expect_val", [fp_high_level, fp_solver]),
+	xp_tbl : get_val_by_alias(prs, "xp_table"),
+	X_nm : get_val_by_alias(prs, "X_name", "X"),
+	x_nm : get_val_by_alias(prs, "x_name", "x"),
+	n : length(xp_tbl[1]),
+	x_l : xp_tbl[1], p_l : xp_tbl[2],
+	st : printf(false, 
+		"Найти математическое ожидание дискретной случайной величины $~a$, принимающей $~a$ ~a $~a_i$ с вероятностями $p_i$.~2%~a", 
+		X_nm, n, correct_word_znacheniye(n), x_nm, to_tex_rv_table(xp_tbl)),
+	psm : sum(p_l[i], i, 1, n),
+	if (abs(psm - 1) > 0.0001) then 
+		append_to_s_l("Сумма вероятностей ($~a$) не равна 1. Скорее всего дальнейшее решение неверно.~2%", totex(psm)),
+	calc_expr : 0,
+	calc_ch : [],
+	for i : 1 thru n do block([pp, px],
+		pp : gensym("vp"), px : gensym("vx"),
+		calc_expr : calc_expr + px * pp,
+		calc_ch : push(px = x_l[i], calc_ch),
+		calc_ch : push(pp = p_l[i], calc_ch)),
+	[s, e_v] : totex_calc_val(calc_expr, calc_ch),
+	append_to_s_l("Математическое ожидание:~2%$M[~a]=\\sum_i ~a_i\\,p_i=$ ~a~2%", X_nm, x_nm, s),
+	answ : [[type = ts_single_value, ts_name = "математическое ожидание", ts_caption="$M[X]$", ts_alias = "expected value", value=e_v]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* Математическое ожидание и дисперсия дискретной     */
+/* случайной величины, заданной таблицей вероятностей */
+/* ================================================== */
+debuglog("discrete_rv_density_table_dispersion_and_expect_val", debug_message_func_load)$
+discrete_rv_density_table_dispersion_and_expect_val(prs) := block(
+	[res, 																/* результат функции */
+	xp_tbl,																/* таблица распределения */ 
+	x_l, 																/* список значений */
+	p_l, 																/* список вероятностей */
+	X_nm, 																/* имя случайной величины */
+	x_nm, 																/* имя переменной */
+	psm, n, e_v, d, sgm, calc_expr, calc_ch, st, s, s_l, rs, rs_an, answ], 
+	s_l : [],
+	debug_start_function("discrete_rv_density_table_dispersion_and_expect_val", [fp_high_level, fp_solver]),
+	xp_tbl : get_val_by_alias(prs, "xp_table"),
+	X_nm : get_val_by_alias(prs, "X_name", "X"),
+	x_nm : get_val_by_alias(prs, "x_name", "x"),
+	n : length(xp_tbl[1]),
+	x_l : xp_tbl[1], p_l : xp_tbl[2],
+	st : printf(false, 
+		"Найти математическое ожидание и дисперсию дискретной случайной величины $~a$, принимающей $~a$ ~a $~a_i$ с вероятностями $p_i$.~2%~a", 
+		X_nm, n, correct_word_znacheniye(n), x_nm, to_tex_rv_table(xp_tbl)),
+	rs : discrete_rv_density_table_expect_val(prs),
+	rs_an : getprop(rs, answer),
+	e_v : getprop(rs_an[1], value),
+	s : getprop(rs, solution),
+	s_l : append(s_l, [s]),
+	calc_expr : 0,
+	calc_ch : [],
+	for i : 1 thru n do block([pp, px],
+		pp : gensym("vp"), px : gensym("vx"),
+		calc_expr : calc_expr + px * pp,
+		calc_ch : push(px = x_l[i]^2, calc_ch),
+		calc_ch : push(pp = p_l[i], calc_ch)),
+	calc_expr : calc_expr-ev2,
+	calc_ch : push(ev2 = e_v^2, calc_ch),
+	[s, d] : totex_calc_val(calc_expr, calc_ch),
+	append_to_s_l("Дисперсия:~2%$D[~a]=M[~a^2]-(M[~a])^2=\\sum_i ~a_i^2\\,p_i-(M[~a])^2=$ ~a~2%", X_nm, X_nm, X_nm, x_nm, X_nm, s),
+	sgm : sqrt(d),
+	append_to_s_l("Среднее квадратическое отклонение:~2%$\\sigma=\\sqrt{D[~a]}=\\sqrt{~a}=~a$~2%", X_nm, totex(d), totex(float(sgm))),
+	answ : [
+		[type = ts_single_value, ts_name = "математическое ожидание", ts_caption = "$M[X]$", ts_alias = "expected value", value = e_v],
+		[type = ts_single_value, ts_name = "дисперсия", ts_caption = "$D[X]$", ts_alias = "dispersion", value = d],
+		[type = ts_single_value, ts_name = "среднее квадратическое отклонение", ts_caption = "$\\sigma$", ts_alias = "sigma", value = sgm]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* Закон распределения дискретной                     */
+/* случайной величины, заданной таблицей вероятностей */
+/* ================================================== */
+debuglog("discrete_rv_density_table_distribution_law", debug_message_func_load)$
+discrete_rv_density_table_distribution_law(prs) := block(
+	[res, xp_tbl, x_l, p_l, F_l, X_nm, x_nm, psm, n, xF_tbl, d, calc_expr, calc_ch, st, s, s_l, rs, rs_an, answ], 
+	s_l : [],
+	debug_start_function("discrete_rv_density_table_distribution_law", [fp_high_level, fp_solver]),
+	xp_tbl : get_val_by_alias(prs, "xp_table"),
+	X_nm : get_val_by_alias(prs, "X_name", "X"),
+	x_nm : get_val_by_alias(prs, "x_name", "x"),
+	x_l : xp_tbl[1], p_l : xp_tbl[2], F_l : [],
+	n : length(x_l),
+	st : printf(false, 
+		"Составить закон распределения дискретной случайной величины $~a$, принимающей $~a$ ~a $~a_i$ с вероятностями $p_i$.~2%~a", 
+		X_nm, n, correct_word_znacheniye(n), x_nm, to_tex_rv_table(xp_tbl)),
+	F_l : copylist(p_l),
+	append_to_s_l("$F(~a)=p(~a)=~a$; ", totex(x_l[1]), totex(x_l[1]), totex(F_l[1])),
+	for i : 2 thru n do block([],
+		F_l[i] : F_l[i-1]+p_l[i],
+		append_to_s_l("$F(~a)=F(~a)+p(~a)=~a+~a=~a$;~2%", 
+			totex(x_l[i]), totex(x_l[i-1]), totex(x_l[i]), totex(F_l[i-1]), totex(p_l[i]), totex(F_l[i]))),
+	xF_tbl : matrix(x_l, F_l),
+	append_to_s_l("~2%~a", to_tex_rv_table(xF_tbl)),
+	s : printf(false, "~2%\\begin{tikzpicture}~2%\\begin{axis}"),
+	s : printf(false, "~a[~%xlabel = {$x$},ylabel = {$F$}]~%", s),
+	s : printf(false, "~a~2%\\addplot coordinates {~2%", s),
+	for i : 1 thru n do
+		s : printf(false, "~a(~a,~a) ", s, x_l[i], F_l[i]),
+	s : printf(false, "~a~2%};~2%\\end{axis}~2%\\end{tikzpicture}", s),
+	s_l : append(s_l, [s]),
+	answ : [
+		[type = ts_table, ts_name = "закон распределения", ts_caption="$F[X]$", ts_alias = "distribution law", value = xF_tbl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$
+/* ============================================================================ */
+/* Определить одномерные законы распределения, условные плотности вероятностей, */
+/* матожидания, дисперсии, ковариационный момент и коэффициент корреляции       */
+/* дискретной двумерной случайной величины, заданной таблицей                   */
+/* ============================================================================ */
+debuglog("discrete_rv_d2_density_table_dist_cpd_me_v_cc_ct", debug_message_func_load)$
+discrete_rv_d2_density_table_dist_cpd_me_v_cc_ct(prs) := block(
+	[res,				/* переменная возвращаемого результата */
+	xyp_table, 			/* таблица плотности вероятностей */
+	x_l, y_l, p_l, 		/* списки значений переменных и матрица вероятностей */
+	xn, yn, 				/* число значений переменных */
+	X_nm, x_nm, Y_nm, y_nm,	/* имена переменных */
+	p_x_l, p_y_l,			/* одномерные законы распределения */
+	p_xy_l, p_yx_l,			/* условные плотности вероятностей */
+	ev_x, ev_y, D_x, D_y,	/* математические ожидания, и дисперсии */
+	K_xy, r_xy,				/* ковариационный момент и коэффициент корреляции */
+	p_l_sum,
+	rs, rs_an,
+	psm, n, e_v, d, sgm, calc_expr, calc_ch, st, s, s_l, answ], 
+	s_l : [],
+	debug_start_function("discrete_rv_d2_density_table_dist_cpd_me_v_cc_ct", [fp_high_level, fp_solver]),
+	xyp_table : get_val_by_alias(prs, "xyp_table"),
+	X_nm : get_val_by_alias(prs, "X_name", "X"),
+	x_nm : get_val_by_alias(prs, "x_name", "x"),
+	Y_nm : get_val_by_alias(prs, "Y_name", "Y"),
+	y_nm : get_val_by_alias(prs, "y_name", "y"),
+	[xn, yn] : matrix_size(xyp_table) - 1,
+	x_l : makelist(xyp_table[i+1, 1], i, 1, xn),
+	y_l : makelist(xyp_table[1, j+1], j, 1, yn),
+	p_l : minor(xyp_table, 1, 1),
+	st : printf(false, 
+		"~a~a~2%~a~2%",
+		"Найти одномерные законы распределения, условные плотности вероятностей, математические ожидания, ",
+		"дисперсии, ковариационный момент и коэффициент корреляции дискретной двумерной случайной величины, заданной таблицей:",
+		to_tex_table(p_l, [ts_top_captions = y_l, ts_left_captions = x_l])),
+	p_l_sum : sum(sum(p_l[i][j], i, 1, xn), j, 1, yn),
+	if equal(p_l_sum, 0) then (
+		s : printf(false, 
+			"Сумма вероятностей $~a$ не равна единице. Такого быть не должно. Все дальнейшие действия могут быть неверными. ~2%", 
+			totex(p_l_sum)),
+		s_l : append(s_l, [s])),
+	/* Одномерные законы распределения */
+	debuglog(printf(false, "One-dimensional")),
+	s : printf(false, "Плотности вероятности для величины $~a$:~2%", x_nm),		/* закон распределения для x */
+	s_l : append(s_l, [s]),
+	p_x_l : makelist(0, length(x_l)),
+	for i : 1 thru xn do (
+		[s, p_x_l[i]] : totex_calc_val_formula(lambda([ppl], sum(ppl[i][k], k, 1, yn)), [p_l]),
+		s : printf(false, 
+			"$P(~a=~a)=\\sum_{j=1}^{~a} p_{~aj}=$ ~a~2%", 
+			x_nm, totex(x_l[i]), totex(yn), totex(i), s),
+		s_l : append(s_l, [s])),
+	s : printf(false, 
+		"Одномерный закон распределения для ~a\\\\~a~2%", 
+		x_nm, to_tex_table([x_l, p_x_l], [ts_left_captions=["$x_i$", "$p_i$"]])),
+	s_l : append(s_l, [s]),
+	s : printf(false, "Плотности вероятности для величины $~a$:~2%", y_nm),		/* закон распределения для y */
+	s_l : append(s_l, [s]),
+	p_y_l : makelist(0, length(y_l)),
+	for i : 1 thru yn do (
+		[s, p_y_l[i]] : totex_calc_val_formula(lambda([ppl], sum(ppl[k][i], k, 1, xn)), [p_l]),
+		s : printf(false, 
+			"$P(~a=~a)=\\sum_{i=1}^{~a} p_{i~a}=$ ~a~2%", 
+			y_nm, totex(y_l[i]), totex(xn), totex(i), s),
+		s_l : append(s_l, [s])),
+	s : printf(false, 
+		"Одномерный закон распределения для ~a\\\\~a~2%",  
+		y_nm, to_tex_table([y_l, p_y_l], [ts_left_captions=["$y_i$", "$p_i$"]])),
+	s_l : append(s_l, [s]),
+	/* Условные плотности вероятностей */
+	debuglog(printf(false, "One-dimensional uslovnie")),
+	p_xy_l : transpose(transpose(p_l) / p_y_l),		/* условные вероятности x по y */
+	s : printf(false, "Условные плотности вероятностей $~a$ по $~a$:~2%", x_nm, y_nm),
+	s_l : append(s_l, [s]),
+	for j : 1 thru yn do
+		for i : 1 thru xn do block(
+			s : printf(false,
+				"$P(~a=~a|~a=~a)=\\frac{~a}{~a}=~a$;~2%",
+				x_nm, totex(x_l[i]), y_nm, totex(y_l[j]), totex(p_l[i, j]), totex(p_y_l[j]), totex(p_xy_l[i,j])),
+			s_l : append(s_l, [s])),
+	p_yx_l : p_l / p_x_l,		/* условные вероятности y по x */
+	s : printf(false, "Условные плотности вероятностей $~a$ по $~a$:~2%", y_nm, x_nm),
+	s_l : append(s_l, [s]),
+	for i : 1 thru xn do
+		for j : 1 thru yn do block(
+			s : printf(false,
+				"$P(~a=~a|~a=~a)=\\frac{~a}{~a}=~a$;~2%",
+				y_nm, totex(y_l[j]), x_nm, totex(x_l[i]), totex(p_l[i, j]), totex(p_x_l[i]), totex(p_yx_l[i,j])),
+			s_l : append(s_l, [s])),
+	/* Математические ожидания */
+	debuglog(printf(false, "One-dimensional expected values")),
+	s : printf(false, "Математическое ожидание случайной величины $~a$:~2%", x_nm),
+	s_l : append(s_l, [s]),
+	[s, ev_x] : totex_calc_val_formula(
+		lambda([ppxl, pxl], sum(ppxl[i]*pxl[i], i, 1, xn)), 
+		[p_x_l, x_l]),
+	s : printf(false,
+		"$m_{~a}=\\sum^{~a}_{i=1}\\sum^{~a}_{j=1} ~a_i p_{ij}=$ ~a~2%",
+		x_nm, totex(xn), totex(yn), x_nm, s),
+	s_l : append(s_l, [s]),
+	s : printf(false, "Математическое ожидание случайной величины $~a$:~2%", y_nm),
+	s_l : append(s_l, [s]),
+	[s, ev_y] : totex_calc_val_formula(
+		lambda([ppyl, pyl], sum(ppyl[i]*pyl[i], i, 1, yn)), 
+		[p_y_l, y_l]),
+	s : printf(false,
+		"$m_{~a}=\\sum^{~a}_{i=1}\\sum^{~a}_{j=1} ~a_j p_{ij}=$ ~a~2%",
+		y_nm, totex(xn), totex(yn), y_nm, s),
+	s_l : append(s_l, [s]),
+	/* Дисперсии */
+	debuglog(printf(false, "One-dimensional dispersions")),
+	s : printf(false, "Дисперсия случайной величины $~a$:~2%", x_nm),
+	s_l : append(s_l, [s]),
+	[s, D_x] : totex_calc_val_formula(
+		lambda([ppxl, pxl, pevx], sum(ppxl[i]*pxl[i]^2, i, 1, xn)-pevx^2), 
+		[p_x_l, x_l, ev_x]),
+	s : printf(false,
+		"$\\sigma^2_{~a}=\\sum^{~a}_{i=1}\\sum^{~a}_{j=1} ~a^2_i p_{ij}-(m_{~a})^2=$ ~a~2%",
+		x_nm, totex(xn), totex(yn), x_nm, x_nm, s),
+	s_l : append(s_l, [s]),
+	s : printf(false, "Дисперсия случайной величины $~a$:~2%", y_nm),
+	s_l : append(s_l, [s]),
+	[s, D_y] : totex_calc_val_formula(
+		lambda([ppyl, pyl, pevy], sum(ppyl[i]*pyl[i]^2, i, 1, yn)-pevy^2), 
+		[p_y_l, y_l, ev_y]),
+	s : printf(false,
+		"$\\sigma^2_{~a}=\\sum^{~a}_{i=1}\\sum^{~a}_{j=1} ~a^2_j p_{ij}-(m_{~a})^2=$ ~a~2%",
+		y_nm, totex(xn), totex(yn), y_nm, y_nm, s),
+	s_l : append(s_l, [s]),
+	/* Ковариационный момент и коэффициент корреляции */
+	debuglog(printf(false, "Covariative moment")),
+	s : printf(false, "Ковариационный момент:~2%"),
+	s_l : append(s_l, [s]),
+	[s, K_xy] : totex_calc_val_formula(
+		lambda([ppl, pxl, pyl], sum(sum(ppl[i][j]*(pxl[i]-ev_x)*(pyl[j]-ev_y), i, 1, xn), j, 1, yn)), 
+		[p_l, x_l, y_l]),
+	s : printf(false,
+		"$K_{~a~a}=\\sum^{~a}_{i=1}\\sum^{~a}_{j=1} p_{ij}(~a_i-m_{~a})(~a_i-m_{~a})=$ ~a~2%",
+		x_nm, y_nm, totex(xn), totex(yn), x_nm, x_nm, y_nm, y_nm, s),
+	s_l : append(s_l, [s]),
+	s : printf(false, "Коэффициент корреляции:~2%"),
+	s_l : append(s_l, [s]),
+	r_xy : K_xy/(sqrt(D_x*D_y)),
+	s : printf(false,
+		"$r_{~a~a}=\\frac{K_{~a~a}}{\\sigma_{~a}\\sigma_{~a}}=\\frac{~a}{~a\\cdot~a}=~a$~2%",
+		x_nm, y_nm, x_nm, y_nm, x_nm, y_nm, totex(K_xy), totex(sqrt(D_x)), totex(sqrt(D_y)), totex(r_xy)),
+	s_l : append(s_l, [s]),
+	answ : [
+		[type = ts_single_value, ts_name = "математическое ожидание $x$", ts_caption="$m_x$", ts_alias = "expected value x", value = ev_x],
+		[type = ts_single_value, ts_name = "математическое ожидание $y$", ts_caption="$m_y$", ts_alias = "expected value y", value = ev_y],
+		[type = ts_single_value, ts_name = "дисперсия $x$", ts_caption="$\\sigma^2_x$", ts_alias = "dispersion x", value = D_x],
+		[type = ts_single_value, ts_name = "дисперсия $y$", ts_caption="$\\sigma^2_y$", ts_alias = "dispersion y", value = D_y]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debug_end_function(),
+	res)$

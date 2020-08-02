@@ -1,0 +1,186 @@
+/* ====================================================== */
+/* ================ Неформальные задания ================ */
+/* ================ Теория вероятностей ================= */
+/* ====================================================== */
+debuglog("it_chances.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ================================================= */
+/* Закон распределения дискретной случайной величины */
+/* заданной таблицей вероятностей                    */
+/* ================================================= */
+informaltask_chances_discrete_rv_density_table_distribution_law : [
+	category = [ts_chances],
+	name = "chances_discrete_rv_density_table_distribution_law",
+	shortname = "mc_drvdtdl",
+	readiness = ts_full_readiness,
+	short_description = "Найти закон распределения дискретной случайной величины, заданной таблицей вероятностей",
+	text = 
+		"Найти закон распределения дискретной случайной величины, принимающей $n$ значений $x_i$ с вероятностями $p_i$.",
+	taskparams = [[parname = "xp", pr_name = "xp", pr_caption = "chances table", alias = "xp_table", pr_type = type_m_real_height_eq2,
+		ts_default_value =  matrix([0, 1, 2, 3, 4], [0.2, 0.15, 0.15, 0.2, 0.3])]],
+	solver = discrete_rv_density_table_distribution_law]$
+push(informaltask_chances_discrete_rv_density_table_distribution_law, informaltasks)$
+/* ===================================================== */
+/* Математическое ожидание дискретной случайной величины */
+/* заданной таблицей вероятностей                        */
+/* ===================================================== */
+informaltask_chances_discrete_rv_density_table_expect_val : [
+	category = [ts_chances],
+	name = "chances_discrete_rv_density_table_expect_val",
+	shortname = "mc_drvdtev",
+	readiness = ts_full_readiness,
+	short_description = "Найти математическое ожидание дискретной случайной величины, заданной таблицей вероятностей",
+	text = 
+		"Найти математическое ожидание дискретной случайной величины, принимающей $n$ значений $x_i$ с вероятностями $p_i$.",
+	taskparams = [[parname = "xp", pr_name = "xp", pr_caption = "chances table", alias = "xp_table", pr_type = type_m_real_height_eq2,
+		ts_default_value =  matrix([0, 1, 2, 3, 4], [0.2, 0.15, 0.15, 0.2, 0.3])]],
+	solver = discrete_rv_density_table_expect_val]$
+push(informaltask_chances_discrete_rv_density_table_expect_val, informaltasks)$
+/* ================================================= */
+/* Математическое ожидание и дисперсию дискретной    */
+/* случайной величины заданной таблицей вероятностей */
+/* ================================================= */
+informaltask_chances_discrete_rv_density_table_dispersion_and_expect_val : [
+	category = [ts_chances],
+	name = "chances_discrete_rv_density_table_dispersion_and_expect_val",
+	shortname = "mc_drvdtdev",
+	readiness = ts_full_readiness,
+	short_description = "Найти математическое ожидание и дисперсию дискретной случайной величины, заданной таблицей вероятностей",
+	text = 
+		"Найти математическое ожидание и дисперсию дискретной случайной величины, принимающей $n$ значений $x_i$ с вероятностями $p_i$.",
+	taskparams = [[parname = "xp", pr_name = "xp", pr_caption = "chances table", alias = "xp_table", pr_type = type_m_real_height_eq2,
+		ts_default_value =  matrix([0, 1, 2, 3, 4], [0.2, 0.15, 0.15, 0.2, 0.3])]],
+	solver = discrete_rv_density_table_dispersion_and_expect_val]$
+push(informaltask_chances_discrete_rv_density_table_dispersion_and_expect_val, informaltasks)$
+/* ============================================================================ */
+/* Определить одномерные законы распределения, условные плотности вероятностей, */
+/* матожидания, дисперсии, ковариационный момент и коэффициент корреляции       */
+/* дискретной двумерной случайной величины, заданной таблицей                   */
+/* ============================================================================ */
+informaltask_chances_discrete_rv_d2_density_table_dist_cpd_me_v_cc_ct : [
+	category = [ts_chances],
+	name = "chances_discrete_rv_d2_density_table_dist_cpd_me_v_cc_ct",
+	shortname = "mc_drv2dtdcmvcc",
+	readiness = ts_full_readiness,
+	short_description = "Характеристики дискретной двумерной случайной величины, заданной таблицей",
+	text = 
+		"Определить одномерные законы распределения, условные плотности вероятностей, матожидания, дисперсии, ковариационный момент и коэффициент корреляции дискретной двумерной случайной величины, заданной таблицей.",
+	/* ts_note = "", */
+	taskparams = [[parname = "xyp", pr_name = "xp", pr_caption = "chances table", alias = "xyp_table", pr_type = type_m_real,
+		ts_default_value = matrix([10, 11, 10, 11], [0, 0, 1, 1], [0.25, 0.25, 0.25, 0.25])]],
+	solver = discrete_rv_d2_density_table_dist_cpd_me_v_cc_ct]$
+push(informaltask_chances_discrete_rv_d2_density_table_dist_cpd_me_v_cc_ct, informaltasks)$
+/* ====================================================== */
+/* Математическое ожидание непрерывной случайной величины */
+/* заданной функцией плотности вероятности на промежутке  */
+/* ====================================================== */
+informaltask_chances_cont_rv_density_func_expect_val : [
+	category = [ts_chances],
+	name = "chances_cont_rv_density_func_expect_val",
+	shortname = "mc_crvdfev",
+	readiness = ts_full_readiness,
+	short_description = "Найти математическое ожидание непрерывной случайной величины, заданной функцией плотности вероятности",
+	text = 
+		"Найти математическое ожидание непрерывной случайной величины, заданной функцией плотности вероятности $f(\\x)$ на промежутке $a \\leq x \\leq b$ (равной нулю в остальных точках).",
+	taskparams = [
+		[parname = "f(\\x)", pr_name = "f_x", pr_caption = "f(x)", alias = "f(x)", pr_type = type_s_function_x, 
+			pr_hint = "Функция плотности вероятности",
+			ts_default_value = x],
+		[parname = "a", pr_name = "a", pr_caption = "a", alias = "a", pr_type = type_s_real, 
+			pr_hint = "Начало интервала с ненулевой плотностью вероятности",
+			ts_default_value = 0],
+		[parname = "b", pr_name = "b", pr_caption = "b", alias = "b", pr_type = type_s_real, 
+			pr_hint = "Конец интервала с ненулевой плотностью вероятности",
+			ts_default_value = 1]],
+	solver = chances_cont_rv_density_func_expect_val]$
+push(informaltask_chances_cont_rv_density_func_expect_val, informaltasks)$
+/* ================================================================== */
+/* Дисперсия и математическое ожидание непрерывной случайной величины */
+/* заданной функцией плотности вероятности на промежутке              */
+/* ================================================================== */
+informaltask_chances_cont_rv_density_func_dispersion_and_expect_val : [
+	category = [ts_chances],
+	name = "chances_cont_rv_density_func_dispersion_and_expect_val",
+	shortname = "mc_crvdfdev",
+	readiness = ts_full_readiness,
+	short_description = "Найти математическое ожидание и дисперсию непрерывной случайной величины, заданной функцией плотности вероятности",
+	text = 
+		"Найти математическое ожидание и дисперсию непрерывной случайной величины, заданной функцией плотности вероятности $f(\\x)$ на промежутке $a \\leq x \\leq b$ (равной нулю в остальных точках).",
+	taskparams = [
+		[parname = "f(\\x)", pr_name = "f_x", pr_caption = "f(x)", alias = "f(x)", pr_type = type_s_function_x, 
+			pr_hint = "Функция плотности вероятности",
+			ts_default_value = x],
+		[parname = "a", pr_name = "a", pr_caption = "a", alias = "a", pr_type = type_s_real, 
+			pr_hint = "Начало интервала с ненулевой плотностью вероятности",
+			ts_default_value = 0],
+		[parname = "b", pr_name = "b", pr_caption = "b", alias = "b", pr_type = type_s_real, 
+			pr_hint = "Конец интервала с ненулевой плотностью вероятности",
+			ts_default_value = 1]],
+	solver = chances_cont_rv_density_func_dispersion_and_expect_val]$
+push(informaltask_chances_cont_rv_density_func_dispersion_and_expect_val, informaltasks)$
+/* =================================== */
+/* Интегральная теорема Муавра-Лапласа */
+/* =================================== */
+informaltask_chances_integral_theorem_moivre_laplace : [
+	category = [ts_chances],
+	name = "chances_integral_theorem_moivre_laplace",
+	shortname = "mc_itml",
+	readiness = ts_full_readiness,
+	short_description = "Найти вероятность с помощью интегральной теоремы Муавра-Лапласа",
+	text = 
+		"Найти вероятность того, что случайная величина, наступление которой имеет вероятность $p$, в $n$ испытаниях появится от $m_1$ до $m_2$ раз.",
+	taskparams = [
+		[parname = "n", pr_name = "n", pr_caption = "n", alias = "n", pr_type = type_s_integer_positive, 
+			pr_hint = "Число испытаний",
+			ts_default_value = 100],
+		[parname = "p", pr_name = "p", pr_caption = "p", alias = "p", pr_type = type_s_real_0_1, 
+			pr_hint = "Вероятность наступления события при каждом испытании",
+			ts_default_value = 0.5],
+		[parname = "m_1", pr_name = "m1", pr_caption = "m_1", alias = "m1", pr_type = type_s_natural, 
+			pr_hint = "Нижний предел числа наступления событий",
+			ts_default_value = 1],
+		[parname = "m_2", pr_name = "m2", pr_caption = "m_2", alias = "m2", pr_type = type_s_natural, 
+			pr_hint = "Верхний предел числа наступления событий",
+			ts_default_value = 10]],
+	solver = integral_theorem_moivre_laplace]$
+push(informaltask_chances_integral_theorem_moivre_laplace, informaltasks)$
+/* =================================================== */
+/* Вероятность наступления события некоторое число раз */
+/* по схеме Бернулли                                   */
+/* =================================================== */
+informaltask_probability_occurrence_event_number_times_bernoulli_scheme : [
+	category = [ts_chances],
+	name = "probability_occurrence_event_number_times_bernoulli_scheme",
+	shortname = "mc_poentbs",
+	readiness = ts_full_readiness,
+	short_description = "Вероятность наступления события некоторое число раз по схеме Бернулли",
+	text = "Найти вероятность того, что событие, вероятность наступления которого равна $p$, появится в $n$ испытаниях от $m_1$ до $m_2$ раз.",
+	taskparams = [
+		[parname = "n", pr_name = "n", pr_caption = "n", alias = "n", pr_type = type_s_integer_positive,
+			pr_hint = "Число испытаний",
+			ts_default_value = 100],
+		[parname = "p", pr_name = "p", pr_caption = "p", alias = "p", pr_type = type_s_real_0_1, 
+			pr_hint = "Вероятность наступления события при каждом испытании",
+			ts_default_value = 0.5],
+		[parname = "m_1", pr_name = "m1", pr_caption = "m_1", alias = "m1", pr_type = type_s_natural, 
+			pr_hint = "Нижний предел числа наступления событий",
+			ts_default_value = 1],
+		[parname = "m_2", pr_name = "m2", pr_caption = "m_2", alias = "m2", pr_type = type_s_natural, 
+			pr_hint = "Верхний предел числа наступления событий",
+			ts_default_value = 10]],
+	solver = probability_occurrence_event_number_times_bernoulli_scheme]$
+push(informaltask_probability_occurrence_event_number_times_bernoulli_scheme, informaltasks)$
+/* ================================================= */
+/* Выбор из конечной совокупности с двумя вариантами */
+/* ================================================= */
+informaltask_select_finite_set_with_2_variants : [
+	category = [ts_chances],
+	name = "select_finite_set_with_2_variants",
+	shortname = "mc_fs2v",
+	readiness = ts_test_readiness,
+	text = "Найти вероятность выбора cn_1 штук из первого варианта и cn_2 штук из второго варианта.",
+	taskparams = [[parname = "n1", alias = "n1", ts_default_value = 1],
+				[parname = "n2", alias = "n2", ts_default_value = 1],
+				[parname = "cn1", alias = "cn1", ts_default_value = 1],
+				[parname = "cn2", alias = "cn2", ts_default_value = 1]], 
+	solver = select_finite_set_with_2_variants]$

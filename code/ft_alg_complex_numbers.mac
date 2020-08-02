@@ -1,0 +1,67 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ====================== Алгебра ===================== */
+/* ================= Комплексные числа ================ */
+/* ==================================================== */
+debuglog("ft_alg_complex_numbers.mac", debug_message_module_load)$
+/* ==================================================== */
+/* Записать комплексное число в тригонометрическом виде */
+/* ==================================================== */
+debuglog("complex_number_to_trig_form", debug_message_func_load)$
+complex_number_to_trig_form(prs) := block(
+	[res, 																/* результат функции */
+	a, b,																/* параметры */
+	a_n, b_n,
+	r, phi,																/* модуль и аргумент */
+	ttx_a, ttx_b, ttx_r, ttx_phi,
+	rs, rs_ans,
+	st, ss, s_l, s,														/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [],
+	debug_start_function("complex_number_to_trig_form", [fp_high_level, fp_solver]),
+	[a, b, a_n, b_n] : 
+		get_vals_by_aliases(prs, ["x", "y", "x name", "y name"]),		/* получаем параметры */
+	if (a_n = false) then a_n : "x",
+	if (b_n = false) then b_n : "y",
+	ttx_a : totex(a),
+	ttx_b : totex(b),
+	st : printf(false,
+		"Записать комплексное число $z=~a ~a\\cdot i$ в тригонометрическом виде.",
+		ttx_a, totex(b, "ppinm" = true)),
+	r : sqrt(a^2+b^2),
+	ttx_r : totex(r),
+	append_to_s_l("Найдем модуль комплексного числа $r=|z|=\\sqrt{(~a)^2+(~a)^2}=~a$.~2%",
+		ttx_a, ttx_b, ttx_r),
+	if (r = 0) then (
+		append_to_s_l("Поскольку модуль равен нулю, то аргумент может принимать любое значение. Для определенности примем, что $\\varphi = 0$.~2%"),
+		phi : 0,
+		go(tag_answ)),
+	append_to_s_l("Косинус аргумента равен $\\cos(\\varphi)=\\frac{~a}{r}=~a$, а синус аргумента равен $\\sin(\\varphi)=\\frac{~a}{r}=~a$. ",
+		a_n, totex(a/r), b_n, totex(b/r)),
+	append_to_s_l("Таким образом $\\varphi=\\pm\\arccos\\left(~a\\right)=\\pm\\left(~a\\right)$. ",
+		totex(a/r), totex(acos(a/r))),
+	append_to_s_l("Так как $\\sin(\\varphi)$ ~a, значит знак аргумента должен быть ~a, ",
+		if (b >= 0) then "больше или равен нулю" else "меньше нуля",
+		if (b >= 0) then "положительным" else "отрицательным"),
+	phi : if (b >= 0) then acos(a/r) else -acos(a/r),
+	ttx_phi : totex(phi),
+	append_to_s_l("то есть $\\varphi = ~a$.~2%",
+		ttx_phi),
+	tag_answ,
+	append_to_s_l("$$z=~a\\cdot\\left(\\cos\\left(~a\\right)+i\\cdot\\sin\\left(~a\\right)\\right)$$",
+		totex(r), ttx_phi, ttx_phi),
+	answ : [[type = ts_value, 
+		ts_name = "модуль", 
+		ts_caption="r",
+		ts_alias = "r", 
+		value = r],
+		[type = ts_value, 
+		ts_name = "аргумент", 
+		ts_caption="\\varphi",
+		ts_alias = "phi", 
+		value = phi]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$

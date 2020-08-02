@@ -1,0 +1,119 @@
+/* ==================================================== */
+/* ================ Паттерны для интегрирования ======= */
+/* ====================== матанализ =================== */
+/* ==================================================== */
+debuglog("formaltasks_integrate_patterns.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ======================== */
+/*   Табличные интегралы    */
+/* ======================== */
+table_for_integrate_by_table : []$
+/* matchdeclare(const_x_pc1, freeof(x)); */
+/* defmatch(const_x_p, const_x_pc1, x); */
+const_x_p(cxp_expr, cxp_x) := freeof(cxp_x, cxp_expr)$
+/* Линейная функция от x */
+matchdeclare(linear_x_pc1, lambda([e], e#0 and freeof(x, e)), linear_x_pc2, freeof(x))$
+defmatch(linear_x_p, linear_x_pc1*x+linear_x_pc2, x)$
+/* Рациональные функции от x */
+matchdeclare(power_m1_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	power_m1_x_p_c2, lambda([e], e#0 and freeof(x, e)), 
+	power_m1_x_p_c3, freeof(x))$
+defmatch(power_m1_x_p, power_m1_x_p_c1/(power_m1_x_p_c2*x+power_m1_x_p_c3), x)$
+matchdeclare(power_x_p_c1, freeof(x), 
+	power_x_p_c2, lambda([e], e#0 and freeof(x, e)), 
+	power_x_p_c3, freeof(x), 
+	power_x_p_c4, lambda([e], e#0 and e#-1 and freeof(x, e)))$
+defmatch(power_x_p, power_x_p_c1*(power_x_p_c2*x+power_x_p_c3)^power_x_p_c4, x)$
+matchdeclare(power_m2pc_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	power_m2pc_x_p_c2, lambda([e], e>0 and freeof(x, e)), 
+	power_m2pc_x_p_c3, lambda([e], e#0 and freeof(x, e)),
+	power_m2pc_x_p_c4, freeof(x))$
+defmatch(power_m2pc_x_p, power_m2pc_x_p_c1/(power_m2pc_x_p_c2+(power_m2pc_x_p_c3*x+power_m2pc_x_p_c4)^2), x)$
+matchdeclare(power_m2mc_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	power_m2mc_x_p_c2, lambda([e], e<0 and freeof(x, e)), 
+	power_m2mc_x_p_c3, lambda([e], e#0 and freeof(x, e)),
+	power_m2mc_x_p_c4, freeof(x))$
+defmatch(power_m2mc_x_p, power_m2mc_x_p_c1/(power_m2mc_x_p_c2+(power_m2mc_x_p_c3*x+power_m2mc_x_p_c4)^2), x)$
+/* Иррациональные функции от x */
+matchdeclare(irrat_dvsqpcmx_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	irrat_dvsqpcmx_x_p_c2, lambda([e], e>0 and freeof(x, e)), 
+	irrat_dvsqpcmx_x_p_c3, lambda([e], e#0 and freeof(x, e)),
+	irrat_dvsqpcmx_x_p_c4, freeof(x))$
+defmatch(irrat_dvsqpcmx_x_p, irrat_dvsqpcmx_x_p_c1/sqrt(irrat_dvsqpcmx_x_p_c2-(irrat_dvsqpcmx_x_p_c3*x+irrat_dvsqpcmx_x_p_c4)^2), x)$
+matchdeclare(irrat_dvsqpcmx_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	irrat_dvsqpcmx_x_p_c2, lambda([e], e#0 and freeof(x, e)))$
+defmatch(irrat_dvsqcpx_x_p, irrat_dvsqcpx_x_p_c1/sqrt(irrat_dvsqcpx_x_p_c2+x^2), x)$
+/* Показательная функция от x */
+matchdeclare(expon_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	expon_x_p_c2, lambda([e], e#1 and e>0 and freeof(x, e)), 
+	expon_x_p_c3, lambda([e], e#0 and freeof(x, e)), 
+	expon_x_p_c4, freeof(x))$
+defmatch(expon_x_p, expon_x_p_c1*expon_x_p_c2^(expon_x_p_c3*x+expon_x_p_c4), x)$
+/* Логарифмическая функция от x */
+matchdeclare(logar_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	logar_x_p_c2, lambda([e], e#0 and freeof(x, e)), 
+	logar_x_p_c3, freeof(x))$
+defmatch(logar_x_p, logar_x_p_c1*log(logar_x_p_c2*x+logar_x_p_c3), x)$
+/* Тригонометрические функции от x */
+matchdeclare(sin_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	sin_x_p_c2, lambda([e], e#0 and freeof(x, e)), 
+	sin_x_p_c3, freeof(x))$
+defmatch(sin_x_p, sin_x_p_c1*sin(sin_x_p_c2*x+sin_x_p_c3), x)$
+matchdeclare(cos_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	cos_x_p_c2, lambda([e], e#0 and freeof(x, e)), 
+	cos_x_p_c3, freeof(x))$
+defmatch(cos_x_p, cos_x_p_c1*cos(cos_x_p_c2*x+cos_x_p_c3), x)$
+matchdeclare(tan_x_p_c1, lambda([e], e#0 and freeof(x, e)), 
+	tan_x_p_c2, lambda([e], e#0 and freeof(x, e)), 
+	tan_x_p_c3, freeof(x))$
+defmatch(tan_x_p, tan_x_p_c1*tan(tan_x_p_c2*x+tan_x_p_c3), x)$
+/* */
+table_for_integrate_by_table : [
+	/* Линейная функция от x */
+	[pattern=linear_x_p,
+	steps=[(linear_x_pc1/2)*x^2+linear_x_pc2*x]],
+	/* Рациональные функции от x */
+	[pattern=power_m1_x_p,
+	steps=[power_m1_x_p_c1*log(power_m1_x_p_c2*x+power_m1_x_p_c3)/power_m1_x_p_c2]],
+	[pattern=power_x_p,
+	steps=[(power_x_p_c1/(power_x_p_c2*(power_x_p_c4+1)))*(power_x_p_c2*x+power_x_p_c3)^(power_x_p_c4+1)]],
+	[pattern=power_m2pc_x_p,
+	steps=[power_m2pc_x_p_c1*atan((2*power_m2pc_x_p_c3^2*x+2*power_m2pc_x_p_c3*power_m2pc_x_p_c4)/(2*sqrt(power_m2pc_x_p_c2)*power_m2pc_x_p_c3))/(sqrt(power_m2pc_x_p_c2)*power_m2pc_x_p_c3)]],
+	[pattern = power_m2mc_x_p,
+	steps = [power_m2mc_x_p_c1*log((power_m2mc_x_p_c3*x+power_m2mc_x_p_c4-sqrt(power_m2mc_x_p_c2))/(power_m2mc_x_p_c3*x+power_m2mc_x_p_c4+sqrt(power_m2mc_x_p_c2)))/(2*sqrt(power_m2mc_x_p_c2)*power_m2mc_x_p_c3)]],
+	/* Иррациональные функции от x */
+	[pattern = irrat_dvsqpcmx_x_p,
+	steps = [irrat_dvsqpcmx_x_p_c1*asin((irrat_dvsqpcmx_x_p_c3*x+irrat_dvsqpcmx_x_p_c4)/sqrt(irrat_dvsqpcmx_x_p_c2))/irrat_dvsqpcmx_x_p_c3]],
+	[pattern = irrat_dvsqcpx_x_p,
+	steps = [irrat_dvsqcpx_x_p_c1*log(x+sqrt(irrat_dvsqcpx_x_p_c2+x^2))]],
+	/* Показательная функция от x */
+	[pattern=expon_x_p,
+	steps=[(expon_x_p_c1*expon_x_p_c2^(expon_x_p_c3*x+expon_x_p_c4))/(log(expon_x_p_c2)*expon_x_p_c3)]],
+	/* Логарифмическая функция от x */
+	[pattern=logar_x_p,
+	steps=[logar_x_p_c1*((logar_x_p_c2*x+logar_x_p_c3)*log(logar_x_p_c2*x+logar_x_p_c3)-(logar_x_p_c2*x+logar_x_p_c3))/logar_x_p_c2]],
+	/* Тригонометрические функции от x */
+	[pattern=sin_x_p,
+	steps=[-(sin_x_p_c1/sin_x_p_c2)*cos(sin_x_p_c2*x+sin_x_p_c3)]],
+	[pattern=cos_x_p,
+	steps=[(cos_x_p_c1/cos_x_p_c2)*sin(cos_x_p_c2*x+cos_x_p_c3)]],
+	[pattern=tan_x_p,
+	steps=[-tan_x_p_c1*log(cos(tan_x_p_c2*x+tan_x_p_c3))/tan_x_p_c2]]
+]$
+/* ============================ */
+/*   Интегрирование по частям   */
+/* ============================ */
+matchdeclare(int_bp_x_sin_c1, lambda([e], e#0 and freeof(x, e)), 
+             int_bp_x_sin_c2, freeof(x),
+             int_bp_x_sin_c3, lambda([e], e#0 and freeof(x, e)),
+             int_bp_x_sin_c4, freeof(x));
+defmatch(int_bp_x_sin_p, (int_bp_x_sin_c1*x+int_bp_x_sin_c1)*sin(int_bp_x_sin_c3*x+int_bp_x_sin_c4), x);
+/* [pattern,[u,dv,du,v]] */
+patterns_for_integrate_by_parts : [
+	[pattern = int_bp_x_sin_p, 
+	 pred = [],
+	 f_u  = int_bp_x_sin_c1*x+int_bp_x_sin_c1,
+	 f_dv = sin(int_bp_x_sin_c3*x+int_bp_x_sin_c4),
+	 f_du = int_bp_x_sin_c1,
+	 f_v  = -cos(int_bp_x_sin_c3*x+int_bp_x_sin_c4)/int_bp_x_sin_c3]
+]$

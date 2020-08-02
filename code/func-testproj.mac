@@ -1,0 +1,31 @@
+/* ===================================================== */
+/* =========== Функции генерации тестов ================ */
+/* ===================================================== */
+/* +++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+debuglog("func-testproj.mac", debug_message_module_load)$
+/* ============================================= */
+/* Функция генерирует все варианты проекта-теста */
+/* ============================================= */
+debuglog("generate_test_project_variants", debug_message_func_load)$
+generate_test_project_variants(prj) := block([res, var_num, prj_tasks, prj_tasks_test_desc], res : prj,
+	debug_start_function("generate_test_project_variants", [fp_high_level, fp_common]),
+	var_num : getprop(prj, ts_test_variants_num),							/* количество генерируемых вариантов */
+	prj_tasks_test_desc : getprop(prj, project_tasks_test_description),		/* параметры генерации заданий проекта */
+	for task_desc in prj_tasks_test_desc do block([c_tsk],
+		c_tsk : generate_task_test_random_variant(task_desc)
+		),
+			/*  */
+			/*  */
+			/*  */
+			/*  */
+			/*  */
+	debug_end_function(),
+	res)$
+/* ========================================================= */
+/* Функция генерирует случайный вариант для описания задания */
+/* ========================================================= */
+generate_task_test_random_variant(tsk_desc) := block([res],
+	debug_start_function("generate_task_test_random_variant", [fp_high_level, fp_common]),
+	/* !TODO! */
+	debug_end_function(),
+	res)$

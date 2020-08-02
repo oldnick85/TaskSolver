@@ -1,0 +1,156 @@
+/* ====================================================== */
+/* ================ Неформальные задания ================ */
+/* ====================================================== */
+debuglog("informaltasks.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* Типы данных параметров для заданий */
+type_s_real_nz : [
+	tp_shape = ts_single, 
+	tp_part = [ts_real, ts_nonzero], 
+	tp_whole = []]$
+type_s_real : [
+	tp_shape = ts_single, 
+	tp_part = [ts_real], 
+	tp_whole = []]$
+type_s_real_0_1 : [
+	tp_shape = ts_single, 
+	tp_part = [ts_real, ts_nonnegative, ts_less_eq_1], 
+	tp_whole = []]$
+type_s_integer : [
+	tp_shape = ts_single, 
+	tp_part = [ts_integer], 
+	tp_whole = []]$
+type_s_integer_positive : [
+	tp_shape = ts_single, 
+	tp_part = [ts_integer, ts_positive], 
+	tp_whole = []]$
+type_s_integer_nonnegative : [
+	tp_shape = ts_single, 
+	tp_part = [ts_integer, ts_nonnegative], 
+	tp_whole = []]$
+type_s_natural : [
+	tp_shape = ts_single, 
+	tp_part = [ts_natural], 
+	tp_whole = []]$
+type_s_function_x : [
+	tp_shape = ts_single, 
+	tp_part = [ts_function, ts_var_x], 
+	tp_whole = []]$
+type_s_expression : [
+	tp_shape = ts_single, 
+	tp_part = [ts_expression], 
+	tp_whole = []]$
+type_s_polynomial_x : [
+	tp_shape = ts_single, 
+	tp_part = [ts_function, ts_var_x], 
+	tp_whole = []]$
+type_v_integer : [
+	tp_shape = ts_vector, 
+	tp_part = [ts_integer], 
+	tp_whole = []]$
+type_v_real : [
+	tp_shape = ts_vector, 
+	tp_part = [ts_real], 
+	tp_whole = []]$
+type_m_real : [
+	tp_shape = ts_matrix, 
+	tp_part = [ts_real], 
+	tp_whole = []]$
+type_m_real_height_eq2 : [
+	tp_shape = ts_matrix, 
+	tp_part = [ts_real], 
+	tp_whole = [ts_matrix_height_eq2]]$
+type_sq_m_real : [
+	tp_shape = ts_square_matrix, 
+	tp_part = [ts_real], 
+	tp_whole = []]$
+/* ================================================== */
+/* @begin ts_inftasks_categories_metadata */
+/* @type variable */
+/* @brief Категории неформальных заданий */
+/* @details Ассоциативный список категорий неформальных заданий. */
+/*          ts_category --- категория; */
+/*          ts_title --- заголовок (под)категории; */
+/*          ts_subcategories --- список подкатегорий; */
+/*          ts_subcategory --- подкатегория */
+/* @end */
+/* ================================================== */
+ts_inftasks_categories_metadata : [
+	[ts_category = ts_algebra,
+	ts_title = "Алгебра",
+	ts_name = "algebra",
+	ts_subcategories = [
+		[ts_subcategory = ts_matrixes,
+		ts_title = "Матрицы"],
+		[ts_subcategory = ts_equations,
+		ts_title = "Уравнения и системы уравнений"],
+		[ts_subcategory = ts_logic,
+		ts_title = "Логика"],
+		[ts_subcategory = ts_complex_numbers,
+		ts_title = "Комплексные числа"]]],
+	[ts_category = ts_geometry,
+	ts_title = "Геометрия",
+	ts_name = "geometry",
+	ts_subcategories = [
+		[ts_subcategory = ts_vectors,
+		ts_title = "Векторы"],
+		[ts_subcategory = ts_lines_planes,
+		ts_title = "Прямые и плоскости"],
+		[ts_subcategory = ts_multidim_geom,
+		ts_title = "Многомерная геометрия"]]],
+	[ts_category = ts_diffgeometry,
+	ts_title = "Дифференциальная геометрия",
+	ts_name = "diffgeometry",
+	ts_subcategories = [
+		[ts_subcategory = ts_curves,
+		ts_title = "Кривые"],
+		[ts_subcategory = ts_surfaces,
+		ts_title = "Поверхности"]]],
+	[ts_category = ts_matanaliz,
+	ts_title = "Математический анализ",
+	ts_name = "matanaliz",
+	ts_subcategories = [
+		[ts_subcategory = ts_differentiate,
+		ts_title = "Дифференцирование"],
+		[ts_subcategory = ts_integrate,
+		ts_title = "Интегрирование"]]],
+	[ts_category = ts_chances,
+	ts_title = "Теория вероятностей",
+	ts_name = "chances",
+	ts_subcategories = []],
+	[ts_category = ts_stat,
+	ts_title = "Статистика",
+	ts_name = "stat",
+	ts_subcategories = [
+		[ts_subcategory = ts_approximation,
+		ts_title = "Аппроксимация"]]],
+	[ts_category = ts_number_theory,
+	ts_title = "Теория чисел",
+	ts_name = "number_theory",
+	ts_subcategories = []]
+	]$
+/* ==================================================================== */
+/* @begin informaltasks 												*/
+/* @type variable 														*/
+/* @brief Метаданные неформальных заданий 								*/
+/* @details Ассоциативный список метаданных неформальных заданий. 		*/
+/*          category --- категория задания; 							*/
+/*          name --- имя задания; 										*/
+/*          shortname --- уникальное короткое имя задания; 				*/
+/*          readiness --- степень готовности; 							*/
+/*          short_description --- короткое описание; 					*/
+/*          text --- текст задания; 									*/
+/*          taskparams --- параметры задания; 							*/
+/*          solver --- функция-решатель задания. 						*/
+/* @end 																*/
+/* ==================================================================== */
+informaltasks : []$
+load("code/it_alg.mac")$
+load("code/it_matan.mac")$
+load("code/it_angeom.mac")$
+load("code/it_diffgeom.mac")$
+load("code/it_chances.mac")$
+load("code/it_stat.mac")$
+load("code/it_number_theory.mac")$
+load("code/informaltasks-examples.mac")$
+

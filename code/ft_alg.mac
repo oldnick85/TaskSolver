@@ -1,0 +1,157 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ====================== Алгебра ===================== */
+/* ==================================================== */
+debuglog("ft_alg.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* =================================== */
+/* Упрощение алгебраического выражения */
+/* =================================== */
+debuglog("algebra_arithmetical_simplification", debug_message_func_load);
+algebra_arithmetical_simplification(prs) := block([res, rs, st, s, ss, expr, sbss, answ, e], res : [], ss : [],
+	debug_start_function("algebra_arithmetical_simplification", [fp_high_level, fp_solver]),
+	expr : get_val_by_alias(prs,"expression"),
+	sbss : get_val_by_alias(prs,"substitutions"),
+	e : subst(sbss, expr),
+	debuglog(printf(false, "expr=~a, sbss=~a", expr, sbss)),
+	/* Добавляем исходное выражение в решение */
+	ss : push(totex(expr, substitutions=sbss), ss),
+	st : printf(false, "Вычислим значение выражения $~a$", ss[1]),
+	s : map(sconcat, ss),
+	debuglog(printf(false,"s=~a, ss=~a", s, ss)),
+	/* Вычисляем выражения нижнего уровня */
+	rs : aac_calc_low_lewels(expr, sbss),
+	debuglog(printf(false,"rs=~a", rs)),
+	/* Если произошли перемены внешнего вида, то добавляем шаг вычисления */
+	/* Если выражение - не число, то переходим к пункту вычислений */
+	answ : [[type = expression, value = e]],
+	res : [solution_title = st,
+         solution = s,
+         solution_steps = ss,
+         answer = answ],
+    debuglog(printf(false,"res=~a", res)),
+    debug_end_function(),
+	res)$
+debuglog("aas_calc_low_lewels", debug_message_func_load);
+aas_calc_low_lewels(e, s) := block([res, e_op, e_ar],
+	debug_start_function("aas_calc_low_lewels", [fp_high_level, fp_common]),
+	res : e,
+	if aas_subst_has_no_affect_p(e, s) then go(tag_exit), /* если подстановка не влияет на выражение, то выходим */
+	e_op : op(e),
+	e_ar : args(e),
+	debuglog(printf(false,"e_op=~a, e_ar=~a", e_op, e_ar)),
+	if every(lambda([x], aas_subst_has_no_affect_p(x, s) or atom(x)), e_ar) then block([], /* если все аргументы атомарные или числовые */
+		res : ev(e, s) /* тогда подставляем подстановки и вычисляем */
+		)
+	else block([aa], /* если не все аргументы атомарные или числовые */
+		aa : [],
+		for a in e_ar do block([], /* тогда идем по аргументам */
+			aa : push(aas_calc_low_lewels(a, s), aa) /* и каждый из них подвергаем подобной процедуре */
+			),
+		debuglog(printf(false,"aa=~a", aa))),
+	tag_exit,
+	debug_end_function(),
+	res)$
+debuglog("aas_subst_has_no_affect_p", debug_message_func_load);
+aas_subst_has_no_affect_p(e, s) := block([res],
+	debug_start_function("aas_subst_has_no_affect_p", [fp_low_level, fp_predicate]),
+	res: is(equal(ev(e), ev(e,s))),
+	if res = unknown then res : false,
+	debug_end_function(),
+	res)$
+/* ============================================================= */
+/* Вычисление алгебраического выражения                          */
+/* Выражение (свойство expression) передается с переменными,     */
+/* значения которых должны быть указаны (свойство substitutions) */
+/* ============================================================= */
+debuglog("algebra_arithmetical_calculation", debug_message_func_load)$
+algebra_arithmetical_calculation(prs) := block(
+	[res,														 		/* переменная результата */
+	rs,															 		/* результат вычисления выражений нижнего уровня */
+	rs_str,															 	/* строка этого результата */
+	st, 																/* титул решения */
+	s, 																	/* текст решения */
+	ss, 																/* список строк - шагов решения */
+	n,
+	expr, ee,															/* выражение */
+	sbss, 																/* значения переменных в выражении expr */
+	answ, 																/* ответ для результата */
+	e],																	/* результат подстановки значений переменных в выражение */ 
+	debug_start_function("algebra_arithmetical_calculation", [fp_high_level, fp_common]),
+	debuglog(printf(false, "prs~a", prs)),
+	res : [], ss : [],													/* инициализация переменных */
+	expr : get_val_by_alias(prs, "expression"),							/* вынимаем выражение... */
+	sbss : get_val_by_alias(prs, "substitutions"),						/* ...и подстановки */
+	/* !TODO! если выражение с учетом подстановок не является числом, то возвращаем ошибку и выходим */
+	debuglog(printf(false, "expr=~a, sbss=~a", expr, sbss)),
+	ss : push(															/* добавляем исходное выражение в список решений */
+		printf(false, "$~a$", totex(expr, substitutions = sbss)), 
+		ss),
+	st : printf(false, "Вычислим значение выражения $~a$", ss[1]),
+	debuglog(printf(false, "s=~a, ss=~a", s, ss)),
+	/* Вычисляем выражения нижнего уровня */
+	tag_calc_step,														/* метка для цикла вычислений */
+	rs : aac_calc_low_lewels(expr, sbss),								/* вычисляем части выражения нижнего уровня */
+	debuglog(printf(false, "rs=~a", rs)),
+	expr : rs[1], sbss : rs[2],											/* вынимаем из результата выражение и подстановки */
+	rs_str : printf(false, 
+		" $=~a$", 
+		totex(expr, substitutions = sbss)),								/* формируем строку шага решения */
+	if not(sequal(rs_str, last(ss))) then ss : append(ss, [rs_str]),	/* если произошли перемены внешнего вида выражения, то добавляем шаг вычисления */
+	if not(atom(expr)) then go(tag_calc_step),							/* если выражение - не атом, то делаем еще шаг вычислений */
+	ee : ratsimp(expr),
+	if not(equal(ee, expr)) then (										/* !TODO! - последняя симплификация */
+		expr : ee,
+		ss : append(ss, 
+			[printf(false, " $=~a$", subst(sbss, expr))])),
+	e : subst(sbss, expr),												/* подставляем значения переменных в выражение */
+	if not(floatnump(e)) then e : ratsimp(e),							/* если это не число с плавающей точкой, то упрощаем */
+	ss : append(ss, 
+			[printf(false, " $=~a$", totex(e))]),
+	/* ss : push(printf(false,"$~a$",totex(expr, substitutions=sbss)), ss), */
+	n : length(ss),
+	if ((n > 1) and (sequal(ss[n], ss[n - 1]) = true)) then 
+		ss[n] : "",														/* если два последних шага совпадают, то последний не нужен */
+	s : apply(sconcat, ss),												/* склеиваем шаги решения */
+	answ : [[type = expression, value = e]],
+	res : [solution_title = st,
+         solution = s,
+         solution_steps = ss,
+         answer = answ],
+    tag_exit,
+    debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+debuglog("aac_calc_low_lewels", debug_message_func_load)$
+aac_calc_low_lewels(e, s) := block([res, e_op, e_ar, res_e, res_s],
+	debug_start_function("aac_calc_low_lewels", [fp_mid_level, fp_common]),
+	debuglog(printf(false, "e=~a, s=~a", e, s)),
+	res_e : e, res_s : s,
+	if (num_expr_p(e) or atom(e)) then go(tag_exit),					/* если выражение уже является числом, то выходим */
+	e_op : op(e),
+	e_ar : args(e),
+	debuglog(printf(false, "e_op=~a, e_ar=~a", e_op, e_ar)),
+	if every(lambda([x], num_expr_p(x) or atom(x)), e_ar) then block([n_v, e_e],	/* если все аргументы атомарные или числовые */
+		n_v : new_variable('general),
+		e_e : ev(e, s),
+		res_s : push(n_v = e_e, res_s),									/* тогда подставляем подстановки и вычисляем */
+		res_e : n_v,
+		debuglog(printf(false, "n_v=~a, e_e=~a", n_v, e_e)))
+	else block(															/* если не все аргументы атомарные или числовые */
+		[aa],															/* список новых аргументов */
+		debuglog(printf(false, "recurse begins~%")),
+		aa : [],														/* список новых аргументов сначала пустой */
+		for a in e_ar do block([a_r, a_e],								/* идем по аргументам */
+			debuglog(printf(false, "a=~a", a)),
+			a_r : aac_calc_low_lewels(a, res_s),
+			a_e : a_r[1], res_s : a_r[2],
+			aa : append(aa, [a_e])),									/* и каждый из них подвергаем подобной процедуре */
+		res_e : apply(e_op, aa),
+		debuglog(printf(false, "aa=~a", aa))),
+	tag_exit,															/* метка выхода */
+	res : [res_e, res_s],
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+debuglog("aac_subst_has_no_affect_p", debug_message_func_load)$
+

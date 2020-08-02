@@ -1,0 +1,408 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ====================== Алгебра ===================== */
+/* =================== Теория чисел =================== */
+/* ==================================================== */
+debuglog("ft_alg_num_theory.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ==================== */
+/* Найти НОК двух чисел */
+/* ==================== */
+debuglog("least_common_multiple_2_numbers_euclid_algo", debug_message_func_load)$
+least_common_multiple_2_numbers_euclid_algo(prs) := block(
+	[res, 
+	m, n, 
+	pr, rs, r_s, r_a, 
+	v, v_gcd, v_lcm,
+	st, s_l, s, vl, b, answ],
+	debug_start_function("least_common_multiple_2_numbers_euclid_algo", [fp_high_level, fp_solver]),
+	s_l : [], vl : false,
+	[m, n] : get_vals_by_aliases(prs, ["m", "n"]),
+	if ((m = false) or (n = false)) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	debuglog(printf(false, "m=~a, n=~a", m, n)),
+	st : printf(false, "Найти наименьшее общее кратное (НОК) двух целых чисел $~a$ и $~a$ с помощью алгоритма Евклида.~2%", totex(m), totex(n)),
+	s : printf(false, 
+		"$\\mbox{НОК}\\left(~a;~a\\right)=\\frac{~a\\cdot ~a}{\\mbox{НОД}\\left(~a;~a\\right)}$~2%", 
+		totex(m), totex(n), totex(m), totex(n), totex(m), totex(n)),
+	append_to_s_l("~a", s),
+	pr : [[alias = "m", value = m], [alias = "n", value = n]],
+	rs : greatest_common_divisor_2_numbers_euclid_algo(pr),				/* ищем НОД чисел */
+	r_s : getprop(rs, solution),
+	s_l : append(s_l, [r_s]),											/* нахождение НОД - в решение */
+	r_a : getprop(rs, answer),
+	v_gcd : getprop(r_a[1], value),										/* собственно НОД */
+	[s, v_lcm] : totex_calc_val(										/* вычисляем НОК */
+		(pn * pm) / pgcd, 
+		[pn = n, pm = m, pgcd = v_gcd]),
+	append_to_s_l("~2%$\\mbox{НОК}\\left(~a;~a\\right)=$ ~a~2%", totex(m), totex(n), s),
+	/* Ответ */
+	answ : [[type = ts_value, 
+		ts_name = "НОК", 
+		ts_caption="НОК", 
+		ts_alias = "lcm",  
+		value = v_lcm]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ========================== */
+/* Найти НОК нескольких чисел */
+/* ========================== */
+debuglog("least_common_multiple_euclid_algo", debug_message_func_load)$
+least_common_multiple_euclid_algo(prs) := block(
+	[res, n_l, n1, n2, pr, rs, v, st, s_l, s, answ],
+	debug_start_function("least_common_multiple_euclid_algo", [fp_high_level, fp_solver]),
+	s_l : [],
+	n_l : get_val_by_alias(prs, "num list"),
+	if (atom(n_l) or (length(n_l) < 2)) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	debuglog(printf(false, "n_l=~a", n_l)),
+	st : printf(false, 
+		"Найти наименьшее общее кратное (НОК) целых чисел $~a$~{, $~a$~} с помощью алгоритма Евклида.~2%", 
+		n_l[1], rest(n_l)),
+	v : n_l[1],
+	for i : 2 thru length(n_l) do block([r_s, r_a],
+		pr : [[alias = "m", value = v], [alias = "n", value = n_l[i]]],
+		rs : least_common_multiple_2_numbers_euclid_algo(pr),
+		r_s : getprop(rs, solution),
+		s_l : append(s_l, [r_s]),
+		r_a : getprop(rs, answer),
+		v : getprop(r_a[1], value)),
+	/* Ответ */
+	answ : [[type = ts_value, 
+		ts_name = "НОК", 
+		ts_caption="НОК", 
+		ts_alias = "lcm",  
+		value = v]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ==================== */
+/* Найти НОД двух чисел */
+/* ==================== */
+debuglog("greatest_common_divisor_2_numbers_euclid_algo", debug_message_func_load)$
+greatest_common_divisor_2_numbers_euclid_algo(prs) := block([res, m, n, qtnt, rmdr, st, s_l, s, vl, b, answ],
+	debug_start_function("greatest_common_divisor_2_numbers_euclid_algo", [fp_high_level, fp_solver]),
+	s_l : [], vl : false, b : false,
+	[m, n] : get_vals_by_aliases(prs, ["m", "n"]),
+	if ((m = false) or (n = false)) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	debuglog(printf(false, "m=~a, n=~a", m, n)),
+	st : printf(false, "Найти наибольший общий делитель (НОД) двух целых чисел $~a$ и $~a$ с помощью алгоритма Евклида.~2%", totex(m), totex(n)),
+	s : printf(false, "$\\mbox{НОД}\\left(~a;~a\\right)$ ", totex(m), totex(n)),
+	s_l : append(s_l, [s]),
+	tag_step,
+	if (m = 0) then (vl : n),	if (n = 0) then (vl : m),
+	if ((m = 1) or (n = 1)) then (vl : 1),
+	if (m = n) then (vl : m),
+	if (vl # false) then go(tag_end_cycle),
+	if (m > n) then block([],
+		[qtnt, rmdr] : divide(m, n),
+		s : printf(false, " $=\\mbox{НОД}\\left(~a-~a\\cdot ~a;~a\\right)$ ", totex(m), totex(qtnt), totex(n), totex(n)),
+		m : rmdr, b : true)
+	elseif m<n then block([],
+		[qtnt, rmdr] : divide(n, m),
+		s : printf(false, " $=\\mbox{НОД}\\left(~a;~a-~a\\cdot ~a\\right)$ ", totex(m), totex(n), totex(qtnt), totex(m)),
+		n : rmdr, b : true),
+	if b then (
+		s_l : append(s_l, [s]),
+		s : printf(false, " $=\\mbox{НОД}\\left(~a;~a\\right)$ ", totex(m), totex(n)),
+		s_l : append(s_l, [s]),
+		b : false),
+	debuglog(printf(false, "m=~a, n=~a, vl=~a", m, n, vl)),
+	if (vl = false) then go(tag_step),
+	tag_end_cycle,
+	s : printf(false, " $=~a$", totex(vl)),
+	s_l : append(s_l, [s]),
+	/* Ответ */
+	answ : [[type = ts_value, 
+		ts_name = "НОД", 
+		ts_caption="НОД", 
+		ts_alias = "gcd",  
+		value = vl]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ========================== */
+/* Найти НОД нескольких чисел */
+/* ========================== */
+debuglog("greatest_common_divisor_euclid_algo", debug_message_func_load)$
+greatest_common_divisor_euclid_algo(prs) := block(
+	[res, n_l, n1, n2, pr, rs, v, st, s_l, s, answ],
+	debug_start_function("greatest_common_divisor_euclid_algo", [fp_high_level, fp_solver]),
+	s_l : [],
+	n_l : get_val_by_alias(prs, "num list"),
+	if (atom(n_l) or (length(n_l) < 2)) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	debuglog(printf(false, "n_l=~a", n_l)),
+	st : printf(false, 
+		"Найти наибольший общий делитель (НОД) целых чисел $~a$~{, $~a$~} с помощью алгоритма Евклида.~2%", 
+		n_l[1], rest(n_l)),
+	v : n_l[1],
+	for i : 2 thru length(n_l) do block([r_s, r_a],
+		pr : [[alias = "m", value = v], [alias = "n", value = n_l[i]]],
+		rs : greatest_common_divisor_2_numbers_euclid_algo(pr),
+		r_s : getprop(rs, solution),
+		append_to_s_l("~2%"),
+		s_l : append(s_l, [r_s]),
+		r_a : getprop(rs, answer),
+		v : getprop(r_a[1], value)),
+	/* Ответ */
+	answ : [[type = ts_value, 
+		ts_name = "НОД", 
+		ts_caption="НОД", 
+		ts_alias = "gcd",  
+		value = v]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================ */
+/* Представить в виде цепной дроби правильную дробь */
+/* ================================================ */
+debuglog("present_in_continued_fraction_proper_fraction", debug_message_func_load)$
+present_in_continued_fraction_proper_fraction(prs) := block(
+	[res, 																/* результат функции */
+	m, n, 																/* числитель и знаменатель */
+	i,
+	a_n, x_n,															/* имена для отображения переменных*/
+	tx_v, tx_a, tx_aa, tx_i,
+	a, v, vv,															/* значение дроби */
+	v_l,																/* массив значений цепной дроби */
+	st, s_l, s, answ],
+	debug_start_function("present_in_continued_fraction_proper_fraction", [fp_high_level, fp_solver]),
+	s_l : [], vl : false, b : false,
+	[m, n] : get_vals_by_aliases(prs, ["m", "n"]),
+	if ((m = false) or (n = false)) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	[a_n, x_n] : get_vals_by_aliases(prs, ["a name", "x name"]),
+	if (a_n = false) then a_n : "a",
+	if (x_n = false) then x_n : "x",
+	debuglog(printf(false, "m=~a, n=~a", m, n)),
+	st : printf(false, "Представить в виде цепной дроби правильную дробь $\\frac{~a}{~a}$.~2%", totex(m), totex(n)),
+	v : m / n, i : 0, v_l : [],											/* инициализация значений */
+	tag_step,
+	a : floor(v), vv : v - a,
+	v_l : append(v_l, [a]),
+	tx_v : totex(v), tx_a : totex(a), tx_aa : totex(a, "prbim" = true), tx_i : totex(i),
+	s : printf(false, 
+		"$~a_{~a}=\\lfloor ~a\\rfloor=~a$; $~a_{~a}=~a - ~a=~a$;~2%",
+		a_n, tx_i, tx_v, tx_a, x_n, tx_i, tx_v, tx_aa, totex(vv)),
+	s_l : append(s_l, [s]),
+	i : i + 1,
+	if (vv # 0) then (v : 1 / vv, go(tag_step)),
+	/* Ответ */
+	answ : [[type = ts_value, 
+		ts_name = "Цепная дробь", 
+		ts_caption = "Цепная дробь", 
+		ts_alias = "cf",  
+		value = v_l]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ======================================================== */
+/* Найти каноническое разложение числа на простые множители */
+/* ======================================================== */
+debuglog("number_canonical_factor", debug_message_func_load)$
+number_canonical_factor(prs) := block(
+	[res, 																/* результат функции */
+	n, 																	/* раскладываемое значение */
+	n_n,																/* имена для отображения переменных*/
+	p_max,																/* наибольшее значение, до которого подбираем делители */
+	p_cur,																/* текущий проверяемый простой делитель */
+	cur_p_m,															/* текущая степень простого делителя */
+	dv, md,																/* частное и остаток от деления */
+	p_lst, p_m_lst,														/* список делителей с кратностями */
+	st, s_l, s, vv, answ],
+	debug_start_function("number_canonical_factor", [fp_high_level, fp_solver]),
+	s_l : [], p_lst : [], p_m_lst : [],
+	[n] : get_vals_by_aliases(prs, ["n"]),
+	if ((n = false) or (n < 1) or not(integerp(n))) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	[n_n] : get_vals_by_aliases(prs, ["n name"]),
+	if (n_n = false) then a_n : "n",
+	debuglog(printf(false, "n=~a", n)),
+	st : printf(false, "Найти каноническое разложение числа $~a$ на простые множители.~2%", totex(n)),
+	p_cur : 2, cur_p_m : 0,
+	tag_cycle,
+	if (n = 1) then go(tag_make_answer),
+	if (n = p_cur) then (
+		cur_p_m : cur_p_m + 1,
+		p_lst : append(p_lst, [p_cur]),
+		p_m_lst : append(p_m_lst, [cur_p_m]),
+		go(tag_make_answer)),
+	p_max : sqrt(n),													/* находим наибольший предел для подбора делителей */
+	if (p_cur > p_max) then (											/* если текущий делитель больше корня из делимого... */
+		append_to_s_l("${~a}^2=~a > ~a$, значит $~a$ простое;", 
+			totex(p_cur), totex(p_cur^2), totex(n), totex(n)),
+		if (cur_p_m > 0) then (
+			p_lst : append(p_lst, [p_cur]),
+			p_m_lst : append(p_m_lst, [cur_p_m])),
+		p_lst : append(p_lst, [n]),
+		p_m_lst : append(p_m_lst, [1]),
+		go(tag_make_answer)),
+	[dv, md] : divide(n, p_cur),										/* пытаемся разделить нацело */
+	if (md = 0) 
+		then (															/* если разделилось нацело... */
+			cur_p_m : cur_p_m + 1,
+			append_to_s_l("Число $~a$ делится нацело на $~a$: $~a=~a\\cdot ~a$.~2%", 
+				totex(n), totex(p_cur), totex(n), totex(dv), totex(p_cur)),
+			n : dv)														/* в качестве делимого дальше берем результат деления */
+		else block([old_p_cur],											/* если не разделилось нацело... */
+			if (cur_p_m > 0) then (										/* добавляем множитель в список */
+				p_lst : append(p_lst, [p_cur]),
+				p_m_lst : append(p_m_lst, [cur_p_m])),
+			append_to_s_l("Число $~a$ не делится на $~a$, поэтому будем дальше делить на следующее простое число $~a$.~2%",
+				totex(n), totex(p_cur), totex(next_prime(p_cur))),
+			cur_p_m : 0,												/* новая степень равна нулю */
+			p_cur : next_prime(p_cur)),									/* берем следующее простое число */
+	go(tag_cycle),
+	tag_make_answer,
+	[s, vv] : totex_calc_val_formula(lambda([pvl, pml], product(pvl[i]^pml[i], i, 1, length(p_lst))), [p_lst, p_m_lst]),
+	append_to_s_l("~2% ~a ~2%", s),
+	/* Ответ */
+	answ : [[type = ts_multipliers, 
+			ts_name = "Простые множители", 
+			ts_caption = "Простые множители", 
+			ts_alias = "p",  
+			value = p_lst,
+			ts_power = p_m_lst]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* =============================================== */
+/* Найти число и сумму натуральных делителей числа */
+/* =============================================== */
+debuglog("number_and_amount_of_natural_divisors", debug_message_func_load)$
+number_and_amount_of_natural_divisors(prs) := block(
+	[res, 																/* результат функции */
+	n, 																	/* раскладываемое значение */
+	n_n,																/* имена для отображения переменных*/
+	p_lst, p_m_lst,														/* список простых делителей с кратностями */
+	tau_n,																/* число натуральных делителей */
+	sigma_n,															/* сумма натуральных делителей */
+	rs, rs_ans,
+	st, s_l, s, answ],
+	debug_start_function("number_and_amount_of_natural_divisors", [fp_high_level, fp_solver]),
+	s_l : [],
+	[n] : get_vals_by_aliases(prs, ["n"]),
+	if ((n = false) or (n < 1) or not(integerp(n))) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	[n_n] : get_vals_by_aliases(prs, ["n name"]),
+	if (n_n = false) then a_n : "n",
+	debuglog(printf(false, "n=~a", n)),
+	if (n = 1) then (
+		answ : [[type = ts_single_value, 
+			ts_name = "Число делителей", 
+			ts_caption = "Число делителей", 
+			ts_alias = "\\tau(n)",  
+			value = 1],
+			[type = ts_single_value, 
+			ts_name = "Сумма делителей", 
+			ts_caption = "Сумма делителей", 
+			ts_alias = "\\sigma(n)",  
+			value = 1]],
+		go(tag_exit)),
+	st : printf(false, "Найти число и сумму натуральных делителей числа $~a$.~2%", totex(n)),
+	rs : number_canonical_factor([[alias = "n", value = n]]),
+	append_to_s_l("~a~2%", getprop(rs, solution)),
+	rs_ans : getprop(rs, answer),
+	p_lst : getprop(rs_ans[1], value),
+	p_m_lst : getprop(rs_ans[1], ts_power),
+	[s, tau_n] : totex_calc_val_formula(lambda([pml], product((pml[i]+1), i, 1, length(pml))), [p_m_lst]),
+	append_to_s_l("Число натуральных делителей числа равно $\\tau (~a)=$ ~a.~2%", totex(n), s),
+	[s, sigma_n] : totex_calc_val_formula(
+		lambda([pvl, pml], product((pvl[i]^(pml[i]+1)-1)/(pvl[i]-1), i, 1, length(pvl))), 
+		[p_lst, p_m_lst]),
+	append_to_s_l("Сумма натуральных делителей числа равна $\\sigma (~a)=$ ~a.~2%", totex(n), s),
+	/* Ответ */
+	answ : [[type = ts_single_value, 
+			ts_name = "Число делителей", 
+			ts_caption = "Число делителей", 
+			ts_alias = "\\tau(n)",  
+			value = tau_n],
+			[type = ts_single_value, 
+			ts_name = "Сумма делителей", 
+			ts_caption = "Сумма делителей", 
+			ts_alias = "\\sigma(n)",  
+			value = sigma_n]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ========================================================= */
+/* Вычислить значение функции Эйлера от данного целого числа */
+/* ========================================================= */
+debuglog("calculate_euler_function", debug_message_func_load)$
+calculate_euler_function(prs) := block(
+	[res, 																/* результат функции */
+	n, 																	/* раскладываемое значение */
+	n_n,																/* имена для отображения переменных*/
+	p_lst,																/* список простых делителей */
+	phi_n,																/* значение функции Эйлера */
+	rs, rs_ans,
+	st, s_l, s, answ],
+	debug_start_function("calculate_euler_function", [fp_high_level, fp_solver]),
+	s_l : [],
+	[n] : get_vals_by_aliases(prs, ["n"]),
+	if ((n = false) or (n < 1) or not(integerp(n))) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	[n_n] : get_vals_by_aliases(prs, ["n name"]),
+	if (n_n = false) then n_n : "n",
+	debuglog(printf(false, "n=~a", n)),
+	if (n = 1) then (
+		answ : [[type = ts_single_value, 
+			ts_name = "Функция Эйлера", 
+			ts_caption = "Функция Эйлера", 
+			ts_alias = "\\varphi(n)",  
+			value = 1]],
+		go(tag_exit)),
+	st : printf(false, "Вычислить значение функции Эйлера от данного целого числа $~a$.~2%", totex(n)),
+	rs : number_canonical_factor([[alias = "n", value = n]]),
+	append_to_s_l("~a~2%", getprop(rs, solution)),
+	rs_ans : getprop(rs, answer),
+	p_lst : getprop(rs_ans[1], value),
+	append_to_s_l(
+		"Функция Эйлера от натурального числа: $$\\varphi(~a)=~a\\cdot\\prod_{n\\mid p}\\left(1-\\frac{1}{p}\\right).$$~2%", 
+		n_n, n_n),
+	[s, phi_n] : totex_calc_val_formula(lambda([pn, pl], pn*product((1-1/pl[i]), i, 1, length(pl))), [n, p_lst]),
+	append_to_s_l("Функция Эйлера равна $\\varphi (~a)=$ ~a.~2%", totex(n), s),
+	/* Ответ */
+	answ : [[type = ts_single_value, 
+			ts_name = "Функция Эйлера", 
+			ts_caption = "Функция Эйлера", 
+			ts_alias = "\\varphi(n)",  
+			value = phi_n]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$

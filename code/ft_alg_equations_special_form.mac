@@ -1,0 +1,302 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ====================== Алгебра ===================== */
+/* ======== Частные виды алгебраических уравнений ===== */
+/* ==================================================== */
+debuglog("ft_alg_equations_special_form.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ============================= */
+/* Решить биквадратное уравнение */
+/* ============================= */
+debuglog("solve_biquadratic_equation", debug_message_func_load)$
+solve_biquadratic_equation(prs) := block(
+	[res, 
+	a, c, e, 
+	x_n,
+	t1, t2, x1, x2, x3, x4, t_sq,
+	p, p_cl, 
+	st, s_l, s, sqprs, rs, rs_ans, answ],
+	/* !TODO! убрать повторения в конце подробных вычислений */
+	debug_start_function("solve_biquadratic_equation", [fp_high_level, fp_solver]),
+	s_l : [],
+	[a, c, e] : get_vals_by_aliases(prs, ["a", "c", "e"]),
+	x_n : get_val_by_alias(prs, "x name"),
+	if (x_n = false) then x_n : "x",
+	debuglog(printf(false, "a=~a, c=~a, e=~a, x name=~a", a, c, e, x_n)),
+	if ((a = false) or (c = false) or (e = false)) then block([],
+		p : get_val_by_alias(prs, "P(x)"),
+		if (p = false) then p : get_val_by_alias(prs, "equation"),
+		p_cl : poly_coeffs(p, x), 										/* получаем список коэффициентов выражения */
+		if (not(atom(p_cl)) and (length(p_cl) = 5)) then [a, c, e] : [p_cl[1], p_cl[3], p_cl[5]],
+		if ((p_cl[2] # 0) or (p_cl[4] # 0)) then (
+			s_l : ["Это не биквадратное уравнение"],
+			answ : [[type = cant_find_solution, value = "Такое уравнение мы решить не можем"]],
+			go(tag_exit))),
+	if ((a = false) or (c = false) or (e = false)) then (
+		s_l : ["Неверные данные для решения"],
+		answ : [[type = cant_find_solution, value = "Неверные данные для решения"]],
+		go(tag_exit)),
+	debuglog(printf(false, "a=~a, c=~a, e=~a", a, c, e)),
+	st : printf(false, "Решить биквадратное уравнение: $~a$~2%", 
+		totex(a*x^4 + c*x^2 + e = 0, "sub" = [x = x_n])),
+	s : printf(false, "$~a$~2%", 
+		totex(a*x^4 + c*x^2 + e = 0, "sub" = [x = x_n])),
+	append_to_s_l("~a", s),
+	s : printf(false, "После замены ${\\x}^2=t$ будем иметь~2%", 
+		totex(a*x^2 + c*x + e = 0, sub = [[x, "t"]])),
+	append_to_s_l("~a", s),
+	/* Решаем соответствующее квадратное уравнение */
+	sqprs : [[alias = "a", value = a], 
+		[alias = "b", value = c], 
+		[alias = "c", value = e], 
+		[alias = "x name", value = "t"]],
+	rs : solve_quadratic_equation(sqprs),
+	rs_ans : getprop(rs, answer),
+	s : getprop(rs, solution),
+	/* s : printf(false, "{\\renewcommand{\\x}{\\ensuremath{t}}~%~a~%}", s), */
+	append_to_s_l("~a", s),
+	if (getprop(rs_ans[1], value) = emptyset) then (					/* если квадратное уравнение не имело корней */
+		answ : rs_ans, 
+		go(tag_exit)),
+	if (getprop(rs_ans[1], multiplicity) = 2) then (					/* если квадратное уравнение имело один корень */
+		t1 : getprop(rs_ans[1], value),
+		s : printf(false, "${~a}^2=~a$;~2%", x_n, totex(t1)),
+		append_to_s_l("~a", s),
+		if (t1 < 0) then (
+			s : printf(false, "$\\emptyset$;"),
+			append_to_s_l("~a", s),
+			answ : [[type = root, value = emptyset]]),
+		if (t1 = 0) then (
+			x1 : 0,
+			s : printf(false, "${~a}=0$;~2%", x_n),
+			append_to_s_l("~a", s),
+			answ : [[type = root, value = 0, multiplicity = 1]]),
+		if (t1 > 0) then (
+			x1 : ratsimp(sqrt(t1)),
+			x2 : -x1,
+			s : printf(false, 
+				"${~a}=\\pm ~a$;~2%${~a}_1=~a$; ${~a}_2=~a$;", 
+				x_n, totex(x1), x_n, totex(x1), x_n, totex(x2)),
+			append_to_s_l("~a", s),
+			answ : [[type = root, value = x1, multiplicity = 1], 
+			[type = root, value = x2, multiplicity = 1]]),
+		go(tag_exit)),
+	if (getprop(rs_ans[1], multiplicity) = 1) then (					/* если квадратное уравнение имело два корня */
+		t1 : getprop(rs_ans[1], value),
+		t2 : getprop(rs_ans[2], value),
+		x1 : ratsimp(sqrt(t1)),
+		x2 : -x1,
+		x3 : ratsimp(sqrt(t2)),
+		x4 : -x3,
+		s : printf(false, 
+			"${~a}^2=~a$; ${~a}^2=~a$;~2%${~a}=\\pm ~a$; ${~a}=\\pm ~a$~2%", 
+			x_n, totex(t1), x_n, totex(t2), x_n, totex(x1), x_n, totex(x3)),
+		append_to_s_l("~a", s),
+		s : printf(false, 
+			"${~a}_1=~a$; ${~a}_2=~a$; ${~a}_3=~a$; ${~a}_4=~a$", 
+			x_n, totex(x1), x_n, totex(x2), x_n, totex(x3), x_n, totex(x4)),
+		append_to_s_l("~a", s),
+		answ : [[type = root, value = x1, multiplicity = 1], 
+			[type = root, value = x2, multiplicity = 1],
+			[type = root, value = x3, multiplicity = 1], 
+			[type = root, value = x4, multiplicity = 1]],
+		go(tag_exit)),
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ==================================================== */
+/* Решить уравнение четвертой степени специального вида */
+/* ==================================================== */
+debuglog("solve_alg_equation_4_special_form", debug_message_func_load)$
+solve_alg_equation_4_special_form(prs) := block(
+	[res, 
+	a, b, c, d, e, 
+	t1, t2, x1, x2, x3, x4, t_sq,
+	p, p_cl, 
+	st, s_l, s, sqprs, 
+	pr, rs, rs_s, rs_ans, 
+	answ],
+	debug_start_function("solve_alg_equation_4_special_form", [fp_high_level, fp_solver]),
+	s_l : [],
+	[a, b, c, d, e] : get_vals_by_aliases(prs, ["a", "b", "c", "d", "e"]),
+	debuglog(printf(false, "a=~a, b=~a, c=~a, d=~a, e=~a", a, b, c, d, e)),
+	if ((a = false) or (b = false) or (c = false) or (d = false) or (e = false)) then block([],
+		p : get_val_by_alias(prs, "P(x)"),
+		if (p = false) then p : get_val_by_alias(prs, "equation"),
+		p_cl : poly_coeffs(p, x), 										/* получаем список коэффициентов выражения */
+		if (not(atom(p_cl)) and (length(p_cl) = 5)) then 
+			[a, b, c, d, e] : p_cl),
+	if ((a = false) or (b = false) or (c = false) or (d = false) or (e = false)) then (
+		s_l : ["Это не алгебраическое уравнение четвертой степени"],
+		answ : [[type = cant_find_solution, value = "Это не алгебраическое уравнение четвертой степени"]],
+		go(tag_exit)),
+	debuglog(printf(false, "a=~a, b=~a, c=~a, d=~a, e=~a", a, b, c, d, e)),
+	st : printf(false, 
+		"Решить уравнение: $~a$~2%", 
+		totex(a*x^4+b*x^3+c*x^2+d*x+e=0)),
+	/* Биквадратное уравнение */
+	if ((b = 0) and (d = 0)) then block([],
+		pr : prs,
+		rs : solve_biquadratic_equation(pr),
+		s : getprop(rs, solution),
+		append_to_s_l("~a", s),
+		answ : getprop(rs, answer)),
+	if not(atom(answ)) then go(tag_exit),
+	/* Возвратное уравнение (palindromic polynomial) */
+	if ((a = e) and (b = d)) then block([r_a_m, t1, t2],				/* если коэффициенты симметричны, то решаем возвратное уравнение */
+		s : printf(false, 												/* делим левую часть уравнения на икс квадрат и выводим */
+			"Это возвратное уравнение, делим обе его части на $\\x^2$:~2% $~a$~2%", 
+			totex(a*x^2+b*x+c+b/x+a/(x^2)=0)),
+		append_to_s_l("~a", s),
+		s : printf(false, 												/* описываем замену */
+			"Делаем замену: $t=x+\\frac{1}{\\x}$; $t^2={\\x}^2+2+\\frac{1}{{\\x}^2}$; $t^2-2=x^2-\\frac{1}{{\\x}^2}$;~2%"),
+		append_to_s_l("~a", s),
+		s : printf(false, 												/* уравнение после замены */
+			"$~a$~2%", 
+			totex(a*(t^2-2)+b*t+c=0)),
+		append_to_s_l("~a", s),
+		pr : [[alias = "a", value = a], 								/* готовим параметры для квадратного уравнения */
+			[alias = "b", value = b], 
+			[alias = "c", value = c-2*a]],
+		rs : solve_quadratic_equation(pr),								/* и решаем его */
+		rs_s : getprop(rs, solution),
+		append_to_s_l("~a", rs_s),
+		rs_ans : getprop(rs, answer),
+		r_a_m : getprop(rs_ans[1], multiplicity),						/* получаем кратность первого значения ответа */
+		if (r_a_m = false) then (										/* если кратности нет, то у квадратного уравнения не было корней */
+			t1 : false, t2 : false,
+			answ : rs_ans),
+		if (r_a_m = 2) then (
+			t1 : getprop(rs_ans[1], value), 
+			t2 : false),
+		if (r_a_m = 1) then (
+			t1 : getprop(rs_ans[1], value), 
+			t2 : getprop(rs_ans[2], value)),
+		if (t1 # false) then (
+			s : printf(false, 											/* описываем замену */
+			"Возвращаем замену и решаем уравнение: $\\x+\\frac{1}{\\x}=~a$;~2%",
+			totex(t1)),
+			append_to_s_l("~a", s),
+			pr : [[alias = "a", value = 1], 							/* готовим параметры для квадратного уравнения */
+				[alias = "b", value = -t1], 
+				[alias = "c", value = 1]],
+			rs : solve_quadratic_equation(pr),							/* и решаем его */
+			rs_s : getprop(rs, solution),
+			append_to_s_l("~a", rs_s),
+			rs_ans : getprop(rs, answer),
+			answ : rs_ans),
+		if (t2 # false) then (
+			s : printf(false,
+			"Решаем уравнение: $\\x+\\frac{1}{\\x}=~a$;~2%",
+			totex(t2)),
+			append_to_s_l("~a", s),
+			pr : [[alias = "a", value = 1], 							/* готовим параметры для квадратного уравнения */
+				[alias = "b", value = -t2], 
+				[alias = "c", value = 1]],
+			rs : solve_quadratic_equation(pr),							/* и решаем его */
+			rs_s : getprop(rs, solution),
+			append_to_s_l("~a", rs_s),
+			rs_ans : getprop(rs, answer),
+			answ : merge_answer_roots_with_multiplicityes(answ, rs_ans))),
+	if not(atom(answ)) then go(tag_exit),
+	/* Возвратное общее уравнение (palindromic polynomial) */
+	if (b^2 * e = d^2 * a) then block([r_a_m, k, t1, t2],				/* если коэффициенты симметричны, то решаем возвратное уравнение */
+		k : b^2/a,
+		s : printf(false, 												/* делим левую часть уравнения на икс квадрат и выводим */
+			"Это возвратное общее уравнение, делим обе его части на $\\x^2$:~2% $~a$~2%", 
+			totex(a*x^2+b*x+c+d/x+e/(x^2)=0)),
+		append_to_s_l("~a", s),
+		s : printf(false, 												/* описываем замену */
+			"Делаем замену: $~a$; $~a$; $~a$;~2%",
+			totex(t=b*x+d/x), totex(t^2=b^2*x^2+2*b*d+d^2/x^2), totex(a*x^2+e/x^2=t^2/k-2*b*d/k)),
+		append_to_s_l("~a", s),
+		s : printf(false, 												/* уравнение после замены */
+			"$~a$~2%$~a$~2%", 
+			totex(t^2/k+t+c-2*b*d/k=0), totex(t^2+k*t+k*c-2*b*d=0)),
+		append_to_s_l("~a", s),
+		pr : [[alias = "a", value = 1], 								/* готовим параметры для квадратного уравнения */
+			[alias = "b", value = k], 
+			[alias = "c", value = k*c-2*b*d]],
+		rs : solve_quadratic_equation(pr),								/* и решаем его */
+		rs_s : getprop(rs, solution),
+		append_to_s_l("~a", rs_s),
+		rs_ans : getprop(rs, answer),
+		r_a_m : getprop(rs_ans[1], multiplicity),						/* получаем кратность первого значения ответа */
+		if (r_a_m = false) then (										/* если кратности нет, то у квадратного уравнения не было корней */
+			t1 : false, t2 : false,
+			answ : rs_ans),
+		if (r_a_m = 2) then (
+			t1 : getprop(rs_ans[1], value), 
+			t2 : false),
+		if (r_a_m = 1) then (
+			t1 : getprop(rs_ans[1], value), 
+			t2 : getprop(rs_ans[2], value)),
+		if (t1 # false) then (
+			s : printf(false, 											/* описываем замену */
+			"Возвращаем замену и решаем уравнение: $~a$;~2%",
+			totex(b*x + d/x = t1)),
+			append_to_s_l("~a", s),
+			pr : [[alias = "a", value = b], 							/* готовим параметры для квадратного уравнения */
+				[alias = "b", value = -t1], 
+				[alias = "c", value = d]],
+			rs : solve_quadratic_equation(pr),							/* и решаем его */
+			rs_s : getprop(rs, solution),
+			append_to_s_l("~a", rs_s),
+			rs_ans : getprop(rs, answer),
+			answ : rs_ans),
+		if (t2 # false) then (
+			s : printf(false,
+			"Решаем уравнение: $~a$;~2%",
+			totex(totex(b*x + d/x = t2))),
+			append_to_s_l("~a", s),
+			pr : [[alias = "a", value = b], 							/* готовим параметры для квадратного уравнения */
+				[alias = "b", value = -t2], 
+				[alias = "c", value = d]],
+			rs : solve_quadratic_equation(pr),							/* и решаем его */
+			rs_s : getprop(rs, solution),
+			append_to_s_l("~a", rs_s),
+			rs_ans : getprop(rs, answer),
+			answ : merge_answer_roots_with_multiplicityes(answ, rs_ans))),
+	/* Уравнение, разложимое "пополам" (ax^2+bx+c)(x^2+d)=0 */
+	if (b^2 * e + d^2 * a =  b*c*d) then block(							/* если коэффициенты удовлетворяют условию */
+		[r_a_m, k, kk, c1, c2, t1, t2],
+		c1 : b*e/d, c2 : a*d/b,
+		k : b/d, kk : d/b,
+		s : printf(false, 												/*  */
+			"$(~a)\\cdot\\x^2+(~a)=0$~2%", 
+			totex(a*x^2+b*x+c1), totex(c2*x^2+d*x+e)),
+		append_to_s_l("~a", s),
+		s : printf(false, 												/*  */
+			"$(~a)\\cdot\\x^2+~a\\cdot(~a)=0$~2%", 
+			totex(a*x^2+b*x+c1), totex(kk, put_round_brackets_if_minus = true), totex(a*x^2+b*x+c1)),
+		append_to_s_l("~a", s),
+		s : printf(false, 												/*  */
+			"$(~a)\\cdot(~a)=0$~2%", 
+			totex(a*x^2+b*x+c1), totex(x^2+kk)),
+		append_to_s_l("~a", s),
+		pr : [[alias = "a", value = a], 								/* готовим параметры для квадратного уравнения */
+			[alias = "b", value = b], 
+			[alias = "c", value = c1]],
+		rs : solve_quadratic_equation(pr),								/* и решаем его */
+		rs_s : getprop(rs, solution),
+		append_to_s_l("~a", rs_s),
+		rs_ans : getprop(rs, answer),
+		answ : rs_ans,
+		pr : [[alias = "a", value = 1], 								/* готовим параметры для квадратного уравнения */
+			[alias = "b", value = 0], 
+			[alias = "c", value = kk]],
+		rs : solve_quadratic_equation(pr),								/* и решаем его */
+		rs_s : getprop(rs, solution),
+		append_to_s_l("~a", rs_s),
+		rs_ans : getprop(rs, answer),
+		answ : merge_answer_roots_with_multiplicityes(answ, rs_ans)),
+	/* !TODO! */
+	if not(atom(answ)) then go(tag_exit),
+	/* !TODO! */
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$

@@ -1,0 +1,95 @@
+/* ====================================================== */
+/* ================ Неформальные задания ================ */
+/* ===================== Статистика ===================== */
+/* ====================================================== */
+debuglog("it_stat.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ================================================================= */
+/* По данной выборке случайной величины вычислить                    */
+/* матожидание, дисперсию, несмещенную дисперсию, ср. кв. отклонение */
+/* ================================================================= */
+informaltask_selection_rv_empirical_characteristics : [
+	category = [ts_stat],
+	name = "selection_rv_empirical_characteristics",
+	shortname = "ms_srvec",
+	readiness = ts_full_readiness,
+	short_description = "По данной выборке случайной величины вычислить её эмпирические характеристики",
+	text = 
+		"По данной выборке случайной величины вычислить её эмпирические характеристики: матожидание, дисперсию, несмещенную дисперсию, ср. кв. отклонение",
+	taskparams = [[parname = "v", pr_name = "v", pr_caption = "x_i", alias = "v_list", pr_type = type_v_real,
+		pr_hint = "Элементы выборки",
+		ts_default_value =  [1, 0, 1, 2, 1, 0, 0, 2, 1, 1, 0, 3, 2, 1, 1, 0, 1, 2, 3, 0]]],
+	solver = selection_rv_empirical_characteristics]$
+push(informaltask_selection_rv_empirical_characteristics, informaltasks)$
+/* ===================================== */
+/* Построить дискретный вариационный ряд */
+/* ===================================== */
+informaltask_build_discrete_variation_series : [
+	category = [ts_stat],
+	name = "build_discrete_variation_series",
+	shortname = "ms_bdvs",
+	readiness = ts_full_readiness,
+	short_description = "Построить дискретный вариационный ряд",
+	text = 
+		"Построить дискретный вариационный ряд.",
+	taskparams = [[parname = "v", pr_name = "v", pr_caption = "x_i", alias = "v_list", pr_type = type_v_real,
+		pr_hint = "Элементы выборки",
+		ts_default_value =  [1, 0, 1, 2, 1, 0, 0, 2, 1, 1, 0, 3, 2, 1, 1, 0, 1, 2, 3, 0]]],
+	solver = build_discrete_variation_series]$
+push(informaltask_build_discrete_variation_series, informaltasks)$
+/* ======================================= */
+/* Построить интервальный вариационный ряд */
+/* ======================================= */
+informaltask_build_interval_variation_series : [
+	category = [ts_stat],
+	name = "chances_discrete_rv_density_table_expect_val",
+	shortname = "ms_bivs",
+	readiness = ts_full_readiness,
+	short_description = "Построить интервальный вариационный ряд",
+	text = 
+		"Построить интервальный вариационный ряд.",
+	taskparams = [
+		[parname = "v", pr_name = "v", pr_caption = "x_i", alias = "v_list", pr_type = type_v_real,
+			pr_hint = "Элементы выборки",
+			ts_default_value =  [1, 0, 1, 2, 1, 0, 0, 2, 1, 1, 0, 3, 2, 1, 1, 0, 1, 2, 3, 0]],
+		[parname = "ni", pr_name = "ni", pr_caption = "n", alias = "ni", pr_type = type_s_integer_nonnegative,
+			pr_hint = "Число интервалов",
+			ts_default_value =  3]],
+	solver = build_interval_variation_series]$
+push(informaltask_build_interval_variation_series, informaltasks)$
+/* ============================================================================== */
+/* Линейная аппроксимация методом наименьших квадратов функции одного переменного */
+/* ============================================================================== */
+informaltask_linear_approximation_least_squares_method_1_var : [
+	category = [ts_stat],
+	ts_subcategory = ts_approximation,
+	name = "linear_approximation_least_squares_method_1_var",
+	shortname = "ms_lalsm1v",
+	readiness = ts_full_readiness,
+	short_description = "Линейная аппроксимация МНК функции одного переменного",
+	text = 
+		"Найти линейную аппроксимацию МНК функции одного переменного.",
+	taskparams = [
+		[parname = "xy", pr_name = "xy", pr_caption = "table", alias = "xy_table", pr_type = type_m_real_height_eq2,
+			pr_hint = "Таблица значений аргумента и функции",
+			ts_default_value =  matrix([-2, -1, 0, 1, 2], [-3.1, -0.9, 1, 2.9, 5])]],
+	solver = linear_approximation_least_squares_method_1_var]$
+push(informaltask_linear_approximation_least_squares_method_1_var, informaltasks)$
+/* ================================================================================== */
+/* Квадратичная аппроксимация методом наименьших квадратов функции одного переменного */
+/* ================================================================================== */
+informaltask_quadratic_approximation_least_squares_method_1_var : [
+	category = [ts_stat],
+	ts_subcategory = ts_approximation,
+	name = "quadratic_approximation_least_squares_method_1_var",
+	shortname = "ms_qalsm1v",
+	readiness = ts_full_readiness,
+	short_description = "Квадратичная аппроксимация МНК функции одного переменного",
+	text = 
+		"Найти квадратичную аппроксимацию МНК функции одного переменного.",
+	taskparams = [
+		[parname = "xy", pr_name = "xy", pr_caption = "table", alias = "xy_table", pr_type = type_m_real_height_eq2,
+			pr_hint = "Таблица значений аргумента и функции",
+			ts_default_value =  matrix([-2, -1, 0, 1, 2], [-3.1, -0.9, 1, 2.9, 5])]],
+	solver = quadratic_approximation_least_squares_method_1_var]$
+push(informaltask_quadratic_approximation_least_squares_method_1_var, informaltasks)$

@@ -1,0 +1,73 @@
+/* ====================================================== */
+/* ================ Неформальные задания ================ */
+/* ===================== Матанализ ====================== */
+/* ====================================================== */
+debuglog("it_matan.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ============================= */
+/* Найти неопределенный интеграл */
+/* ============================= */
+informaltask_matanaliz_find_indefinite_integral : [
+	category = [ts_matanaliz],
+	ts_subcategory = ts_integrate,
+	name = "matanaliz_find_indefinite_integral",
+	shortname = "mm_iint",
+	readiness = ts_full_readiness,
+	short_description = "Найти неопределенный интеграл",
+	text = "Найти неопределенный интеграл $\\int f(\\x)d\\x$.",
+	ts_notes = "В данный момент это задание может быть решено лишь для простейших функций. В перспективе возможности решения будут расширены.",
+	taskparams = [[parname = "f(\\x)", pr_name = "f_x", pr_caption = "f(x)", alias = "f(x)", pr_type = type_s_function_x, 
+		ts_default_value = x+sin(x)]],
+	solver = matanaliz_find_indefinite_integral]$
+push(informaltask_matanaliz_find_indefinite_integral, informaltasks)$
+/* =========================== */
+/* Найти определенный интеграл */
+/* =========================== */
+informaltask_matanaliz_find_definite_integral : [
+	category = [ts_matanaliz],
+	ts_subcategory = ts_integrate,
+	name = "matanaliz_find_definite_integral",
+	shortname = "mm_dint",
+	readiness = ts_full_readiness,
+	short_description = "Найти определенный интеграл",
+	text = "Найти определенный интеграл $\\int^b_a f(\\x)d\\x$.",
+	ts_notes = "В данный момент это задание может быть решено лишь для простейших функций. В перспективе возможности решения будут расширены.",
+	taskparams = [
+		[parname = "f(\\x)", pr_name = "f_x", pr_caption = "f(x)", alias = "f(x)", pr_type = type_s_function_x, 
+			ts_default_value = x+sin(x)],
+		[parname = "a", pr_name = "a", pr_caption = "a", alias = "a", pr_type = type_s_real, 
+			ts_default_value = 0],
+		[parname = "b", pr_name = "b", pr_caption = "b", alias = "b", pr_type = type_s_real, 
+			ts_default_value = 1]],
+	solver = matanaliz_find_definite_integral]$
+push(informaltask_matanaliz_find_definite_integral, informaltasks)$
+/* ============================================ */
+/* Найти производную функции одного переменного */
+/* ============================================ */
+informaltask_matanaliz_find_derivative_func_1_var : [
+	category = [ts_matanaliz],
+	ts_subcategory = ts_differentiate,
+	name = "matanaliz_find_derivative",
+	shortname = "mm_fdf1v",
+	readiness = ts_full_readiness,
+	short_description = "Найти производную функции одного переменного",
+	text = "Найти производную функции одного переменного $f(\\x)$.",
+	taskparams = [[parname = "f(\\x)", pr_name = "f_x", pr_caption = "f(x)", alias = "f(x)", pr_type = type_s_function_x, 
+		ts_default_value = (x + sin(x))]],
+	solver = find_derivative_func_1_var]$
+push(informaltask_matanaliz_find_derivative_func_1_var, informaltasks)$
+/* ======================================================== */
+/* Разложить функцию в ряд Фурье на промежутке от -пи до пи */
+/* ======================================================== */
+informaltask_matanaliz_expand_in_fourier_pi : [
+	category = [ts_matanaliz],
+	ts_subcategory = ts_fourier,
+	name = "matanaliz_find_derivative",
+	shortname = "mm_eifp",
+	readiness = ts_test_readiness,
+	short_description = "Разложить функцию в ряд Фурье на промежутке от -пи до пи",
+	text = "Разложить функцию $f(\\x)$ в ряд Фурье на промежутке от $[-\\pi ; \\pi]$.",
+	taskparams = [[parname = "f(\\x)", pr_name = "f_x", pr_caption = "f(x)", alias = "f(x)", pr_type = type_s_function_x, 
+		ts_default_value = (x + x^2)]],
+	solver = matanaliz_expand_in_fourier_pi]$
+push(informaltask_matanaliz_expand_in_fourier_pi, informaltasks)$

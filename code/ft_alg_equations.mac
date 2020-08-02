@@ -1,0 +1,553 @@
+/* ==================================================== */
+/* ================ Формальные задания ================ */
+/* ====================== Алгебра ===================== */
+/* ===================== Уравнения ==================== */
+/* ==================================================== */
+debuglog("ft_alg_equations.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* ================================================== */
+/* @type function */
+/* @begin find_max_common_subexpression */
+/* @brief Поиск наибольшего общего подвыражения в выражении */
+/* @details Найти производную функции одного переменного */
+/* @param expr - выражение, в котором ведется поиск */
+/* @param var - выражение-переменная */
+/* @result наибольшее общее подвыражение */
+/* @example find_max_common_subexpression(sin(x)^2/(1-sin(x))+sqrt(sin(x))) -> sin(x) */
+/* @todo Ничего не сделано */
+/* @tags solver */
+/* @end */
+/* ================================================== */
+debuglog("find_max_common_subexpression", debug_message_func_load)$
+find_max_common_subexpression(expr, var) := block(
+	[res],
+	debug_start_function("find_max_common_subexpression", [fp_mid_level]),
+	/* поиск появлений var в дереве выражения */
+	/* сформировать список списков адресов var в выражении, например для x+sin(x) будет [[1], [2,1]] ??? */
+	/* поднимаемся по веткам пока есть совпадения */
+	/* !TODO! */
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =============================== */
+/* Решить алгебраическое уравнение */
+/* =============================== */
+debuglog("solve_algebraic_equation", debug_message_func_load)$
+solve_algebraic_equation(prs) := block(
+	[res, rs, rs_ans, eq, st, s_l, s, answ],
+	debug_start_function("solve_algebraic_equation", [fp_high_level, fp_solver]),
+	s_l : [],
+	eq : get_val_by_alias(prs, "P(x)"),
+	if (eq = false) then eq : get_val_by_alias(prs, "equation"),
+	/* Пытаемся решить уравнение частного вида */
+	debuglog(printf(false, "special_form")),
+	rs : find_polynome_roots_poly_of_special_form(prs),
+	if can_solve_p(rs) then (
+		res : rs,
+		go(tag_quit)),
+	/* Пытаемся решить с помощью теоремы Безу */
+	debuglog(printf(false, "bezout_theorem")),
+	rs : find_polynome_roots_bezout_theorem(prs),
+	if can_solve_p(rs) then (
+		res : rs,
+		go(tag_quit)),
+	st : printf(false, "Решить уравнение $~a$", totex(eq)),
+	answ : [[type = cant_find_solution, value = "Такое задание мы решить не можем"]],
+	s_l : ["Мы не можем решить такое задание"],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	tag_quit,
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ========================= */
+/* Решить линейное уравнение */
+/* ========================= */
+debuglog("solve_linear_equation", debug_message_func_load)$
+solve_linear_equation(prs) := block([res, a, b, st, s_l, s, s1, s2, s3, vl, answ],
+	debug_start_function("solve_linear_equation", [fp_high_level, fp_solver]),
+	s_l : [],
+	[a, b] : get_vals_by_aliases(prs, ["a", "b"]),
+	if ((a = false) or (b = false) or (c = false)) then block([p, p_cl],
+		p : get_val_by_alias(prs, "P(x)"),
+		if (p = false) then p : get_val_by_alias(prs, "equation"),
+		p_cl : poly_coeffs(p, x), 										/* получаем список коэффициентов делителя */
+		if (not(atom(p_cl)) and (length(p_cl) = 2)) then [a, b] : [p_cl[1], p_cl[2]]),
+	if ((a = false) or (a = 0) or (b = false) or (c = false)) then (
+		s_l : ["В решатель переданы неверные данные"],
+		answ : [[type=cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	debuglog(printf(false, "a=~a, b=~a, c=~a", a, b, c)),
+	st : printf(false, "Решить линейное уравнение: $~a$~2%", totex(a*x + b = 0)),
+	append_to_s_l("$~a$~2%", totex(a*x + b = 0)),
+	if (b = 0) then (
+		append_to_s_l("$~a$~2%", totex(x = 0)),
+		vl : 0,
+		go(tag_make_answer)),
+	if (a = 1) then (
+		append_to_s_l("$~a$~2%", totex(x = -b)),
+		vl : -b,
+		go(tag_make_answer)),
+	append_to_s_l("$~a$~2%", totex(a*x = -b)),
+	[s, vl] : totex_calc_val(-pb/pa, [pa = a, pb = b]),
+	append_to_s_l("$x=$ ~a", s),
+	tag_make_answer,
+	answ : [[type = root, value = vl, multiplicity = 1]],
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* =========================== */
+/* Решить квадратное уравнение */
+/* =========================== */
+debuglog("solve_quadratic_equation", debug_message_func_load)$
+solve_quadratic_equation(prs) := block(
+	[res, 
+	a, b, c,
+	x_n,
+	st, s_l, s, s1, s2, s3, 
+	pr, rs, rs_s, rs_ans,
+	d, x1, x2,
+	answ],
+	debug_start_function("solve_quadratic_equation", [fp_high_level, fp_solver]),
+	debuglog(printf(false, "prs=~a", prs)),
+	st : "", s_l : [],
+	[a, b, c] : get_vals_by_aliases(prs, ["a", "b", "c"]),				/* коэффициенты квадратного уравнения */
+	x_n : get_val_by_alias(prs, "x name"),
+	if (x_n = false) then x_n : "x",
+	debuglog(printf(false, "a=~a, b=~a, c=~a", a, b, c)),
+	if ((a = false) or (b = false) or (c = false)) then block(			/* если какой-либо коэффициент не получен... */
+		[p, p_cl],
+		p : get_val_by_alias(prs, "P(x)"),								/* ...то получаем уравнение как выражение */
+		if (p = false) then p : get_val_by_alias(prs, "equation"),
+		p_cl : poly_coeffs(p, x), 										/* получаем список коэффициентов выражения */
+		if not(atom(p_cl)) and length(p_cl)=3 then [a, b, c] : [p_cl[1], p_cl[2], p_cl[3]]),
+	if ((a = false) or (b = false) or (c = false)) then (				/* если коэффициентов опять нет... */
+		s_l : ["В решатель переданы неверные данные"],					/* ...то не можем решить и выходим */
+		answ : [[type = cant_find_solution, value = "В решатель переданы неверные данные"]],
+		go(tag_exit)),
+	debuglog(printf(false, "a=~a, b=~a, c=~a", a, b, c)),
+	st : printf(false, 
+		"Решить квадратное уравнение: $~a$~2%", 
+		totex(a*x^2+b*x+c=0, "sub" = [x = x_n])),
+	/* Случай, когда квадратичный член равен нулю */
+	if (a = 0) then block([],
+		append_to_s_l("Имеем линейное уравнение.~2%"),
+		pr : [[alias = "a", value = b], [alias = "b", value = c]],
+		rs : solve_linear_equation(pr),
+		rs_s : getprop(rs, solution),
+		append_to_s_l("~a", rs_s),
+		rs_ans : getprop(rs, answer)),
+	if not(atom(answ)) then go(tag_exit),
+	/* Случай, когда линейный и свободный члены равны нулю */
+	if ((b = 0) and (c = 0)) then block([],
+		s : printf(false, 
+			"$~a$~2%${~a}^2=0$;~2%${~a}=0$~2%", 
+			totex(a*x = 0, "sub" = [x = x_n]), x_n, x_n),
+		s_l : append(s_l, [s]),
+		answ : [[type = root, value = 0, multiplicity = 2]]),
+	if not(atom(answ)) then go(tag_exit),
+	/* Случай, когда свободный член равен нулю */
+	if (c = 0) then block([rp],
+		rp : ratsimp(-b/a),
+		s : printf(false, 
+			"$~a$~2%${~a}_1=~a$; ${~a}_2=~a$~2%", 
+			totex(x*(a*x+b) = 0, "sub" = [x = x_n]), x_n, 0, x_n, totex(rp)),
+		s_l : append(s_l, [s]),
+		answ : [[type = root, value = 0, multiplicity = 1], [type = root, value = rp, multiplicity = 1]]),
+	if not(atom(answ)) then go(tag_exit),
+	/* Случай, когда линейный коэффициент равен нулю */
+	if (b = 0) then block([rp],
+		rp : ratsimp(-c/a),
+		s : printf(false, "$~a$~2%$~a$~2%", 
+			totex(a*x^2 = -c, "sub" = [x = x_n]), totex(x^2 = rp, "sub" = [x = x_n])),
+		s_l : append(s_l, [s]),
+		if (rp < 0) then (
+			s : printf(false, "действительных корней нет;~2%"),
+			s_l : append(s_l, [s]),
+			answ : [[type = root, value = emptyset]]),
+		if (rp = 0) then (
+			s : printf(false, "${~a}_1=0$;~2%", x_n),
+			s_l : append(s_l, [s]),
+			answ : [[type = root, value = 0, multiplicity = 2]]),
+		if (rp > 0) then (
+			x1 : ratsimp(sqrt(-c/a)),
+			x2 : -x1,
+			s : printf(false, "${~a}_1=~a$; ${~a}_2=~a$~2%", x_n, totex(x1), x_n, totex(x2)),
+			s_l : append(s_l, [s]),
+			answ : [[type = root, value = x1, multiplicity = 1], [type = root, value = x2, multiplicity = 1]])),
+	if not(atom(answ)) then go(tag_exit),
+	/* Стандартное решение через дискриминант */
+	s : printf(false, "$~a$~2%", totex(a*x^2+b*x+c=0, "sub" = [x = x_n])),
+	s_l : append(s_l, [s]),
+	[s, d] : totex_calc_val(pb^2-4*pa*pc, [pa = a, pb = b, pc = c]),
+	s : printf(false, "Найдем дискриминант: $D=$ ~a\\\\~%", s),
+	s_l : append(s_l, [s]),
+	if (d > 0) then block([s3p, s3m], 
+		[s3p, x1] : totex_calc_val((-pb+sqrt(pd))/(2*pa), [pa = a, pb = b, pd = d]),
+		[s3m, x2] : totex_calc_val((-pb-sqrt(pd))/(2*pa), [pa = a, pb = b, pd = d]),
+		answ : [[type = root, value = x1, multiplicity = 1], [type = root, value = x2, multiplicity = 1]],
+		debuglog(printf(false, "s3p=~a, s3m=~a", s3p, s3m)),
+		s : printf(false, 
+			"Корни уравнения:~2%${~a}_1=$ ~a;\\\\${~a}_2=$ ~a;~2%", 
+			x_n, s3p, x_n, s3m),
+		s_l : append(s_l, [s])),
+	if (d = 0) then block([], 
+		x1 : (-b)/(2*a), answ : [[type = root, value = x1, multiplicity = 2]],
+		[s, x1] : totex_calc_val((-pb)/(2*pa), [pa = a, pb = b]),
+		s : printf(false, "Корень уравнения: ${~a}_1=$ ~a;~2%", x_n, s),
+		s_l : append(s_l, [s])),
+	if (d < 0) then block([], 
+		s : printf(false, "Уравнение корней не имеет~2%"), 
+		s_l : append(s_l, [s]), 
+		answ : [[type = root, value = emptyset]]),
+	tag_exit,
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ========================================= */
+/* Найти корни многочлена в специального вида */
+/* ========================================= */
+debuglog("find_polynome_roots_poly_of_special_form", debug_message_func_load)$
+find_polynome_roots_poly_of_special_form(prs) := block(
+	[res, 				/* результат */
+	p, 					/* многочлен - левая часть уравнения */
+	p_cl,				/* список коэффициентов многочлена */
+	potential_roots,	/* список возможных корней */
+	verified_roots,		/* список найденных корней */
+	st, s_l, s, 		/* строки для решения */
+	answ],				/* ответ */
+	s_l : [], answ : [],
+	debug_start_function("find_polynome_roots_poly_of_special_form", [fp_high_level, fp_solver]),
+	p : get_val_by_alias(prs, "P(x)"),
+	if (p = false) then p : get_val_by_alias(prs, "equation"),
+	p_cl : poly_coeffs(p, x), 											/* получаем список коэффициентов делителя */
+	if length(p_cl)=2 then (
+		res : solve_linear_equation(prs),
+		go(tag_exit)),
+	if length(p_cl)=3 then (
+		res : solve_quadratic_equation(prs),
+		go(tag_exit)),
+	if ((length(p_cl) = 5) and (p_cl[2] = 0) and (p_cl[4] = 0)) then (
+		res : solve_biquadratic_equation(prs),
+		go(tag_exit)),
+	/* !TODO! */
+	answ : [[type = cant_find_solution, value = "Такое задание мы решить не можем"]],
+	s_l : ["Мы не можем решить такое задание"],
+	res : [solution_title = printf(false, "Найти корни многочлена $~a$", totex(p)), 
+		solution = apply(sconcat, s_l), 
+		solution_steps = s_l, 
+		answer = answ],
+	tag_exit,
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ==================================================== */
+/* Найти кони многочлена с помощью теоремы Безу */
+/* ==================================================== */
+debuglog("find_polynome_roots_bezout_theorem", debug_message_func_load)$
+find_polynome_roots_bezout_theorem(prs) := block(
+	[res, 																/* результат */
+	rs, rs_ans,
+	p, 																	/* многочлен - левая часть уравнения */
+	p_cl,																/* список коэффициентов многочлена */
+	potential_roots,													/* список возможных корней */
+	verified_roots,														/* список найденных корней */
+	null_root_deg,														/* спепень нулевого корня */
+	fnd_all_roots,
+	st, s_l, s, 														/* строки для решения */
+	answ],																/* ответ */
+	verified_roots : [], s_l : [], answ : [], 
+	fnd_all_roots : false, null_root_deg : 0,
+	debug_start_function("find_polynome_roots_bezout_theorem", [fp_high_level, fp_solver]),
+	p : get_val_by_alias(prs, "P(x)"),
+	if (p = false) then p : get_val_by_alias(prs, "equation"),
+	if (p = false) then p : x,
+	p_cl : poly_coeffs(p, x),
+	debuglog(printf(false, "p=~a, p_cl=~a", p, p_cl)),
+	st : printf(false, "Найдем корни многочлена $P(x)=~a$ с помощью теоремы Безу.\\\\~%~%", totex(p)),
+	/* Отсеиваем нулевой корень любой кратности */
+	if last(p_cl)=0 then block([new_p_cl, new_p, null_b, d_d],
+		new_p_cl : [],
+		null_b : true,
+		for i : length(p_cl) thru 1 step -1 do (
+			if (null_b and (p_cl[i] # 0)) then null_b : false,
+			if not(null_b) then new_p_cl : append([p_cl[i]], new_p_cl)),
+		d_d : length(p_cl)-length(new_p_cl),
+		null_root_deg : d_d,
+		append_to_s_l("Видим, что уравнение имеет корень 0 кратности ~a.~2%", d_d),
+		debuglog(printf(false, "p_cl=~a, new_p_cl=~a", p_cl, new_p_cl)),
+		p_cl : new_p_cl,
+		new_p : ratsimp(p/(x^d_d)),
+		append_to_s_l("$~a=~a$~2%", totex(p), totex((x^d_d)*new_p)),
+		append_to_s_l("Получаем новое уравнение $~a=0$~2%", totex(new_p)),
+		p : new_p),
+	/* Формируем список потенциальных корней многочлена */
+	append_to_s_l("Будем искать корни многочлена среди делителей свободного члена, который равен ~a.~2%", last(p_cl)),
+	if last(p_cl) = 0 then
+		potential_roots : [0]
+	else block([fct],
+		fct : args(divisors(last(p_cl))),
+		potential_roots : append(fct, -fct)),
+	debuglog(printf(false, "potential_roots=~a", potential_roots)),
+	append_to_s_l("Делители свободного члена: ~{$~a$; ~}~2%", map(totex, potential_roots)),
+	/* Проверяем потенциальные корни и формируем список проверенных корней */
+	for potential_root in potential_roots do block([rs],
+		append_to_s_l("Подставим в многочлен значение $~a$:~2%$P(~a)$=", potential_root, totex(potential_root)),
+		[s, rs] : totex_calc_val(p,	[x = potential_root]),
+		if rs#0 then block([],
+			s : printf(false, "~a $\\neq 0$, следовательно $x=~a$ не является корнем многочлена.~2%", s, potential_root))
+		else block([],
+			s : printf(false, "~a следовательно $x=~a$ является корнем многочлена.~2%", s, potential_root),
+			verified_roots : append(verified_roots, [potential_root]),
+			answ : append([[type = root, ts_name = "x", ts_alias = "x", value = potential_root, multiplicity = 1]], answ)),
+		s_l : append(s_l, [s])),
+	debuglog(printf(false, "answ=~a", answ)),
+	/* Если найдено максимальное число корней, то выходим */
+	debuglog(printf(false, "verified_roots=~a", verified_roots)),
+	if length(verified_roots)=length(p_cl)-1 then (
+		s : printf(false, "Найдено ~a корней. Так как степень многочлена равна ~a, следовательно других корней быть не может. ~2%", length(verified_roots), length(p_cl)-1),
+		s_l : append(s_l, [s]),
+		fnd_all_roots : true,
+		go(tag_exit)),
+	debuglog(printf(false, "length(verified_roots)=~a", length(verified_roots))),
+	/* Если корней найдено меньше, то делим многочлен на многочлен и пытаемся решить результат деления специальными методами */
+	if length(verified_roots)>0 then block([d_prs, d_rs, d_ans, dp],
+		dp : 1,
+		for v_r in verified_roots do dp : dp*(x-v_r),
+		s : printf(false, "Исходный многочлен должен делиться на $~a=~a$ ~2%", totex(dp), totex(expand(dp))),
+		s_l : append(s_l, [s]),
+		d_prs : [[alias = "dividend", value = p], [alias = "divider", value = expand(dp)]],
+		d_rs : divide_polynomials_by_column(d_prs),
+		d_ans : getprop(d_rs, answer),
+		p : getprop(d_ans[1], value),
+		s : getprop(d_rs, solution),
+		s_l : append(s_l, [s])),
+	debuglog(printf(false, "p=~a", p)),
+	rs : find_polynome_roots_poly_of_special_form([[alias = "P(x)", value = p]]),
+	s : getprop(rs, solution),
+	s_l : append(s_l, [s]),
+	rs_ans : getprop(rs, answer),
+	if getprop(rs_ans[1], type)=cant_find_solution then (	/* если частное не смогли решить стандартными методами... */
+		fnd_all_roots : false,								/* ... то нашли не все корни и переходим печати корней */
+		go(tag_print_roots_and_exit)),
+	fnd_all_roots : true,									/* если все же решили, значит все корни найдены */
+	debuglog(printf(false, "rs_ans=~a, length(rs_ans)=~a", rs_ans, length(rs_ans))),
+	/* Добавляем найденные корни к проверенным корням */
+	if ((getprop(rs_ans[1], type) = root) and (getprop(rs_ans[1], value) # emptyset)) then 
+		for an in rs_ans do block([a_v, a_m],	/* идем по корням, найденным другими методами */
+			debuglog(printf(false, "an=~a", an)),
+			a_v : getprop(an, value),				/* значение корня */
+			a_m : getprop(an, multiplicity),		/* кратность корня */
+			if a_m = false then a_m : 1,
+			for i : 1 thru length(answ) do block([ca_v, ca_m],		/* перебираем корни в формируемом ответе */
+				ca_v : getprop(answ[i], value),			/* значение текущего корня из ответа */
+				ca_m : getprop(answ[i], multiplicity),	/* кратность текущего корня из ответа */
+				if ca_m = false then ca_m : 1,
+				if ca_v=a_v then block([new_an],
+					new_an : answ[i],
+					new_an : setprop(new_an, multiplicity, a_m + ca_m),
+					answ[i] : new_an))),
+	if null_root_deg > 0 then answ : append([[type = root, value = 0, multiplicity = null_root_deg]], answ),
+	/* !TODO! - если после деления многочленов найти корни стандартными способами не получилось, */
+	/* !TODO! - то нужно еще раз попробовать теорему Безу */
+	/* Печатаем найденные корни */
+	tag_print_roots_and_exit,
+	if fnd_all_roots 
+		then s : printf(false, "~2%Найдены все корни многочлена. ")
+		else s : printf(false, "~2%Найдены не все корни многочлена.~2%"),
+	s_l : append(s_l, [s]),
+	append_to_s_l("Найдены следующие корни:~2%"),
+	for an in answ do block([],
+		s : printf(false, "Корень $\\x=~a$ кратности $~a$. ", totex(getprop(an, value)), totex(getprop(an, multiplicity))),
+		s_l : append(s_l, [s])),
+	tag_exit,
+	/* Формируем результат и выходим */
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================================================== */
+/* Функция из двух списков корней делает один, складывая кратности совпадающих корней */
+/* ================================================================================== */
+debuglog("merge_answer_roots_with_multiplicityes", debug_message_func_load)$
+merge_answer_roots_with_multiplicityes(ans1, ans2) := block([res], 
+	debug_start_function("merge_answer_roots_with_multiplicityes", [fp_mid_level, fp_misc]),
+	if atom(ans1) then (res : false, go(tag_exit)),
+	if atom(ans2) then (res : false, go(tag_exit)),
+	if ((length(ans1) > 0) and ((getprop(ans1[1], type) = root) or (getprop(ans1[1], type) = ts_value)) and (getprop(ans1[1], value) # emptyset)) 
+		then res : ans1
+		else res : [],
+	for an in ans2 do block([a_t, a_v, a_m],							/* идем по корням ans2 */
+		a_t : getprop(an, type),										/* тип корня */
+		a_v : getprop(an, value),										/* значение корня */
+		if (((a_t = root) or (a_t = ts_value)) and (a_v # emptyset)) then block([add_r_p],
+			a_m : getprop(an, multiplicity),							/* кратность корня */
+			if a_m = false then a_m : 1,
+			add_r_p : true,
+			for i : 1 thru length(res) do block([ca_v, ca_m],			/* перебираем корни в формируемом ответе */
+				ca_v : getprop(res[i], value),							/* значение текущего корня из ответа */
+				ca_m : getprop(res[i], multiplicity),					/* кратность текущего корня из ответа */
+				if (ca_m = false) then ca_m : 1,
+				if (ca_v = a_v) then block([new_an],
+					add_r_p : false,
+					new_an : res[i],
+					new_an : setprop(new_an, multiplicity, a_m + ca_m),
+					res[i] : new_an)),
+			if (add_r_p = true) then res : append(res, [an])
+			)),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ========================================== */
+/* Разделить многочлен на многочлен столбиком */
+/* ========================================== */
+debuglog("divide_polynomials_by_column", debug_message_func_load)$
+divide_polynomials_by_column(prs) := block(
+	[res, 																/* результат функции */
+	p_divider, 															/* параметр - делитель */
+	p_dividend,													 		/* параметр - делимое */
+	p_divider_cl, 														/* список коэффициентов делителя */
+	p_dividend_cl, 														/* список коэффициентов делимого */
+	p_divider_pwr,														/* степень делителя */
+	p_dividend_pwr,														/* степень делимого */
+	div_res, 															/* результат деления, вычисляется внутренними методами максимы */
+	c_ratio, c_shift,
+	st, ss, s_l, s, tbl_s, 												/* строковые составляющие решения */
+	answ], 																/* ответ для решения */
+	s_l : [], c_shift : 0,
+	debug_start_function("divide_polynomials_by_column", [fp_high_level, fp_solver]),
+	p_dividend : get_val_by_alias(prs, "dividend"),						/* получаем параметр полином-делимое */
+	p_divider : get_val_by_alias(prs, "divider"),						/* получаем параметр полином-делитель */
+	debuglog(printf(false, "p_dividend=~a, p_divider=~a", p_dividend, p_divider)),
+	st : printf(false, "Разделим многочлен $~a$ на многочлен $~a$.\\\\~%~%", totex(p_dividend), totex(p_divider)),
+	p_divider_cl : poly_coeffs(p_divider, x), 							/* получаем список коэффициентов делителя */
+	p_dividend_cl : poly_coeffs(p_dividend, x),							/* получаем список коэффициентов делимого */
+	debuglog(printf(false, "p_dividend_cl=~a, p_divider_cl=~a", p_dividend_cl, p_divider_cl)),
+	p_divider_pwr : length(p_divider_cl)-1,								/* выталкиваем степень делителя */
+	p_dividend_pwr : length(p_dividend_cl)-1,							/* выталкиваем степень делимого */
+	debuglog(printf(false, "p_dividend_pwr=~a, p_divider_pwr=~a", p_dividend_pwr, p_divider_pwr)),
+	debuglog(printf(false, "p_dividend_cl=~a, p_divider_cl=~a", p_dividend_cl, p_divider_cl)),
+	s : printf(false, "Степень делителя равна ~a, а степень делимого равна ~a. ", p_divider_pwr, p_dividend_pwr),
+	s_l : append(s_l, [s]),
+	if p_divider_pwr>p_dividend_pwr then (								/* если степень делителя больше степени делимого, то формируем ответ и выходим */
+		s : printf(false, "Степень делителя больше степени делимого, поэтому частное равно нулю, а остаток равен делимому. "),
+		s_l : append(s_l, [s]),
+		answ : [
+			[type = ts_value, ts_name = "частное", ts_alias = "quotient", value = 0], 
+			[type = ts_value, ts_name = "остаток", ts_alias = "remainder", value = p_dividend]],
+		go(tag_exit)),
+	div_res : divide(p_dividend, p_divider),							/* решаем задачу внутренними методами */
+	s : smake(length(p_dividend_cl), "r"),								/* команды для столбцов, соответствующих коэффициентам делимого */
+	tbl_s : printf(false, 
+		"$$\\arraycolsep=0.05em~%\\begin{array}{~a@{\\,}r|r}~%", s),	/* заголовок таблицы */
+	/* Первый шаг - особенный */
+	/* Первая строка */
+	for i : 1 thru length(p_dividend_cl) do block([cs, c_p, p_dd],		/* заполняем ячейки первой строки слагаемыми делимого */
+		p_dd : p_dividend_cl[i],
+		c_p : length(p_dividend_cl)-i,
+		cs : dpc_c2tex(p_dd, c_p, i),
+		tbl_s : printf(false, "~a ~a& ", tbl_s, cs)),
+	tbl_s : printf(false, "~a&~a\\\\~%", tbl_s, totex(p_divider)),		/* в последнюю ячейку первой строки попадает делитель */
+	tbl_s : printf(false, 
+		"~a\\cline{~a-~a}~%", 
+		tbl_s, length(p_dividend_cl)+2, length(p_dividend_cl)+2),		/* черта под делителем */
+	/* Вторая строка */
+	c_ratio : p_dividend_cl[1]/p_divider_cl[1],
+	debuglog(printf(false, "c_ratio=~a", c_ratio)),
+	for i : 1 thru length(p_divider_cl) do block([cs, p_dd, c_p],
+		p_dd : c_ratio*p_divider_cl[i],
+		c_p : length(p_dividend_cl)-i,
+		cs : dpc_c2tex(p_dd, c_p, i),
+		tbl_s : printf(false, "~a~a&", tbl_s, cs)),
+	s : smake(length(p_dividend_cl)-length(p_divider_cl)+1, "&"),
+	tbl_s : printf(false, "~a~a", tbl_s, s),
+	tbl_s : printf(false, "~a~a\\\\~%", tbl_s, totex(expand(div_res[1]))),
+	tbl_s : printf(false, "~a\\cline{1-~a}~%", tbl_s, length(p_divider_cl)),
+	/* Остальные шаги */
+	tag_cycle,
+	for i : 1 thru length(p_divider_cl) do
+		p_dividend_cl[i] : p_dividend_cl[i]-c_ratio*p_divider_cl[i],
+	debuglog(printf(false, "p_dividend_cl=~a, p_divider_cl=~a", p_dividend_cl, p_divider_cl)),
+	pop(p_dividend_cl),
+	if length(p_dividend_cl)<length(p_divider_cl) then go(tag_end_cycle),
+	c_shift : c_shift+1,
+	s : smake(c_shift-1, "&"),											/* сдвиг для части делимого */
+	tbl_s : printf(false, "~a~a", tbl_s, s),
+	for i : 1 thru length(p_divider_cl) do ([cs, p_dd, c_p],			/* добавляем часть делимого */
+		p_dd : p_dividend_cl[i],
+		c_p : length(p_dividend_cl)-i,
+		cs : dpc_c2tex(p_dd, c_p, i),
+		tbl_s : printf(false, "~a&~a", tbl_s, cs)),
+	tbl_s : printf(false, "~a\\\\~%", tbl_s),
+	c_ratio : p_dividend_cl[1]/p_divider_cl[1],							/* коэффициент для умножения */
+	debuglog(printf(false, "c_ratio=~a", c_ratio)),
+	s : smake(c_shift-1, "&"),											/* сдвиг для делителя, умноженного на коэффициент */
+	tbl_s : printf(false, "~a~a", tbl_s, s),
+	for i : 1 thru length(p_divider_cl) do block([cs, p_dd, c_p],		/* добавляем делитель, умноженный на коэффициент */
+		p_dd : c_ratio*p_divider_cl[i],
+		c_p : length(p_dividend_cl)-i,
+		cs : dpc_c2tex(p_dd, c_p, i),
+		tbl_s : printf(false, "~a&~a", tbl_s, cs)),
+	tbl_s : printf(false, "~a\\\\~%", tbl_s),
+	tbl_s : printf(false, "~a\\cline{~a-~a}~%", tbl_s, c_shift+1, c_shift+length(p_divider_cl)),
+	go(tag_cycle),
+	tag_end_cycle,
+	c_shift : c_shift+1,
+	s : smake(c_shift-1, "&"),											/* сдвиг для части делимого */
+	tbl_s : printf(false, "~a~a", tbl_s, s),
+	for i : 1 thru length(p_dividend_cl) do ([cs, p_dd, c_p],			/* добавляем часть делимого */
+		p_dd : p_dividend_cl[i],
+		c_p : length(p_dividend_cl)-i,
+		cs : dpc_c2tex(p_dd, c_p, i),
+		tbl_s : printf(false, "~a&~a", tbl_s, cs)),
+	tbl_s : printf(false, "~a\\\\~%", tbl_s),
+	/* x^2&{}+2x&{}-12&&\,x+5\\	\cline{5-5} */
+	/* x^2&{}+5x&&&\,x-3\\ */
+	/* \cline{1-2} */
+	/* &{}-3x&{}-12\\ */
+	/* &{}-3x&{}-15\\ */
+	/* \cline{2-3} */
+	/* &&3 */
+	/* !TODO! */
+	/* Заканчиваем таблицу */
+	tbl_s : printf(false, "~a~%\\end{array}$$~2%", tbl_s),				/* конец таблицы */
+	s : printf(false, "~a", tbl_s),
+	s_l : append(s_l, [s]),
+	tag_exit,
+	answ : [
+			[type=root, ts_name="частное", ts_alias="quotient", value=div_res[1]], 
+			[type=root, ts_name="остаток", ts_alias="remainder", value=div_res[2]]],
+	res : gen_solver_res(st, s_l, answ),
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* Вспомогательная функция для деления многочленов */
+/* возвращает теховское значение для ячейки таблицы деления столбиком */
+/* p_dd - коэффициент перед степенью икса, */
+/* c_p - степень икса, */
+/* i - порядковый номер ячейки (нужно, чтобы знать первая ячейка или нет) */
+dpc_c2tex(p_dd, c_p, i) := block([res, cs, s_xp],
+	cs : totex(p_dd),
+	s_xp : totex(x^c_p),
+	if (c_p # 0) then
+		if p_dd=1 then cs : s_xp else cs : printf(false, "~a\\cdot ~a", cs, s_xp),
+	if ((p_dd>=0) and (i>1)) then cs : printf(false, "+~a", cs),
+	res : cs,
+	res)$
+/* ========================================================= */
+/* Возвращает список коэффициентов полинома                  */
+/* p - полином, v - переменная, относительно которой полином */
+/* ========================================================= */
+poly_coeffs(p, v) := block([res, p_l, p_pwr], res : [],
+	debug_start_function("poly_coeffs", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "p=~a, v=~a", p, v)),
+	p_l : polynome2ele(p, v),
+	p_pwr : pop(p_l),
+	debuglog(printf(false, "p_l=~a, p_pwr=~a", p_l, p_pwr)),
+	for c : 0 thru p_pwr do block([cf],
+		cf : coeff(p, v, c),
+		res : push(cf, res)),
+	res)$

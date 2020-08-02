@@ -1,0 +1,418 @@
+/* ======================================================================== */
+/* =========== Стандартные функции генерации текстов ЛаТеХ ================ */
+/* ======================================================================== */
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+debuglog("func-latex.mac", debug_message_module_load)$
+/* ================================================== */
+/* @type variable */
+/* @begin latex_text_start_std */
+/* @brief Стандартное начало файла ЛаТеХ */
+/* @details Стандартное начало файла ЛаТеХ */
+/* @end */
+/* ================================================== */
+latex_text_start_std : printf(false, "\\documentclass[12pt,a4paper,oneside]{article}~%\\renewcommand{\\baselinestretch}{1.25}~%")$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\textheight252mm~%\\textwidth170mm~%\\voffset-1in~%\\hoffset-1in~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\oddsidemargin30mm~%\\headheight0mm~%\\headsep0mm~%\\topmargin20mm~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\usepackage[utf8]{inputenc}~%\\usepackage[T1]{fontenc}~%\\usepackage[russian]{babel}~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\usepackage{latexsym, amssymb, amsmath, amsthm, array, graphics, floatflt, ifthen}~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\usepackage{pgfplots}~%\\pgfplotsset{compat=1.9}~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\usepackage[unicode, pdftex]{hyperref}~%\\hypersetup{colorlinks=true}~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\parindent=0pt~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\begin{document}~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\newcommand{\\x}{\\ensuremath{x}}~%\\newcommand{\\xx}[1]{\\ensuremath{\\x_{#1}}}~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\newcommand{\\M}{\\ensuremath{M}}~%\\newcommand{\\MM}[1]{\\ensuremath{\\M_{#1}}}~%"))$
+latex_text_start_std : sconcat(latex_text_start_std, printf(false, "\\newcommand{\\customint}{\\ensuremath{\\int}}~%\\newcommand{\\customdx}{\\ensuremath{\\,\\mathrm{d}\\x}}~%"))$
+/* ================================================== */
+/* @type variable */
+/* @begin latex_text_end_std */
+/* @brief Стандартный конец файла ЛаТеХ */
+/* @details Стандартный конец файла ЛаТеХ */
+/* @end */
+/* ================================================== */
+latex_text_end_std : printf(false, "\\end{document}~%")$
+/* ================================================== */
+/* @type function */
+/* @begin gen_project_latex_text */
+/* @brief Генерация текста ЛаТеХ решений для проекта */
+/* @details Генерация текста ЛаТеХ решений для проекта */
+/* @param prj - проект */
+/* @result Текст ЛаТеХ */
+/* @end */
+/* ================================================== */
+debuglog("gen_project_latex_text", debug_message_func_load)$
+gen_project_latex_text(prj) := block([res, s, s_t, t_p, ti, s_n, s_d], res : "",
+	debug_start_function("gen_project_latex_text", [fp_high_level, fp_common]),
+	s : getprop(prj, project_name),
+	res : printf(false, "~a\\begin{center}\\Large TaskSolver проект <<~a>>\\end{center}~2%", res, tex1(s)),
+	s_t : getprop(prj, project_source), 								/* тип источника проекта (ts_cmdline, ts_email) */
+	s_n : getprop(prj, project_source_name),
+	if (s_n = false) then s_n : "неизвестно",
+	if (s_t = ts_cmdline) then s : printf(false, "Получен из командной строки от"),
+	if (s_t = ts_email) then s : printf(false, "Получен по электронной почте от"),
+	if (s_t = ts_web) then s : printf(false, "Получен с сайта от"),
+	if (s_t = false) then s : printf(false, "Получен из неизвестного типа источника от"),
+	s_d : getprop(prj, creation_time),
+	if (s_d = false) then s_d : "время неизвестно",
+	res : printf(false, "~a\\begin{flushright}\\textit{~a ~a\\\\~a}\\end{flushright}~2%", res, s, tex1(s_n), s_d),
+	res : printf(false, "~a\\begin{flushright}{Версия проекта ~a}\\end{flushright}~2%", res, tasksolver_version),
+	t_p : getprop(prj, text_preamble),
+	if (slength(t_p) > 0) then
+		res : printf(false, "~a~a~2%", res, t_p),
+	tsks : getprop(prj, project_tasks),
+	ti : 0,
+	for tsk in tsks do block([t_s_n, t_e_m], ti : ti + 1,
+		t_s_n : getprop(tsk, task_name),
+		if ((t_s_n = false) or (t_s_n="")) then t_s_n : printf(false, "Задание ~a", ti),
+		res : printf(false, "~a\\begin{center}\\bf ~a\\end{center}~2%", res, t_s_n),
+		t_e_m : getprop(tsk, task_error_message),
+		if slength(t_e_m)=0 then block(
+			[s_r, 														/* результат решателя, из которого вынимаются остальные параметры */
+			t_s_st, 													/* заголовок решения */
+			t_s_s, 														/* само решение */
+			t_s_a, 														/* текст ответа */
+			t_a, 														/* ответ решателя */
+			t_w_m],
+			t_w_m : getprop(tsk, task_warning_message),
+			if slength(t_w_m)#0 then 
+				res : printf(false, "~a\\textbf{Предупреждение:} \\textit{~a}~2%", res, t_w_m),
+			s_r : getprop(tsk, solver_result),
+			t_s_st : getprop(s_r, solution_title),
+			t_s_s : getprop(s_r, solution),
+			t_a : getprop(s_r, answer),
+			t_s_a : gen_answer_text(t_a),
+			res : printf(false, "~a~a~2%\\textbf{Решение:}~2%~a~2%~a~2%", res, t_s_st, t_s_s, t_s_a))
+		else block([],
+			res : printf(false, "~a\\textbf{Ошибка:} \\textit{~a}~2%", res, t_e_m))),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @type function */
+/* @begin gen_answer_text */
+/* @brief Сформировать ответ к заданию */
+/* @details Формирует ответ к заданию в виде строки ЛаТеХ */
+/* @param answ - стандартный ответ решателя */
+/* @result Текст ЛаТеХ */
+/* @end */
+/* ================================================== */
+debuglog("gen_answer_text", debug_message_func_load)$
+gen_answer_text(answ) := block([res], res : "",
+	debug_start_function("gen_answer_text", [fp_high_level, fp_common]),
+	debuglog(printf(false, "answ=~a", answ)),
+	res : printf(false, "\\textit{Ответ: } "),
+	for ans in answ do block([ans_txt, ans_tp],							/* проходим по всем ответам */
+		ans_txt : getprop(ans, ts_text),
+		if (ans_txt # false) then (
+			res : printf(false, "~a~a; ", res, ans_txt),
+			go(tag_next_ans)),
+		ans_tp : getprop(ans, type),
+		if ((ans_tp = root) or (ans_tp = ts_single_value)) then 		/* если тип ответа корень или одиночное значение... */
+			block([vl], vl : getprop(ans, value),						/* ... то берем его значение */ 
+			if (vl = emptyset) 
+				then res : printf(false, "~a Корней нет;", res) 
+				else block([cpt],
+					cpt : getprop(ans, ts_caption),
+					if cpt = false then cpt : "" else cpt : printf(false, "~a=", cpt),
+					res : printf(false, "~a~a $~a$; ", res, cpt, totex(vl))
+					))
+		elseif (ans_tp = ts_value) then block([vl, cpt, nm],			/* если тип ответа значение... */
+			vl : getprop(ans, value),
+			cpt : getprop(ans, ts_caption),
+			nm : getprop(ans, ts_name),
+			if ((nm = false) or (nm = "")) 
+				then nm : "" 
+				else nm : printf(false, " --- ~a", nm),
+			if ((cpt = false) or (cpt = "")) 
+				then cpt : "" 
+				else cpt : printf(false, "~a=", cpt),
+			res : printf(false, "~a $~a~a$ ~a; ", res, cpt, totex(vl), nm))
+		elseif (ans_tp = ts_vector) then								/* если тип ответа вектор... */
+			block([vl], vl : getprop(ans, value), 
+			res : printf(false, "~a$~a$", res, to_tex_vector_rb(vl)))
+		elseif (ans_tp = vector_3) then									/* если тип ответа 3-вектор... */
+			block([vl], vl : getprop(ans, value), 
+			res : printf(false, "~a$\\left( ~a; ~a; ~a \\right)$", res, totex(vl[1]), totex(vl[2]), totex(vl[3])))
+		elseif ((ans_tp = expression) or (ans_tp = ts_expression)) then	/* если тип ответа выражение... */
+			block([vl], vl : getprop(ans, value), 
+			res : printf(false, "~a$~a$; ", res, totex(vl)))
+		elseif (ans_tp = matrix_3x3) then								/* если тип ответа матрица 3 на 3... */
+			block([vl], vl : getprop(ans, value), 
+			res : printf(false, "~a$\\left(~a\\right)$", res, to_tex_matr_arr(vl)))
+		elseif ((ans_tp = tp_matrix) or (ans_tp = ts_matrix_value)) then	/* если тип ответа матрица или матричное значение... */
+			block([vl], vl : getprop(ans, value), 
+			res : printf(false, "~a$\\left(~a\\right)$", res, to_tex_matr_arr(vl)))
+		elseif (ans_tp = ts_multipliers) then								/* если тип ответа множители произведения... */
+			block([vl, ml, s, vv], vl : getprop(ans, value), ml : getprop(ans, ts_power),
+			[s, vv] : totex_calc_val_formula(lambda([pvl, pml], product(pvl[i]^pml[i], i, 1, length(pvl))), [vl, ml]),
+			res : printf(false, "~a~a", res, s))
+		elseif ((ans_tp = ts_boolean) or (ans_tp = ts_bool)) then		/* если тип ответа логический... */
+			block([vl], vl : getprop(ans, value), 
+			res : printf(false, "~a~a; ", res, if (vl) then "да" else "нет"))
+		else block([vl], vl : getprop(ans, value),						/* если тип ответа неизвестен... */
+			if (vl = false) 
+				then res : printf(false, "~a!неизвестный тип ответа!;", res)
+				else res : printf(false, "~a~a;", res, vl)),
+		tag_next_ans),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @type function */
+/* @begin gen_answer_text */
+/* @brief Создать файл LaTeX для проекта с решениями */
+/* @details Создает файл LaTeX с полным заголовком для проекта с решениями */
+/* @param prj - проект */
+/* @param fname - имя файла (без расширения) в папке ./projects/ */
+/* @result Имя файла ЛаТеХ */
+/* @end */
+/* ================================================== */
+debuglog("make_project_tex_file", debug_message_func_load)$
+make_project_tex_file(prj, fname) := block([res, s], 
+	debug_start_function("make_project_tex_file", [fp_high_level, fp_common]),
+	debuglog(printf(false, "fname=~a", fname)),
+	s : gen_project_latex_text(prj),
+	if (slength(fname) = 0) then block([s_fn],
+		s_fn : getprop(prj, project_name),
+		if (slength(s_fn) = 0) then s_fn : getprop(prj, creation_time),
+		if (slength(s_fn) = 0) then s_fn : timedate(),
+		fname : s_fn),
+	res : make_tex_file(fname, s),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @type function */
+/* @begin gen_answer_text */
+/* @brief Создание файла LaTeX с полным заголовком */
+/* @details Создание файла LaTeX с полным заголовком из данного ЛаТеХ-текста */
+/* @param fname - имя файла (без расширения) в папке ./projects/ */
+/* @param itex - латеховский текст, который будет внутри */
+/* @result Имя файла ЛаТеХ */
+/* @end */
+/* ================================================== */
+debuglog("make_tex_file", debug_message_func_load)$
+make_tex_file(fname, itex, [p]) := block([res, stex, etex, f_n, flstream, work_folder], 
+	debug_start_function("make_tex_file", [fp_high_level, fp_common]),
+	debuglog(printf(false, "fname=~a", fname)),
+	res : fname,
+	if (length(p) > 0) 													/* задаем рабочую директорию - папку с проектами */
+		then work_folder : p[1]
+		else work_folder : printf(false, "./projects/"),
+	/* Создаем заголовок ТеХ-файла */
+	stex : printf(false, "\\documentclass[12pt,a4paper,oneside]{article}~%\\renewcommand{\\baselinestretch}{1.25}~%"),
+	stex : sconcat(stex, printf(false, "\\textheight252mm~%\\textwidth170mm~%\\voffset-1in~%\\hoffset-1in~%")),
+	stex : sconcat(stex, printf(false, "\\oddsidemargin30mm~%\\headheight0mm~%\\headsep0mm~%\\topmargin20mm~%")),
+	stex : sconcat(stex, printf(false, "\\usepackage[utf8]{inputenc}~%\\usepackage[T1]{fontenc}~%\\usepackage[russian]{babel}~%")),
+	stex : sconcat(stex, printf(false, "\\usepackage{latexsym, amssymb, amsmath, amsthm, array, graphics, floatflt, ifthen}~%")),
+	stex : sconcat(stex, printf(false, "\\usepackage{pgfplots}~%\\pgfplotsset{compat=1.9}~%")),
+	stex : sconcat(stex, printf(false, "\\parindent=0pt~%")),
+	stex : sconcat(stex, printf(false, "\\begin{document}~%")),
+	stex : sconcat(stex, printf(false, "\\newcommand{\\x}{\\ensuremath{x}}~%")),
+	stex : sconcat(stex, printf(false, "\\newcommand{\\xx}[1]{\\ensuremath{\\x_{#1}}}~%")),
+	stex : sconcat(stex, printf(false, "\\newcommand{\\M}{\\ensuremath{M}}~%")),
+	stex : sconcat(stex, printf(false, "\\newcommand{\\MM}[1]{\\ensuremath{\\M_{#1}}}~%")),
+	stex : sconcat(stex, printf(false, "\\newcommand{\\customint}{\\ensuremath{\\int}}~%")),
+	stex : sconcat(stex, printf(false, "\\newcommand{\\customdx}{\\ensuremath{\\,\\mathrm{d}\\x}}~%")),
+	etex : printf(false, "\\end{document}~%"),							/* создаем конец ТеХ-файла */
+	f_n : printf(false, "~a~a.tex", work_folder, fname),
+	printf(true, "f_n = ~a~%", f_n),
+	flstream : openw(f_n),												/* открываем файл для записи */
+	printf(true, "file opened~%"),
+	printf(flstream, "~a~a~a", stex, itex, etex),						/* записываем в него начало, текст и конец */
+	close(flstream),													/* закрываем файл */
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @type function */
+/* @begin make_project_tex_file_and_compile */
+/* @brief Сохраняет решения проекта и компилирует теховский файл */
+/* @details Сохраняет решения проекта и компилирует теховский файл */
+/* @param prj - проект с решениями */
+/* @param fname - имя файла (без расширения) в папке ./projects/ */
+/* @result Имя файла ЛаТеХ */
+/* @end */
+/* ================================================== */
+debuglog("make_project_tex_file_and_compile", debug_message_func_load)$
+make_project_tex_file_and_compile(prj, fname) := block([res, sspdftex, ssmvpdf, ssmvaux, ssmvlog],
+	debug_start_function("make_project_tex_file_and_compile", [fp_high_level, fp_common]),
+	if (slength(fname) = 0) then fname : getprop(prj, project_file_name),
+	res : fname,
+	debuglog(printf(false, "fname=~a", fname)),
+	fname : make_project_tex_file(prj, fname),
+	debuglog(printf(false, "fname=~a", fname)),
+    sspdftex : printf(false, "pdflatex './projects/~a'", fname),
+    debuglog(printf(false, "try to bash string = ~a", sspdftex)),
+    system(sspdftex),
+    ssmvpdf : printf(false, "mv '~a.pdf' './projects/~a.pdf'", fname, fname),
+    debuglog(printf(false, "try to bash string = ~a", ssmvpdf)),
+    system(ssmvpdf),
+    ssmvaux : printf(false, "rm '~a.aux'", fname, fname),
+    debuglog(printf(false, "try to bash string = ~a", ssmvaux)),
+    system(ssmvaux),
+    ssmvlog : printf(false, "rm '~a.log'", fname, fname),
+    debuglog(printf(false, "try to bash string = ~a", ssmvlog)),
+    system(ssmvlog),
+    debug_end_function(),
+    res)$
+/* ================================================== */
+/* @type function */
+/* @begin compile_tex_file */
+/* @brief Компилирует теховский файл */
+/* @details Компилирует теховский файл */
+/* @param fname - имя файла (без расширения) */
+/* @param p - список аргументов, первый из которых - директория, в которой находится файл (по умолчанию - папка ./projects/); */
+/* второй - сколько раз компилировать файл (по умолчанию - один). */
+/* @result Имя файла ЛаТеХ */
+/* @todo функция не работает */
+/* @end */
+/* ================================================== */
+debuglog("compile_tex_file", debug_message_func_load);
+compile_tex_file(fname, [p]) := block(
+	[res, 																/* результат функции */
+	dname, 																/* путь к файлу */
+	compile_times,														/* сколько раз компилировать */
+	sspdftex, ssmvpdf, ssmvaux, ssmvlog],
+	debug_start_function("compile_tex_file", [fp_high_level, fp_common]),
+	if (slength(fname) = 0) then go(tag_exit),
+	if (length(p) = 0) then dname : "./projects/" else dname : p[1],
+	if (length(p) > 1) then compile_times : p[2] else compile_times : 1,
+	res : fname,
+	debuglog(printf(false, "fname=~a", fname)),
+    sspdftex : printf(false, "cd /tmp; pdflatex -interaction=nonstopmode '~a~a'", dname, fname),
+    debuglog(printf(false, "try to bash string = ~a", sspdftex)),
+    for i : 1 thru compile_times do
+		system(sspdftex),
+    ssmvpdf : printf(false, "mv '/tmp/~a.pdf' '~a~a.pdf'", fname, dname, fname),
+    debuglog(printf(false, "try to bash string = ~a", ssmvpdf)),
+    system(ssmvpdf),
+    ssmvaux : printf(false, "rm '/tmp/~a.aux'", fname, fname),
+    debuglog(printf(false, "try to bash string = ~a", ssmvaux)),
+    system(ssmvaux),
+    ssmvlog : printf(false, "rm '/tmp/~a.log'", fname, fname),
+    debuglog(printf(false, "try to bash string = ~a", ssmvlog)),
+    system(ssmvlog),
+    tag_exit,
+    debug_end_function(),
+    res)$
+/* ================================================== */
+/* @type function */
+/* @begin make_informaltasks_description_email_tex_file */
+/* @brief Описание заданий, решаемых по почте */
+/* @details Создание файла LaTeX с описанием всех неформальных */
+/*          заданий, доступных для запроса по почте. */
+/*          Файл: "description/ts-email-desc-inftasks.tex". */
+/* @end */
+/* ================================================== */
+debuglog("make_informaltasks_description_email_tex_file", debug_message_func_load)$
+make_informaltasks_description_email_tex_file() := block(
+	[res, 																/* результат функции */
+	flstream,  															/* поток открытого файла */
+	s],  																/* строка с содержимым файла */
+	debug_start_function("make_informaltasks_description_email_tex_file", [fp_high_level, fp_common]),
+	res : true, 
+	s : printf(false, "Информация справедлива для версии ~a~%~%", tasksolver_version),
+	debuglog(printf(false, "begin")),
+	for i_t in informaltasks do block([it_sn, it_rdyns],				/* проходим по всем неформальным заданиям */
+		it_sn : getprop(i_t, shortname),								/* получаем короткое имя задания */
+		it_rdyns : getprop(i_t, readiness),
+		debuglog(printf(false, "it_sn=~a", it_sn)),
+		if ((it_sn # false) and (it_rdyns = ts_full_readiness)) then block(	/* если оно есть, то генерируем для этого задания описание */
+			[it_sd, it_t, it_pars, s_pars, s_pars_dflt, s_sn],
+			debuglog(printf(false, "shortname found!~%")),
+			it_sd : getprop(i_t, short_description),					/* получаем краткое описание задания */
+			it_t : getprop(i_t, text),									/* получаем текст задания */
+			it_pars : getprop(i_t, taskparams),							/* получаем параметры задания */
+			debuglog(printf(false,"it_sd=~a, it_t=~a", it_sd, it_t)),
+			s_pars : "", s_pars_dflt : "",								/* инициализация строк для имен параметров и их значений по умолчанию */
+			s_sn : tex1(it_sn),											/* меняем нижнее подчеркивание на команду ТеХа */
+			debuglog(printf(false,"it_sn=~a, s_sn=~a", it_sn, s_sn)),
+			for it_par in it_pars do block(								/* проходим по параметрам */
+				[itp_type, itp_name, itp_dflt],
+				itp_name : getprop(it_par, parname),					/* получаем имя параметра */
+				itp_type : getprop(it_par, pr_type),					/* получаем тип параметра */
+				itp_type_shape : getprop(itp_type, tp_shape),			/* получаем форму типа параметра */
+				itp_type_part : getprop(itp_type, tp_part),				/* получаем предикаты части параметра */
+				itp_dflt : getprop(it_par, default),					/* получаем значение параметра по умолчанию */
+				if itp_type_shape = ts_single then block([type_descr],
+					type_descr : generate_predicates_list_description(itp_type_part),	/* генерируем описание предикатов */
+					s_pars : printf(false, 								/* добавляем в строку имен параметров */
+						"~a$~a$ --- ~a\\\\~%", 
+						s_pars, itp_name, type_descr),		
+					s_pars_dflt : printf(false, 						/* добавляем в строку значений по умолчанию */
+						"~a$~a$, ", 
+						s_pars_dflt, itp_dflt)),
+				if itp_type_shape = ts_vector then block([type_descr],
+					type_descr : generate_predicates_list_description(itp_type_part),	/* генерируем описание предикатов */
+					s_pars : printf(false, 
+						"~a$~a$ --- последовательность значений, первое из которых есть целое число, определяющее количество следующих за ним значений; каждое это ~a\\\\~%", 
+						s_pars, itp_name, string_to_downcase(type_descr)),		/* добавляем в строку имен параметров */
+					s_pars_dflt : printf(false, 
+						"~a$~a$, ~{$~a$, ~}", 
+						s_pars_dflt, length(itp_dflt), itp_dflt)		/* добавляем в строку значений по умолчанию */					
+					)),
+			s_pars_dflt : substring(s_pars_dflt, 1, slength(s_pars_dflt) - 1),		/* убираем лишний пробел и зяпятую в строке значений по умолчанию */
+			s : printf(false, "~a\\subsection{~a}~%~%\\noindent \\textbf{Команда для почты:} ~a~%~%", s, it_sd, s_sn),
+			s : printf(false, "~a\\noindent \\textbf{Текст задания:} ~a~%~%\\noindent \\textbf{Аргументы команды:}\\\\ ~a ~2%", s, it_t, s_pars),
+			s : printf(false, "~a\\noindent \\textbf{Пример команды:} ::~a(~a);~%~%", s, s_sn, s_pars_dflt))),
+	flstream : openw("description/ts-email-desc-inftasks.tex"),			/* открываем файл для записи */
+	printf(flstream, "~a", s),											/* записываем в него начало, текст и конец */
+	close(flstream),													/* закрываем файл */
+	debuglog(printf(false, "s=~a", s)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @type function */
+/* @begin make_informaltasks_description_tex_file */
+/* @brief Описание всех заданий */
+/* @details Создание файла LaTeX с описанием всех неформальных */
+/*          заданий. Файл: "description/informaltasks/ts-desc-inftasks.tex". */
+/* @end */
+/* ================================================== */
+debuglog("make_informaltasks_description_tex_file", debug_message_func_load)$
+make_informaltasks_description_tex_file() := block([res, flstream, s, stex, etex, seclist], 
+	debug_start_function("make_informaltasks_description_tex_file", [fp_high_level, fp_common]),
+	res : true, 
+	stex : latex_text_start_std,										/* заголовок ТеХ-файла */
+	etex : latex_text_end_std,											/* конец ТеХ-файла */
+	s : "",
+	s : printf(false, 
+		"~a\\begin{center}\\Large\\bf Задания, доступные для решения\\\\ в проекте TaskSolver ~a.\\end{center}~2%", 
+		s, tasksolver_version),
+	s : printf(false, "~a\\tableofcontents~%\\newpage~%", s),
+	debuglog(printf(false, "begin")),
+	seclist : [
+		[ts_algebra, "Алгебра"], 
+		[ts_matanaliz, "Математический анализ"], 
+		[ts_geometry, "Геометрия"], 
+		[ts_chances, "Теория вероятностей"],
+		[ts_stat, "Статистика"]],
+	for sct in seclist do block([i_t_nl],
+		s : printf(false, "~a\\section{~a}~2%", s, sct[2]),
+		i_t_nl : get_inftasks_nums_by_category(sct[1], true),
+		debuglog(printf(false, "i_t_nl=~a", i_t_nl)),
+		for i_t_n in i_t_nl do block([i_t, i_t_sn],
+			i_t : informaltasks[i_t_n],
+			i_t_sn : getprop(i_t, shortname),
+			s : printf(false, "~a\\subsection{~a}~2%", s, getprop(i_t, short_description)),
+			s : printf(false, "~a\\textbf{Команда: } ~a~2%", s, tex1(i_t_sn)),
+			s : printf(false, "~a\\textbf{Задание: } ~a~2%", s, getprop(i_t, text)),
+			for i_t_e in informaltasks_examples do 
+			if (getprop(i_t_e, ts_shortname) = i_t_sn) then block([prms, i_t_slvr, rs, t_s_st, t_s_s, t_a, t_s_a, ss],
+				printf(true, "~a~%", i_t_sn),
+				prms : getprop(i_t_e, ts_params),
+				i_t_slvr : getprop(i_t, solver),
+				rs : i_t_slvr(prms),
+				t_s_st : getprop(rs, solution_title),
+				t_s_s : getprop(rs, solution),
+				t_a : getprop(rs, answer),
+				t_s_a : gen_answer_text(t_a),
+				ss : printf(false, "~a~2%\\textbf{Решение:}~2%~a~2%~a~2%", t_s_st, t_s_s, t_s_a),
+				s : printf(false, "~a\\textbf{Пример.}~2% ~a~2%", s, ss))
+			)),
+	s : printf(false, "~a~a~a", stex, s, etex),
+	flstream : openw("description/informaltasks/ts-desc-inftasks.tex"),	/* открываем файл для записи */
+	printf(flstream, "~a", s),											/* записываем в него начало, текст и конец */
+	close(flstream),													/* закрываем файл */
+	debuglog(printf(false, "s=~a", s)),
+	debug_end_function(),
+	res)$

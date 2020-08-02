@@ -1,0 +1,749 @@
+/* =================================================================================== */
+/* ==== Стандартные функции поддержки внутренних структур данных и внутренних типов == */
+/* =================================================================================== */
+/* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+debuglog("func-structure-type.mac", debug_message_module_load)$
+/* ================================ */
+/* Проверка типов проекта и задания */
+/* ================================ */
+debuglog("ts_project_p", debug_message_func_load)$
+ts_project_p(p) := block([res],
+	if getprop(p, entity_type)=ts_type_project then res : true else res : false,
+	res)$
+debuglog("ts_task_p", debug_message_func_load);
+ts_task_p(p) := block([res],
+	if getprop(p, entity_type)=ts_type_task then res : true else res : false,
+	res)$
+/* ==================================== */
+/* Создание нового проекта и задания    */
+/* ==================================== */
+debuglog("make_new_project", debug_message_func_load)$
+make_new_project([lst]) := block([res],
+	res : [entity_type = ts_type_project, 	/* тип */
+		project_name = timedate(), 			/* имя проекта */
+		project_file_name = "",
+		project_source = false, 			/* тип источника проекта (ts_cmdline, ts_email) */
+		project_source_name = "", 			/* источник проекта */
+		creation_time = timedate(), 		/* время создания */
+		solve_time = false, 			/* время решения */
+		is_solved = false,
+		text_preamble = "",
+		project_tasks = []				/* задания проекта */
+		],
+	res : append(res, lst),
+	res)$
+debuglog("make_new_task", debug_message_func_load)$
+make_new_task([lst]) := block([res],
+	res : [entity_type = ts_type_task,
+		task_name = "",					/* имя задания */
+		inf_task = false,				/*  */
+		inf_task_short_name = "",		/* короткое имя неформального задания */
+		task_error_message = "",		/* строка с ошибкой */
+		task_warning_message = "",		/* строка с предупреждениями */
+		when_solved_time = false,		/* время когда задание было решено */
+		task_parameters = []			/* значения параметров */
+		],
+	res : append(res, lst),
+	res)$
+/* ================================== */
+/* Добавить новое задание в проект    */
+/* ================================== */
+debuglog("add_task_to_project", debug_message_func_load)$
+add_task_to_project(tsk, pr) := block([res, n_p], 
+	debug_start_function("add_task_to_project", [fp_mid_level, fp_common]),
+	res : pr,
+	if (not(ts_project_p(pr))) then block([],
+		debuglog(printf(false, "ERROR! Project has not a project type!")),
+		res : make_new_project()),
+	if (not(ts_task_p(tsk))) then block([],
+		debuglog(printf(false, "ERROR! Task has not a task type!"))),
+	if res=false then go(tag_exit),
+	n_p : true,
+	for i : 1 thru length(res) while n_p do block([c_p],
+		c_p : res[i],
+		if first(c_p)=project_tasks then block([c_p_l], 
+			c_p_l : second(c_p), 
+			c_p_l : reverse(c_p_l),
+			c_p_l : push(tsk, c_p_l), 
+			c_p_l : reverse(c_p_l),
+			res[i] : project_tasks=c_p_l,
+			n_p : false)),
+	if n_p then res : push(project_tasks=[tsk], res),
+	tag_exit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================= */
+/* Сохранить проект prj в файл fname */
+/* ================================= */
+debuglog("save_project_to_file", debug_message_func_load)$
+save_project_to_file(prj, fname) := block([res, fl], res : true,
+	debug_start_function("save_project_to_file", [fp_mid_level, fp_common]),
+	fl : openw(fname),
+	if fl=false then res : false,
+	if fl=false then go(tag_exit),
+	printf(fl, "~a", prj),
+	close(fl),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================ */
+/* Загрузить проект из файла fname  */
+/* ================================ */
+debuglog("load_project_from_file", debug_message_func_load)$
+load_project_from_file(fname) := block([res, fl, f_s], 
+	debug_start_function("load_project_from_file", [fp_mid_level, fp_common]),
+	fl : openr(fname),
+	if fl=false then go(tag_exit),
+	f_s : readline(fl),
+	close(fl),
+	res : parse_string(f_s),
+	if not(ts_project_p(res)) then res : false,
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ============================================================= */
+/* Генерация решений проекта prj, результат - проект с решениями */
+/* ============================================================= */
+debuglog("generate_project_solution", debug_message_func_load);
+generate_project_solution(prj) := block([res, p_t, p_t_n], res : prj,
+	debug_start_function("generate_project_solution", [fp_high_level, fp_common]),
+	p_t : getprop(res, project_tasks),
+	p_t_n : [],
+	for tsk in p_t do block([tsk_n],
+		tsk_n : generate_task_solution(tsk),
+		p_t_n : append(p_t_n, [tsk_n])),
+	res : setprop(res, project_tasks, p_t_n),
+	debug_end_function(),
+	res)$
+/* ============================================================= */
+/* Генерация решения задания tsk, результат - задание с решением */
+/* ============================================================= */
+debuglog("generate_task_solution", debug_message_func_load);
+generate_task_solution(tsk) := block([res, t_e_m, sfname], res : tsk,
+	debug_start_function("generate_task_solution", [fp_high_level, fp_common]),
+	t_e_m : getprop(res, task_error_message),
+	if t_e_m=false then t_e_m : "",
+	debuglog(printf(false, "t_e_m=~a", t_e_m)),
+	sfname : getprop(res, inf_task_short_name),
+	debuglog(printf(false, "sfname=~a", sfname)),
+	if slength(t_e_m)=0 then block([c_inftask],
+		c_inftask : false,
+		for i_t in informaltasks do block([c_sn, it_rdyns],			/* ищем неформальное задание по короткому имени */
+			c_sn : getprop(i_t, shortname),
+			it_rdyns : getprop(i_t, readiness),
+			if it_rdyns=ts_full_readiness then
+				if sequal(c_sn, sfname) then c_inftask : i_t),
+		debuglog(printf(false, "c_inftask=~a", c_inftask)),
+		/* !TODO! - если задание не найдено */
+		if c_inftask#false then block([slvr, sln, prs],				/* если неформальное задание найдено */
+			slvr : getprop(c_inftask, solver),						/* получаем решатель */
+			prs : getprop(res, task_parameters),					/* получаем параметры */
+			debuglog(printf(false, "prs=~a", prs)),
+			sln : apply(slvr,[prs]),										/* генерируем решение */
+			debuglog(printf(false, "sln=~a", sln)),
+			res : setprop(res, solver_result, sln),					/* сохраняем решение в задании */
+			res : setprop(res, when_solved_time, timedate()))		/* а также время создания решения */
+		),
+	debug_end_function(),
+	res)$
+/* ============================================= */
+/* Поиск задания по строке, выделение параметров */
+/* и формирование задания                        */
+/* ============================================= */
+debuglog("get_task_from_string", debug_message_func_load)$
+get_task_from_string([p]) := block(
+	[		/* Локальные переменные */
+	s,
+	gen_sol,
+	res, 		/* результат */
+	brpos, 		/* позиция скобки в строке */
+	sfname, 	/* имя задания */
+	sfpars, 	/* строка с параметрами */
+	fpars, 		/* список параметров-подстрок */
+	c_inftask, 	/* неформальное задание */
+	prs, 		/* параметры неформального задания */
+	prms, 		/* список значений параметров для передачи в решатель */
+	slvr, 		/* решатель неформального задания */
+	slvrres		/* решение - результат работы решателя */
+	], 
+	debug_start_function("get_task_from_string", [fp_high_level, fp_common]),
+	s : p[1],
+	if length(p)>1 then gen_sol : p[2] else gen_sol : true,
+	res : make_new_task(), prms : [],		/* инициализация переменных */
+	debuglog(printf(false, "s=~a", s)),
+	brpos : ssearch("(", s),						/* ищем начало параметров в строке по открывающейся скобке */
+	sfname : substring(s, 1, brpos),				/* вырезаем имя задания */
+	sfpars : substring(s, brpos+1, slength(s)-1),	/* вырезаем строку с параметрами */
+	debuglog(printf(false, "sfname=~a, sfpars=~a", sfname, sfpars)),
+	c_inftask : false,
+	for i_t in informaltasks do block([c_sn],			/* ищем неформальное задание по короткому имени */
+		c_sn : getprop(i_t, shortname),
+		if sequal(c_sn, sfname) then c_inftask : i_t),
+	if c_inftask=false then block([answ],				/* если соответствующего задания не найдено */
+		res : setprop(res, task_error_message, printf(false, "Команды с именем ~a не найдено!", tex1(sfname))),
+		debuglog(printf(false, "informal task not found")))
+	else block([],										/* если соответствующее задание найдено */
+		prs : getprop(c_inftask, taskparams), 			/* берем параметры из неформального задания */
+		res : get_informaltask_parameters_from_string(res, prs, sfpars),	/* получаем значения параметров */
+		res : setprop(res, inf_task_short_name, sfname),
+		if gen_sol=true then res : generate_task_solution(res)),
+	debug_end_function(),
+	res)$
+/* -------------------------------------------------- */
+/* Получаем параметры неформального задания из строки */
+/* -------------------------------------------------- */
+debuglog("get_informaltask_parameters_from_string", debug_message_func_load)$
+get_informaltask_parameters_from_string(tsk, prs, s) := block([res, prms, tsk_err_msg, tsk_warn_msg, get_no_err], 
+	debug_start_function("get_informaltask_parameters_from_string", [fp_mid_level, fp_common]),
+	res : [], prms : [], tsk_err_msg : "", tsk_warn_msg : "", get_no_err : true,
+	while (get_no_err and (length(prs)>0)) do block([prm, pvl, als, p_e, p_e_m, p_v],		/* проход по параметрам неформального задания */
+		prm : pop(prs),
+		als : getprop(prm, alias),
+		pvl : get_informaltask_parameter_from_string(prm, s),		/* обрабатываем параметр-строку */
+		s : getprop(pvl, p_rest_string_list),
+		p_e : getprop(pvl, p_error),
+		p_v : getprop(pvl, p_value),
+		p_e_m : getprop(pvl, p_error_message),
+		if p_e=ts_error then block([],			/* если получена ошибка */
+			tsk_err_msg : p_e_m,
+			get_no_err : false),
+		if p_e=ts_warning then block([],		/* если получено предупреждение */
+			tsk_warn_msg : printf(false, "~a ~a", tsk_warn_msg, p_e_m)),
+		push([alias=als, value=p_v], prms)),
+	res : setprop(res, task_error_message, tsk_err_msg),
+	res : setprop(res, task_warning_message, tsk_warn_msg),
+	res : setprop(res, task_parameters, prms),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ============================================================ */
+/* Ввод параметра как строки                                    */
+/* Функция принимает метаданные считываемого параметра prm,     */
+/* а также список строк-параметров s_l.                         */
+/* Возвращает наряду со значением параметра value=r_val         */
+/* и значениеми ошибок p_error=r_err, p_error_message=r_err_msg */
+/* остаток строк-параметров p_rest_string_list=r_s_l            */
+/* ============================================================ */
+debuglog("get_informaltask_parameter_from_string", debug_message_func_load);
+get_informaltask_parameter_from_string(prm, s_l) := block([res, inp, nm, dflt, als, prmtype, r_val, r_err, r_err_msg, r_s_l, v], 
+	debug_start_function("get_informaltask_parameter_from_string", [fp_high_level, fp_common]),
+	res : [], r_err : false, r_err_msg : "", r_s_l : s_l,	/* начальные значения переменных */
+	debuglog(printf(false, "prm=~a~%  s_l=~a", prm, s_l)),
+	if stringp(s_l) then block([],	/* если передана строка, то делаем из нее список */
+		s_l : split(s_l, ","),		/* делим строку с параметрами, разделенными запятыми, на список параметров-подстрок */
+		s_l : maplist(lambda([x], strim(" ", x)), s_l)),	/* обрезаем пробелы по краям каждого параметра-строки в списке переданных параметров */
+	nm : getprop(prm, parname),					/* получаем имя параметра */
+	dflt : getprop(prm, default),				/* получаем значение параметра по умолчанию */
+	als : getprop(prm, alias),					/* получаем алиас параметра */
+	prmtype : getprop(prm, pr_type), 			/* получаем тип параметра */
+	/* Чтение параметра */
+	t_sh : getprop(prmtype, tp_shape),		/* получаем форму типа (одиночное значение, матрица и т.д.) */
+	if t_sh=false then t_sh : getprop(t, "shape"),
+	if t_sh=false then t_sh : ts_single,
+	t_pt : getprop(prmtype, tp_part),						/* получаем предикаты типа для внутренних значений */
+	if t_pt=false then t_pt : getprop(prm, "part"),
+	if t_pt=false then t_pt : [],
+	/* Различные варианты форм: */
+	/* Одиночное значение */
+	if t_sh=ts_single then block([dv, dvs, new_loop, ss, v], dv : false,
+		if not(atom(dflt)) then block([],				/* получаем значение по умолчанию */
+			if operatorp(dflt, lambda) then dv : apply(dflt, []))
+		else dv : dflt,
+		if length(s_l)=0 then block([],		/* если список строк пуст */
+			if (dv # false) then block([],			/* если есть значение по умолчанию */
+				r_val : dv,
+				r_err_msg : printf(false, "Параметр ~a: взято значение по умолчанию ~a;", nm, totex(dv)),
+				r_err : ts_warning)
+			else block([],						/* если нет значения по умолчанию */
+				r_err_msg : "",
+				r_err : ts_error))
+		else block([inp],						/* если список строк не пуст */
+			inp : first(s_l),
+			r_s_l : rest(s_l),
+			v : value_for_string_with_predicate_list(t_pt, inp),
+			if stringp(v) then block([],		/* если получили строку, т.е. имеет место ошибка */
+				r_err_msg : v,
+				r_err : ts_error)
+			else block([],						/* если ошибок нет и мы имеем верное значение */
+				r_val : v))),
+	/* Вектор значений */
+	if t_sh=ts_vector then block([dv, dvs, new_loop, ss, v], dv : false,
+		/* !TODO! */
+		if not(atom(dflt)) then block([],				/* получаем значение по умолчанию */
+			if operatorp(dflt, lambda) then dv : apply(dflt, []))
+		else dv : dflt,
+		if length(s_l)=0 then block([],		/* если список строк пуст */
+			if dv#false then block([],			/* если есть значение по умолчанию */
+				r_val : dv,
+				r_err_msg : printf(false, "Параметр ~a: взято значение по умолчанию $~a$;", nm, totex(dv)),
+				r_err : ts_warning)
+			else block([],						/* если нет значения по умолчанию */
+				r_err_msg : "",
+				r_err : ts_error))
+		else block([inp, v_l],						/* если список строк не пуст */
+			/* получаем размерность вектора */
+			inp : first(s_l),
+			s_l : rest(s_l),
+			v_l : value_for_string_with_predicate_list([ts_natural], inp),
+			r_val : makelist(0, v_l),
+			/* получаем элементы вектора */
+			for i : 1 thru v_l do block([],
+				if length(s_l)>0 then block([],
+					inp : first(s_l),
+					s_l : rest(s_l),
+					v : value_for_string_with_predicate_list(t_pt, inp),
+					if stringp(v) then block([],		/* если получили строку, т.е. имеет место ошибка */
+						r_err_msg : v,
+						r_err : ts_error)
+					else block([],						/* если ошибок нет и мы имеем верное значение */
+						r_val[i] : v))
+				else block([],
+					r_val[i] : dv[i]))),
+			r_s_l : s_l),
+	/* Матрица значений */
+	if t_sh=ts_matrix then block([dv, dvs, new_loop, ss, v], dv : false,
+		/* !TODO! */
+		if not(atom(dflt)) then block([],				/* получаем значение по умолчанию */
+			if operatorp(dflt, lambda) then dv : apply(dflt, []))
+		else dv : dflt,
+		if length(s_l)=0 then block([],		/* если список строк пуст */
+			if dv#false then block([],			/* если есть значение по умолчанию */
+				r_val : dv,
+				r_err_msg : printf(false, "Параметр ~a: взято значение по умолчанию $~a$;", nm, totex(dv)),
+				r_err : ts_warning)
+			else block([],						/* если нет значения по умолчанию */
+				r_err_msg : "",
+				r_err : ts_error))
+		else block([inp, v_l, mw, mh],						/* если список строк не пуст */
+			/* получаем размерности матрицы */
+			inp : first(s_l),
+			s_l : rest(s_l),
+			mw : value_for_string_with_predicate_list([ts_natural], inp),
+			inp : first(s_l),
+			s_l : rest(s_l),
+			mh : value_for_string_with_predicate_list([ts_natural], inp),
+			r_val : zeromatrix(mh, mw),
+			/* получаем элементы матрицы */
+			for i : 1 thru mh do for j : 1 thru mw do block([],
+				if length(s_l)>0 then block([],
+					inp : first(s_l),
+					s_l : rest(s_l),
+					v : value_for_string_with_predicate_list(t_pt, inp),
+					if stringp(v) then block([],		/* если получили строку, т.е. имеет место ошибка */
+						r_err_msg : v,
+						r_err : ts_error)
+					else block([],						/* если ошибок нет и мы имеем верное значение */
+						r_val[i, j] : v))
+				else block([],
+					r_val[i] : dv[i]))),
+			r_s_l : s_l),
+	/* Формируем результат */
+	res : [p_value=r_val, p_error=r_err, p_error_message=r_err_msg, p_rest_string_list=r_s_l],
+	debug_end_function(),
+	res)$
+/* ------------------------------------------ */
+debuglog("get_informaltask_parameters_from_terminal", debug_message_func_load)$
+get_informaltask_parameters_from_terminal(prms) := block([res], res : [],
+	debug_start_function("get_informaltask_parameters_from_terminal", [fp_mid_level, fp_common]),
+	for prm in prms do block([r],
+		r : get_parameter_from_terminal(prm),
+		res : push(r, res)),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ========================================== */
+/* Запрос одиночного значения через терминал  */
+/* p_s - строка приглашения к вводу,          */
+/* def_val - значение параметра по умолчанию, */
+/* p_l - список предикатов проверки типа      */
+/* ========================================== */
+debuglog("get_single_value_from_terminal", debug_message_func_load)$
+get_single_value_from_terminal(p_s, def_val, p_l) := block(
+	[res, inp, p_v, new_loop], 
+	res : false,
+	debug_start_function("get_single_value_from_terminal", [fp_high_level, fp_common]),
+	debuglog(printf(false, "p_s=~a, def_val=~a, p_l=~a", p_s, def_val, p_l)),
+	tag_loop,															/* метка для цикла чтения строки со значением параметра */
+	new_loop : false,
+	printf(true, "~a", p_s),											/* приглашение ввести значение */
+	inp : readlinestdio(),												/* чтение строки из терминала */
+	debuglog(printf(false, "inp=~a", inp)),
+	if (slength(inp) = 0) then block([],
+		if (def_val # false) then p_v : def_val else new_loop : true)
+	else block([pms],
+		pms : parse_maxima_string(inp),									/* преобразуем введенную строку в значение */
+		debuglog(printf(false, "pms=~a", pms)),
+		if (pms = false) then block([],
+			printf(true, "Синтаксически неверное выражение~%"),
+			new_loop : true)
+		else block([pvl],
+			pvl : is_predicate_list_p(p_l, pms),
+			if (pvl # true) then block([], 
+				printf(true, "Ошибка типа: ~a~%", pvl),
+				new_loop : true)
+			else block([],
+				p_v : pms,
+				new_loop : false))),
+	if new_loop then go(tag_loop),										/* если есть ошибка, то идем назад для повторного ввода */
+	res : p_v,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* =============================== */
+/* Запрос параметра через терминал */
+/* =============================== */
+debuglog("get_parameter_from_terminal", debug_message_func_load)$
+get_parameter_from_terminal(prm) := block(
+	[res, t_sh, inp, nm, dflt, als, prmtype, pvl, p_v, p_e, t_pt, t_wh, p_n_g], 
+	res : false,
+	debug_start_function("get_parameter_from_terminal", [fp_high_level, fp_common]),
+	nm : getprop(prm, parname),											/* получаем имя параметра */
+	p_n_g : getprop(prm, part_name_generator),							/* получаем генератор имён составных частей */
+	dflt : getprop(prm, ts_default_value),								/* получаем значение параметра по умолчанию */
+	if (dflt = false) then dflt : getprop(prm, default),
+	debuglog(printf(false, "dflt=~a;", dflt)),
+	als : getprop(prm, alias),											/* получаем алиас параметра */
+	prmtype : getprop(prm, pr_type),									/* получаем тип параметра */
+	t_sh : getprop(prmtype, tp_shape),									/* получаем форму типа (одиночное значение, матрица и т.д.) */
+	if (t_sh = false) then t_sh : getprop(t, "shape"),
+	if (t_sh = false) then t_sh : ts_single,
+	t_pt : getprop(prmtype, tp_part),									/* получаем предикаты типа для внутренних значений */
+	if (t_pt = false) then t_pt : getprop(prm, "part"),
+	if (t_pt = false) then t_pt : [],
+	t_wh : getprop(prmtype, tp_whole),									/* получаем предикаты типа для внутренних значений */
+	if (t_wh = false) then t_wh : getprop(prm, "whole"),
+	if (t_wh = false) then t_wh : [],
+	/* Различные варианты форм */
+	if (t_sh = ts_single) then block(									/* если тип - одиночное значение */
+		[dv, 
+		dvs, 
+		new_loop, ss, v], 
+		dv : false,
+		if not(atom(dflt)) 
+			then block([],
+				if operatorp(dflt, lambda) 
+					then dv : apply(dflt, []) 
+					else dv : dflt)
+			else dv : dflt,
+		debuglog(printf(false, "dv=~a;", dv)),
+		if (dv = false) then dvs : "" else dvs : printf(false, " (~a)", dv),
+		ss : printf(false, "Введите значение ~a~a: ", nm, dvs),			/* приглашение ввести значение */
+		v : get_single_value_from_terminal(ss, dv, t_pt),	
+		res : [alias = als, value = v]),
+	if (t_sh = ts_vector) then block([dv, dvs, ss, vc_ln, vc],			/* если векторный тип данных */
+		/* Сначала считываем размерность вектора */
+		if not(atom(dflt)) then block([],
+			if operatorp(dflt, lambda) then dv : apply(dflt, [ts_vector_length]))
+		else dv : dflt,
+		if dv=false then dvs : "" else dvs : printf(false, " (~a)", dv),
+		ss : printf(false, "Введите число элементов ~a~a: ", nm, dvs),	/* приглашение ввести значение */
+		vc_ln : get_single_value_from_terminal(ss, dv, [ts_natural]),
+		/* Затем получаем элементы вектора */
+		vc : makelist(0, vc_ln),
+		for i : 1 thru vc_ln do block([pp_n],
+			if p_n_g#false then pp_n : apply(p_n_g, [i]) else pp_n : printf(false, "$~a_{~a}$", nm, i),
+			if not(atom(dflt)) then block([],
+				if operatorp(dflt, lambda) then dv : apply(dflt, [i]))
+			else dv : dflt,
+			if dv=false then dvs : "" else dvs : printf(false, " (~a)", dv),
+			ss : printf(false, "Введите значение ~a~a: ", pp_n, dvs),
+			vc[i] : get_single_value_from_terminal(ss, dv, t_pt)),
+		res : [alias=als, value=vc]),
+	if t_sh=ts_matrix then block([dv, dvs, ss, m_w, m_h, m],				/* если матричный тип данных */
+		/* Сначала считываем ширину и высоту матрицы */ 
+		if not(atom(dflt)) then block([],
+			if operatorp(dflt, lambda) then dv : apply(dflt, [ts_matrix_width]))
+		else dv : dflt,
+		if dv=false then dvs : "" else dvs : printf(false, " (~a)", dv),
+		ss : printf(false, "Введите ширину матрицы ~a~a: ", nm, dvs),	/* приглашение ввести значение */
+		m_w : get_single_value_from_terminal(ss, dv, [ts_natural]),
+		if member(ts_matrix_height_eq2, t_wh) then (
+			m_h : 2,
+			go(tag_done_height)),
+		if not(atom(dflt)) then block([],
+			if operatorp(dflt, lambda) then dv : apply(dflt, [ts_matrix_height]))
+		else dv : dflt,
+		if dv=false then dvs : "" else dvs : printf(false, " (~a)", dv),
+		ss : printf(false, "Введите высоту матрицы ~a~a: ", nm, dvs),	/* приглашение ввести значение */
+		m_h : get_single_value_from_terminal(ss, dv, [ts_natural]),
+		tag_done_height,
+		/* Затем получаем элементы матрицы */
+		m : zeromatrix(m_h, m_w),
+		for i : 1 thru m_h do for j : 1 thru m_w do block([pp_n],
+			if p_n_g#false then pp_n : apply(p_n_g, [[i,j]]) else pp_n : printf(false, "$~a_{~a~a}$", nm, i, j),
+			if not(atom(dflt)) then block([],
+				if operatorp(dflt, lambda) then dv : apply(dflt, [[i, j]]))
+			else dv : dflt,
+			if dv=false then dvs : "" else dvs : printf(false, " (~a)", dv),
+			ss : printf(false, "Введите значение ~a~a: ", pp_n, dvs),
+			m[i,j] : get_single_value_from_terminal(ss, dv, t_pt)),
+		res : [alias=als, value=m]),
+	if t_sh=ts_square_matrix then block([dv, dvs, ss, m_w, m_h, m],				/* если матричный тип данных */
+		/* Сначала считываем ширину и высоту матрицы */
+		if not(atom(dflt)) then block([],
+			if operatorp(dflt, lambda) then dv : apply(dflt, [ts_matrix_width]))
+		else dv : dflt,
+		if dv=false then dvs : "" else dvs : printf(false, " (~a)", dv),
+		ss : printf(false, "Введите ширину и высоту квадратной матрицы ~a~a: ", nm, dvs),	/* приглашение ввести значение */
+		m_w : get_single_value_from_terminal(ss, dv, [ts_natural]),
+		m_h : m_w,
+		/* Затем получаем элементы матрицы */
+		m : zeromatrix(m_h, m_w),
+		for i : 1 thru m_h do for j : 1 thru m_w do block([pp_n],
+			if p_n_g#false then pp_n : apply(p_n_g, [[i,j]]) else pp_n : printf(false, "$~a_{~a~a}$", nm, i, j),
+			if not(atom(dflt)) then block([],
+				if operatorp(dflt, lambda) then dv : apply(dflt, [[i, j]]))
+			else dv : dflt,
+			if dv=false then dvs : "" else dvs : printf(false, " (~a)", dv),
+			ss : printf(false, "Введите значение ~a~a: ", pp_n, dvs),
+			m[i,j] : get_single_value_from_terminal(ss, dv, t_pt)),
+		res : [alias=als, value=m]),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* --------------------------------------------------------------- */
+/* Проверка подходит ли внутреннее значение p_v матрицы для типа t */
+/* --------------------------------------------------------------- */
+debuglog("is_type_matrix_part_p", debug_message_func_load)$
+is_type_matrix_part_p(t, p_v) := block([res, t_pt], res : "",
+	debug_start_function("is_type_matrix_part_p", [fp_high_level, fp_common]),
+	t_pt : getprop(t, tp_part),						/* получаем предикаты типа для внутренних значений */
+	if t_pt=false then t_pt : getprop(t, "part"),
+	if t_pt=false then t_pt : [],
+	for pp in t_pt do block([s], 
+		s : is_predicate_p(pp, p_v),
+		if s#true then res : printf(false, "~a; строка ~a, столбец ~a: ~a", res, i, j, s)),
+	if slength(res)=0 then res : true,
+	debug_end_function(),
+	res)$
+/* ============================================================ */
+/* Проверка типа t для значения v                               */
+/* ============================================================ */
+debuglog("is_type_p", debug_message_func_load);
+is_type_p(t, v) := block([res, t_sh, t_pt, t_wh], res : "",
+	debug_start_function("is_type_p", [fp_high_level, fp_common]),
+	t_sh : getprop(t, tp_shape),					/* получаем форму типа (одиночное значение, матрица и т.д.) */
+	if t_sh=false then t_sh : getprop(t, "shape"),
+	if t_sh=false then t_sh : ts_single,
+	t_wh : getprop(t, tp_whole),					/* получаем предикаты типа для целого значения */
+	if t_wh=false then t_wh : getprop(t, "whole"),
+	if t_wh=false then t_wh : [],
+	t_pt : getprop(t, tp_part),						/* получаем предикаты типа для внутренних значений */
+	if t_pt=false then t_pt : getprop(t, "part"),
+	if t_pt=false then t_pt : [],
+	/* Для разных форм - разные действия */
+	if t_sh=ts_single then block([],			/* если имеем тип с одиночным значением */
+		for pp in t_wh do block([s], 
+			s : is_predicate_p(pp, v),
+			if s#true then res : printf(false, "~a; ~a", res, s)),
+		for pp in t_pt do block([s], 
+			s : is_predicate_p(pp, v),
+			if s#true then res : printf(false, "~a; ~a", res, s))),
+	if t_sh=ts_vector then block([v_l],			/* если имеем тип вектора */
+		if listp(v) then block([],
+			v_l : length(v),
+			for i : 1 thru v_l do block([s],
+				s : is_type_matrix_part_p(t, v[i]),
+				if s#true then res : printf(false, "~a; ~a", res, s)),
+			for pp in t_wh do block([s], 
+				s : is_predicate_p(pp, v),
+				if s#true then res : printf(false, "~a; ~a", res, s)))
+			else res : "Значение должно быть вектором"),
+	if t_sh=ts_matrix then block([m_h, m_w],			/* если имеем тип матрицы */
+		if matrixp(v) then block([],
+			[m_h, m_w] : matrix_size(v),
+			for i : 1 thru m_h do for j : 1 thru m_w do block([s],
+				s : is_type_matrix_part_p(t, v[i,j]),
+				if s#true then res : printf(false, "~a; ~a", res, s)),
+			for pp in t_wh do block([s], 
+				s : is_predicate_p(pp, v),
+				if s#true then res : printf(false, "~a; ~a", res, s)))
+			else res : "Значение должно быть матрицей"),
+	if t_sh=ts_square_matrix then block([m_h, m_w],		/* если имеем тип квадратной матрицы */
+		if matrixp(v) then block([],
+			[m_h, m_w] : matrix_size(v),
+			if m_h#m_w then res : "Значение должно быть квадратной матрицей",
+			for i : 1 thru m_h do for j : 1 thru m_w do block([s],
+				s : is_type_matrix_part_p(t, v[i,j]),
+				if s#true then res : printf(false, "~a; ~a", res, s)),
+			for pp in t_wh do block([s], 
+				s : is_predicate_p(pp, v),
+				if s#true then res : printf(false, "~a; ~a", res, s)))
+			else res : "Значение должно быть квадратной матрицей"),
+	if slength(res)=0 then res : true,
+	debug_end_function(),
+	res)$
+/* ================================================================== */
+/* Проверка списка предикатов p_l на строке s, которая несет значение */
+/* Возвращает значение или строку с описанием ошибки                  */
+/* ================================================================== */
+debuglog("value_for_string_with_predicate_list", debug_message_func_load)$
+value_for_string_with_predicate_list(p_l, s) := block([res, p_m_s], res : "",
+	debug_start_function("value_for_string_with_predicate_list", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "p_l=~a, s=~a", p_l, s)),
+	p_m_s : parse_maxima_string(s),										/* преобразуем строку в значение */
+	debuglog(printf(false, "p_m_s=~a", p_m_s)),
+	if (p_m_s = false) then block([],
+		res : printf(false, "Синтаксически неверное выражение~%"))
+	else block([pvl],
+		pvl : is_predicate_list_p(p_l, p_m_s),
+		if pvl#true then block([], 
+			res : printf(false, "Ошибка типа: ~a~%", pvl))
+		else block([],
+			res : p_m_s)),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ====================================== */
+/* Проверка списка предикатов на значении */
+/* ====================================== */
+debuglog("is_predicate_list_p", debug_message_func_load)$
+is_predicate_list_p(p_l, v) := block([res], res : "",
+	debug_start_function("is_predicate_list_p", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "p_l=~a, v=~a", p_l, v)),
+	if listp(p_l) then 
+		for pp in p_l do block([s],
+			s : is_predicate_p(pp, v),
+			if s#true then res : printf(false, "~a ~a;", res, s))
+	else block([s],
+		s : is_predicate_p(p_l, v),
+		if s#true then res : printf(false, "~a ~a;", res, s)),
+	if slength(res)=0 then res : true,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ===================================== */
+/* Сгенерировать описание типа параметра */
+/* ===================================== */
+debuglog("generate_parameter_type_description", debug_message_func_load)$
+generate_parameter_type_description(t_p) := block([res, s, t_p_sh, t_p_p], res : "",
+	debug_start_function("generate_parameter_type_description", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "prm=~a", prm)),
+	t_p_sh : getprop(t_p, tp_shape),
+	t_p_p : getprop(t_p, tp_part),
+	if (t_p_sh = ts_single) then res : "Одиночное значение. ",
+	if (t_p_sh = ts_vector) then res : "Вектор (список) значений. ",
+	if (t_p_sh = ts_matrix) then res : "Матрица (таблица) значений. ",
+	if (t_p_sh = ts_square_matrix) then res : "Квадратная матрица (таблица) значений. ",
+	s : generate_predicates_list_description(t_p_p),
+	s : ssubstfirst("tmpforznacheniedoljnobit", "Значение должно быть", s),		/* удаляем лишние слова */
+	s : ssubst("", "Значение должно быть", s),
+	s : ssubst("Значение должно быть", "tmpforznacheniedoljnobit", s),
+	res : printf(false, "~a~a", res, s),
+	debug_end_function(),
+	res)$
+/* ======================================== */
+/* Сгенерировать описание списка предикатов */
+/* ======================================== */
+debuglog("generate_predicates_list_description", debug_message_func_load)$
+generate_predicates_list_description(p_l) := block([res], res : "",
+	debug_start_function("generate_predicates_list_description", [fp_low_level, fp_predicate]),
+	debuglog(printf(false, "p_l=~a", p_l)),
+	for p in p_l do block([s],
+		s : is_predicate_p(p, false),
+		/* s : apply(p, [false]), */
+		res : printf(false, "~a ~a;", res, s)),
+	debug_end_function(),
+	res)$
+/* ================================== */
+/* Проверка предиката p на значении v */
+/* ================================== */
+debuglog("is_predicate_p", debug_message_func_load)$
+is_predicate_p(p, v) := block([res], res : true,
+	if (p = ts_real) then res : is_ts_real_p(v),
+	if (p = ts_integer) then res : is_ts_integer_p(v),
+	if (p = ts_natural) then res : is_ts_natural_p(v),
+	if (p = ts_positive) then res : is_ts_positive_p(v),
+	if (p = ts_negative) then res : is_ts_negative_p(v),
+	if (p = ts_nonpositive) then res : is_ts_nonpositive_p(v),
+	if (p = ts_nonnegative) then res : is_ts_nonnegative_p(v),
+	if (p = ts_nonzero) then res : is_ts_nonzero_p(v),
+	if (p = ts_greater_1) then res : is_ts_greater_1_p(v),
+	if (p = ts_greater_eq_1) then res : is_ts_greater_eq_1_p(v),
+	if (p = ts_less_1) then res : is_ts_less_1_p(v),
+	if (p = ts_less_eq_1) then res : is_ts_less_eq_1_p(v),
+	if (p = ts_polynom_x) then res : is_ts_polynom_x_p(v),
+	if (p = ts_function) then res : is_ts_function(v),
+	if (p = ts_expression) then res : is_ts_expression(v),
+	if (p = ts_var_x) then res : is_ts_var_x(v),
+	res)$
+is_ts_expression(p) := block([res], res : true,
+	res)$
+is_ts_function(p) := block([res, o], res : false, o : true,
+	if atom(p) then res : true else	o : op(p),
+	if member(o, ["+", "-", "*", "^", "/", sin, cos, tan, log, exp]) then res : true,
+	if (p = false) then res : false,
+	if (res # true) then res : "Значение должно быть функцией",
+	res)$
+is_ts_var_x(p) := block([res], res : false,
+	if ((listofvars(p) = [x]) or (length(listofvars(p))=0)) then res : true,
+	if (p = false) then res : false,
+	if (res # true) then res : "Значение должно быть выражением, содержашим только x в качестве переменной",
+	res)$
+is_ts_string_p(p) := block([res], res : false,
+	if stringp(p) then res : true,
+	if (res # true) then res : "Значение должно быть строкой",
+	res)$
+is_ts_polynom_x_p(p) := block([res], res : false,
+	if polynomialp(p, [x]) then res : true,
+	if (res # true) then res : "Значение должно быть полиномом от x",
+	res)$
+/* ============================================================= */
+/* Предикат проверяет является ли аргумент действительным числом */
+/* ============================================================= */
+is_ts_real_p(p) := block([res], res : false,
+	if numberp(float(p)) then res : true,
+	if res#true then res : "Значение должно быть действительным числом",
+	res)$
+/* Предикат проверяет является ли аргумент целым числом */
+is_ts_integer_p(p) := block([res], res : false,
+	if integerp(p) then res : true,
+	if res#true then res : "Значение должно быть целым числом",
+	res)$
+/* Предикат проверяет является ли аргумент натуральным числом */
+is_ts_natural_p(p) := block([res], res : false,
+	if integerp(p) then if p>0 then res : true,
+	if res#true then res : "Значение должно быть натуральным числом",
+	res)$
+/* Предикат проверяет является ли аргумент положительным числом */
+is_ts_positive_p(p) := block([res], res : false,
+	if p>0 then res : true,
+	if res#true then res : "Значение должно быть положительным",
+	res)$
+/* Предикат проверяет является ли аргумент отрицательным числом */
+is_ts_negative_p(p) := block([res], res : false,
+	if p<0 then res : true,
+	if res#true then res : "Значение должно быть отрицательным",
+	res)$
+/* Предикат проверяет является ли аргумент неположительным числом */
+is_ts_nonpositive_p(p) := block([res], res : false,
+	if p<=0 then res : true,
+	if res#true then res : "Значение должно быть неположительным",
+	res)$
+/* Предикат проверяет является ли аргумент неотрицательным числом */
+is_ts_nonnegative_p(p) := block([res], res : false,
+	if p>=0 then res : true,
+	if res#true then res : "Значение должно быть неотрицательным",
+	res)$
+/* Предикат проверяет является ли аргумент ненулевым числом */
+is_ts_nonzero_p(p) := block([res], res : false,
+	if ((p#0) and (p#false)) then res : true,
+	if res#true then res : "Значение должно быть не равно нулю",
+	res)$
+is_ts_greater_1_p(p) := block([res], res : false,
+	if (p>1) then res : true,
+	if res#true then res : "Значение должно быть больше 1",
+	res)$
+is_ts_greater_eq_1_p(p) := block([res], res : false,
+	if (p>=1) then res : true,
+	if res#true then res : "Значение должно быть больше или равно 1",
+	res)$
+is_ts_less_1_p(p) := block([res], res : false,
+	if (p<1) then res : true,
+	if res#true then res : "Значение должно быть меньше 1",
+	res)$
+is_ts_less_eq_1_p(p) := block([res], res : false,
+	if (p<=1) then res : true,
+	if res#true then res : "Значение должно быть меньше или равно 1",
+	res)$

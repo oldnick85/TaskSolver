@@ -1,0 +1,141 @@
+/* ================================= */
+/* Устаревшие функции и участки кода */
+/* ================================= */
+ts_email_main1() := block([/* локальные переменные */
+	f_em, 				/* файл почты */
+	f_em_n,				/* имя файла почты */
+	rl, 				/* булево значение читать ли следующую строку */
+	line_num, 			/* номер прочитанной строки из файла почты */
+	sys_s, 				/* строка, передаваемая для выполнения */
+	r_state, 			/* состояние чтения строки */
+	clct_str, 			/* стока, собираемая из почтового файла */
+	clct_str_base64, 	/* строка, собираемая из содержимого типа base64 */
+	mail_addr,			/* текущий обратный адрес почты */
+	projname			/* имя проекта */
+	/* ------------------- */], 
+	debug_start_function("ts-email", [fp_high_level, fp_common]),
+	historylog(t_session, "Start session", [session_time=timedate(), session_mode="E-mail"]),
+	r_state : find_new_letter, clct_str : "", clct_str_base64 : "", mail_addr : false,
+	/* Качаем почту в локальный почтовый ящик */
+	download_email(),
+	/* Читаем локальный почтовый ящик */
+	f_em_n : printf(false, "/var/mail/~a", usr_name),
+	debuglog(printf(false, "starting to read local mailfile")),
+	if file_search(f_em_n)#false then block([],
+		historylog(t_message, printf(false, "Файл с почтой найден~%"), []),
+		f_em : openr(f_em_n))			/* открываем файл с почтой */
+	else block([], 
+		historylog(t_message, printf(false, "Файл с почтой не найден~%"), []),
+		f_em : false),
+	debuglog(printf(false, "f_em=~a", f_em)),
+	if f_em=false then go(tag_exit),
+	rl : true, line_num : 0,			/* установка начальных значений условия остановки и счетчика строк */
+	while (rl # false) do block([cur_proj, mail_subj, nxst], nxst : false,
+		rl : readline(f_em),			/* читаем следующую строку */
+		if stringp(rl) then block([],	/* если прочитана очередная строка */
+			line_num : line_num+1,		/* инкрементируем номер строки */
+			/* Если найдено новое письмо (поле From) */
+			if (ssearch("From ", rl)=1) then block([tkns],
+				debuglog(printf(false, "found new letter in line ~a", line_num)),
+				if mail_addr#false then block([],
+					proc_email_text(clct_str, projname, mail_addr),
+					clct_str : "",
+					clct_str_base64 : ""),
+				tkns : tokens(rl),		/* ищем обратный адрес */
+				mail_addr : tkns[2],
+				debuglog(printf(false, "letter from <~a>", mail_addr)),
+				historylog(t_message, printf(false, "Найдено новое письмо от <~a> ", mail_addr), [])),
+			/* Если найдена тема письма (поле Subject) */
+			if (ssearch("Subject: ", rl)=1) then block([tkns],
+				tkns : tokens(rl),
+				mail_subj : tkns[2],	/* ищем тему письма */
+				debuglog(printf(false, "ts-email: found subject ~a", mail_subj)),
+				if sequal("=?UTF-8?B?U29sdmVQbGVhc2U=?=", mail_subj) then block([],
+					debuglog(printf(false, "subject correct")),
+					historylog(t_message, printf(false, "с правильной темой~%"), []),
+					r_state : collect_tasks,
+					debuglog(printf(false, "r_state = collect_tasks at line ~a", line_num))) 
+				else block([],
+					debuglog(printf(false, "subject incorrect!")),
+					historylog(t_message, printf(false, "с неправильной темой~%"), []),
+					r_state : find_new_letter,
+					mail_addr : false,
+					debuglog(printf(false, "r_state = find_new_letter at line ~a", line_num)))),
+			if (ssearch("::", rl)#false) then clct_str : sconcat(clct_str, rl),
+			/* Если найдено текстовое содержимое */
+			if (ssearch("Content-Type: text/plain; charset=utf-8", rl)=1) then block([],
+				r_state : collect_base64_ct,
+				nxst : true,
+				debuglog(printf(false, "r_state = collect_base64_ct at line ~a", line_num))),
+			if nxst then go(nxt_email_line),
+			/* закодированное в base64 */
+			if ((r_state = collect_base64_ct) and (ssearch("Content-Transfer-Encoding: base64", rl)=1)) then block([],
+				r_state : collect_base64_cte,
+				nxst : true,
+				debuglog(printf(false, "r_state = collect_base64_cte at line ~a", line_num))),
+			if nxst then go(nxt_email_line),
+			if ((r_state=collect_base64_cte) and (rl="")) then block([],
+				r_state : collect_base64,
+				nxst : true,
+				debuglog(printf(false, "r_state = collect_base64 at line ~a", line_num))),
+			if nxst then go(nxt_email_line),
+			/* содержимое закодированное в base64 закончилось */
+			if (r_state=collect_base64) then block([],
+				if (rl="") then block([],
+					r_state : collect_tasks,
+					clct_str : sconcat(clct_str, base64_decode(clct_str_base64)),
+					clct_str_base64 : "",
+					debuglog(printf(false, "r_state = collect_tasks at line ~a", line_num)))
+				else block([],
+					debuglog(printf(false, "r_state = adding to clctstrbase64 line ~a", line_num)),
+					clct_str_base64 : sconcat(clct_str_base64, rl))),
+			nxt_email_line,		/* метка перехода к следующей строке */
+			nxst : false)
+		else block([],		/* если строки в почтовом файле кончились */
+			if slength(clct_str)>0 then
+				proc_email_text(clct_str, projname, mail_addr),		/* обрабатываем накопленный текст */
+			debuglog(printf(false, "end of file detected")))),
+	debuglog(printf(false, "read ~a strings from local mailbox", line_num)),
+	close(f_em),
+	debuglog(printf(false, "reading local mailfile ended")),
+	/* Очищаем локальный почтовый ящик */
+	/* system(printf(false, "rm ~a", f_em_n)), */
+	/* */
+	tag_exit,
+	historylog(t_session, "End session", [session_time=timedate(), session_mode="E-mail"]),
+	archive_function_calls_statistic(),
+	save_statistic(),
+	save_debuglog(),
+	save_history(),
+	debug_end_function())$
+/* ======================== */
+/* vector_length */
+/* ======================== */
+/* s : printf(false, "$\\left|~a\\right|=$ ~a;~2%", v_n, s), s_l : append(s_l, [s]), */
+/* =============================================== */
+/* linear_approximation_least_squares_method_1_var */
+/* =============================================== */
+/* calc_sym : makelist(gensym("gg"), n), calc_expr : apply("+", calc_sym), calc_ch : map("=", calc_sym, x_l), [ss, sum_x] : totex_calc_val(calc_expr, calc_ch), */
+/* calc_sym : makelist(gensym("gg"), n), calc_expr : map(lambda([x], x^2), calc_sym), calc_expr : apply("+", calc_expr), calc_ch : map("=", calc_sym, x_l), [ss, sum_x2] : totex_calc_val(calc_expr, calc_ch), */
+/* calc_sym : makelist(gensym("gg"), n), calc_expr : apply("+", calc_sym), calc_ch : map("=", calc_sym, y_l), [ss, sum_y] : totex_calc_val(calc_expr, calc_ch), */
+/* calc_sym1 : makelist(gensym("gg"), n), calc_sym2 : makelist(gensym("gg"), n), calc_expr : map("*", calc_sym1, calc_sym2), calc_expr : apply("+", calc_expr), calc_ch : append(map("=", calc_sym1, x_l), map("=", calc_sym2, y_l)), [ss, sum_xy] : totex_calc_val(calc_expr, calc_ch), */
+/* ================================================== */
+/* quadratic_approximation_least_squares_method_1_var */
+/* ================================================== */
+/* calc_sym : makelist(gensym("gg"), n), calc_expr : apply("+", calc_sym), calc_ch : map("=", calc_sym, x_l), [ss, sum_x] : totex_calc_val(calc_expr, calc_ch), */
+/* calc_sym : makelist(gensym("gg"), n), calc_expr : map(lambda([x], x^2), calc_sym), calc_expr : apply("+", calc_expr), calc_ch : map("=", calc_sym, x_l), [ss, sum_x2] : totex_calc_val(calc_expr, calc_ch), */
+/* calc_sym : makelist(gensym("gg"), n), calc_expr : map(lambda([x], x^3), calc_sym), calc_expr : apply("+", calc_expr), calc_ch : map("=", calc_sym, x_l), [ss, sum_x3] : totex_calc_val(calc_expr, calc_ch), */
+/* calc_sym : makelist(gensym("gg"), n), calc_expr : map(lambda([x], x^4), calc_sym), calc_expr : apply("+", calc_expr), calc_ch : map("=", calc_sym, x_l),	[ss, sum_x4] : totex_calc_val(calc_expr, calc_ch), */
+/* calc_sym : makelist(gensym("gg"), n), calc_expr : apply("+", calc_sym), calc_ch : map("=", calc_sym, y_l), [ss, sum_y] : totex_calc_val(calc_expr, calc_ch), */
+/* calc_sym1 : makelist(gensym("gg"), n), calc_sym2 : makelist(gensym("gg"), n), calc_expr : map("*", calc_sym1, calc_sym2), calc_expr : apply("+", calc_expr), calc_ch : append(map("=", calc_sym1, x_l), map("=", calc_sym2, y_l)), [ss, sum_xy] : totex_calc_val(calc_expr, calc_ch), */
+/* calc_sym1 : makelist(gensym("gg"), n), calc_sym2 : makelist(gensym("gg"), n), calc_sym : map(lambda([x], x^2), calc_sym1), calc_expr : map("*", calc_sym, calc_sym2), calc_expr : apply("+", calc_expr), calc_ch : append(map("=", calc_sym1, x_l), map("=", calc_sym2, y_l)), [ss, sum_x2y] : totex_calc_val(calc_expr, calc_ch), */
+/* ================================================ */
+/* discrete_rv_d2_density_table_dist_cpd_me_v_cc_ct */
+/* ================================================ */
+/* expr : 0, sbst : [], for k : 1 thru yn do block([pn], pn : gensym("vn"), expr : expr + pn, sbst : append(sbst, [pn=p_l[i,k]])), [s, p_x_l[i]] : totex_calc_val(expr, sbst), */
+/* expr : 0, sbst : [], for k : 1 thru xn do block([pn], pn : gensym("vn"), expr : expr + pn, sbst : append(sbst, [pn = p_l[k, i]])), [s, p_y_l[i]] : totex_calc_val(expr, sbst), */
+/* expr : 0, sbst : [],	for i : 1 thru xn do block([pn, px], pn : gensym("pn"), px : gensym("px"), expr : expr + pn * px, sbst : append(sbst, [pn = p_x_l[i], px = x_l[i]])),	[s, ev_x] : totex_calc_val(expr, sbst), */
+/* expr : 0, sbst : [], for i : 1 thru yn do block([pn, py], pn : gensym("pn"), py : gensym("py"), expr : expr + pn * py, sbst : append(sbst, [pn = p_y_l[i], py = y_l[i]])), [s, ev_y] : totex_calc_val(expr, sbst), */
+/* expr : 0, sbst : [], for i : 1 thru xn do block([pn, px], pn : gensym("pn"), px : gensym("px"), expr : expr + pn * px^2, sbst : append(sbst, [pn = p_x_l[i], px = x_l[i]]), if (i = xn) then (pn : gensym("pn"), expr : expr - pn^2, sbst : append(sbst,[pn = ev_x]))), [s, D_x] : totex_calc_val(expr, sbst), */
+/* expr : 0, sbst : [], for i : 1 thru yn do block([pn, py], pn : gensym("pn"), py : gensym("py"), expr : expr + pn * py^2, sbst : append(sbst, [pn = p_y_l[i], py = y_l[i]]), if (i = yn) then (pn : gensym("pn"), expr : expr - pn^2, sbst : append(sbst,[pn = ev_y]))), [s, D_y] : totex_calc_val(expr, sbst), */
+/* expr : 0, sbst : [],	for i : 1 thru xn do for j : 1 thru yn do block([pn, px, py], pn : gensym("pn"), px : gensym("px"), py : gensym("py"), expr : expr + pn * (px - ev_x) * (py - ev_y), sbst : append(sbst, [pn = p_l[i,j], px = x_l[i], py = y_l[j]])), [s, K_xy] : totex_calc_val(expr, sbst), */

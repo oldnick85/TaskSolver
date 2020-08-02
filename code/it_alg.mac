@@ -1,0 +1,544 @@
+/* ====================================================== */
+/* ================ Неформальные задания ================ */
+/* ====================== Алгебра ======================= */
+/* ====================================================== */
+debuglog("it_alg.mac", debug_message_module_load)$
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+/* =============================== */
+/* Решить алгебраическое уравнение */
+/* =============================== */
+informaltask_algebra_solve_algebraic_equation : [
+	category = [ts_algebra],
+	ts_subcategory = ts_equations,
+	name = "solve_algebraic_equation",
+	shortname = "ma_sae",
+	readiness = ts_test_readiness,
+	short_description = "Решить алгебраическое уравнение",
+	text = "Решить алгебраическое уравнение $P(x)$.",
+	taskparams = [
+		[parname = "P(x)", pr_name = "P_x", pr_caption = "P(x)", alias = "P(x)", pr_type = type_s_function_x, 
+			pr_hint = "Уравнение или выражение, которое будет приравнено к нулю",
+			ts_default_value = 4*x + 5]],
+	solver = solve_algebraic_equation]$
+push(informaltask_algebra_solve_algebraic_equation, informaltasks)$
+/* =========================== */
+/* Решение линейного уравнения */
+/* =========================== */
+informaltask_algebra_solve_linear_equation : [
+	category = [ts_algebra],
+	name = "algebra_solve_linear_equation",
+	shortname = "ma_sle",
+	readiness = ts_full_readiness,
+	short_description = "Решить линейное уравнение",
+	text = "Решить линейное уравнение $a\\cdot x+b=0$.",
+	taskparams = [
+		[parname = "a", pr_name = "a", pr_caption = "a", alias = "a", pr_type = type_s_real_nz, 
+			pr_hint = "Линейный коэффициент",
+			ts_default_value = 7],
+		[parname = "b", pr_name = "b", pr_caption = "b", alias = "b", pr_type = type_s_real, 
+			pr_hint = "Свободный член",
+			ts_default_value = -8]],
+	solver = solve_linear_equation]$
+push(informaltask_algebra_solve_linear_equation, informaltasks)$
+/* ============================= */
+/* Решение квадратного уравнения */
+/* ============================= */
+informaltask_algebra_solve_quadratic_equation : [
+	category = [ts_algebra],
+	name = "algebra_solve_quadratic_equation",
+	shortname = "ma_sqe",
+	readiness = ts_full_readiness,
+	short_description = "Решить квадратное уравнение",
+	text = "Решить квадратное уравнение $a\\cdot x^2+b\\cdot x+c=0$.",
+	taskparams = [
+		[parname = "a", pr_name = "a", pr_caption = "a", alias = "a", pr_type = type_s_real_nz, 
+			pr_hint = "Квадратичный коэффициент",
+			ts_default_value = 1],
+		[parname = "b", pr_name = "b", pr_caption = "b", alias = "b", pr_type = type_s_real, 
+			pr_hint = "Линейный коэффициент",
+			ts_default_value = -5],
+		[parname = "c", pr_name = "c", pr_caption = "c", alias = "c", pr_type = type_s_real, 
+			pr_hint = "Свободный член",
+			ts_default_value = 6]],
+	solver = solve_quadratic_equation]$
+push(informaltask_algebra_solve_quadratic_equation, informaltasks)$
+/* =============================== */
+/* Решение биквадратного уравнения */
+/* =============================== */
+informaltask_algebra_solve_biquadratic_equation : [
+	category = [ts_algebra],
+	name = "algebra_solve_biquadratic_equation",
+	shortname = "ma_sbqe",
+	readiness = ts_full_readiness,
+	short_description = "Решить биквадратное уравнение",
+	text = "Решить биквадратное уравнение $a\\cdot x^4+c\\cdot x^2+e=0$.",
+	taskparams = [
+		[parname = "a", pr_name = "a", pr_caption = "a", alias = "a", pr_type = type_s_real_nz, 
+			ts_default_value = 1],
+		[parname = "c", pr_name = "c", pr_caption = "c", alias = "c", pr_type = type_s_real, 
+			ts_default_value = 13],
+		[parname = "e", pr_name = "e", pr_caption = "e", alias = "e", pr_type = type_s_real,
+			ts_default_value = 36]],
+	solver = solve_biquadratic_equation]$
+push(informaltask_algebra_solve_biquadratic_equation, informaltasks)$
+/* ==================================================== */
+/* Решить уравнение четвертой степени специального вида */
+/* ==================================================== */
+informaltask_algebra_solve_alg_equation_4_special_form : [
+	category = [ts_algebra],
+	name = "algebra_solve_alg_equation_4_special_form",
+	shortname = "ma_sae4sf",
+	readiness = ts_test_readiness,
+	short_description = "Решить уравнение четвертой степени специального вида",
+	text = "Решить уравнение четвертой степени специального вида $a\\cdot x^4+b\\cdot x^3+c\\cdot x^2+d\\cdot x+e=0$.",
+	taskparams = [
+		[parname = "a", pr_name = "a", pr_caption = "a", alias = "a", pr_type = type_s_real_nz, 
+			ts_default_value = 1],
+		[parname = "b", pr_name = "b", pr_caption = "b", alias = "b", pr_type = type_s_real, 
+			ts_default_value = 13],
+		[parname = "c", pr_name = "c", pr_caption = "c", alias = "c", pr_type = type_s_real, 
+			ts_default_value = 13],
+		[parname = "d", pr_name = "d", pr_caption = "d", alias = "d", pr_type = type_s_real, 
+			ts_default_value = 13],
+		[parname = "e", pr_name = "e", pr_caption = "e", alias = "e", pr_type = type_s_real,
+			ts_default_value = 1]],
+	solver = solve_alg_equation_4_special_form]$
+push(informaltask_algebra_solve_alg_equation_4_special_form, informaltasks)$
+/* ============================= */
+/* Поделить многочлены столбиком */
+/* ============================= */
+informaltask_divide_polynomials_by_column : [
+	category = [ts_algebra],
+	name = "divide_polynomials_by_column",
+	shortname = "ma_divpoly",
+	readiness = ts_full_readiness,
+	short_description = "Поделить многочлены столбиком",
+	text = "Разделить многочлен $P_1(x)$ на многочлен $P_2(x)$ столбиком.",
+	taskparams = [
+		[parname = "P_1(\\x)", pr_name = "P_1_x", pr_caption = "P_1(x)", alias = "dividend", pr_type = type_s_polynomial_x, 
+			pr_hint = "Делимый многочлен",
+			ts_default_value = x^2+3*x-2],
+		[parname = "P_2(\\x)", pr_name = "P_2_x", pr_caption = "P_2(x)", alias = "divider", pr_type = type_s_polynomial_x, 
+			pr_hint = "Многочлен-делитель",
+			ts_default_value = x+1]],
+	solver = divide_polynomials_by_column]$
+push(informaltask_divide_polynomials_by_column, informaltasks)$
+/* ============================================= */
+/* Найти корни многочлена с помощью теоремы Безу */
+/* ============================================= */
+informaltask_find_polynome_roots_bezout_theorem : [
+	category = [ts_algebra],
+	ts_subcategory = ts_equations,
+	name = "find_polynome_roots_bezout_theorem",
+	shortname = "ma_fprbt",
+	readiness = ts_full_readiness,
+	short_description = "Найти корни многочлена с помощью теоремы Безу",
+	text = "Найти корни многочлена $P(x)=0$ с помощью теоремы Безу",
+	taskparams = [
+		[parname = "P(\\x)", pr_name = "P_x", pr_caption = "P(x)", alias = "P(x)", pr_type = type_s_polynomial_x, 
+			pr_hint = "Многочлен",
+			ts_default_value = x^3+x^2+x-3]],
+	solver = find_polynome_roots_bezout_theorem]$
+push(informaltask_find_polynome_roots_bezout_theorem, informaltasks)$
+/* ============================= */
+/* Найти обратную матрицу 3 на 3 */
+/* ============================= */
+informaltask_algebra_matrix_invert_3x3 : [
+	category = [ts_algebra],
+	name = "algebra_matrix_invert_3x3",
+	shortname = "ma_minv33",
+	readiness = ts_full_readiness,
+	short_description = "Найти обратную матрицу 3 на 3",
+	text=
+		"Найти обратную матрицу для матрицы $\\begin{pmatrix} a_{11} & a_{12} & a_{13} \\\\ a_{21} & a_{22} & a_{23} \\\\ a_{31} & a_{32} & a_{33} \\end{pmatrix}$",
+	taskparams=[
+		[parname = "a_{11}", pr_name = "a_11", pr_caption = "a_{11}", alias = "a11", pr_type = type_s_real, 
+			ts_default_value = 1],
+		[parname = "a_{12}", pr_name = "a_12", pr_caption = "a_{12}", alias = "a12", pr_type = type_s_real, 
+			ts_default_value = 2],
+		[parname = "a_{13}", pr_name = "a_13", pr_caption = "a_{13}", alias = "a13", pr_type = type_s_real, 
+			ts_default_value = 3],
+		[parname = "a_{21}", pr_name = "a_21", pr_caption = "a_{21}", alias = "a21", pr_type = type_s_real, 
+			ts_default_value = 4],
+		[parname = "a_{22}", pr_name = "a_22", pr_caption = "a_{22}", alias = "a22", pr_type = type_s_real, 
+			ts_default_value = -5],
+		[parname = "a_{23}", pr_name = "a_23", pr_caption = "a_{23}", alias = "a23", pr_type = type_s_real, 
+			ts_default_value = 6],
+		[parname = "a_{31}", pr_name = "a_31", pr_caption = "a_{31}", alias = "a31", pr_type = type_s_real, 
+			ts_default_value = 0],
+		[parname = "a_{32}", pr_name = "a_32", pr_caption = "a_{32}", alias = "a32", pr_type = type_s_real, 
+			ts_default_value = 8],
+		[parname = "a_{33}", pr_name = "a_33", pr_caption = "a_{33}", alias = "a33", pr_type = type_s_real, 
+			ts_default_value = 9]], 
+	solver = matrix_invert_3x3]$
+push(informaltask_algebra_matrix_invert_3x3, informaltasks)$
+/* ================================= */
+/* Найти определитель матрицы 3 на 3 */
+/* ================================= */
+informaltask_algebra_matrix_determinant_3x3 : [
+	category = [ts_algebra],
+	name = "algebra_matrix_determinant_3x3",
+	shortname = "ma_mdet33",
+	readiness = ts_full_readiness,
+	short_description = "Найти определитель матрицы 3 на 3",
+	text=
+		"Найти определитель матрицы $\\begin{pmatrix} a_{11} & a_{12} & a_{13} \\\\ a_{21} & a_{22} & a_{23} \\\\ a_{31} & a_{32} & a_{33} \\end{pmatrix}$",
+	taskparams=[
+		[parname = "a_{11}", pr_name = "a_11", pr_caption = "a_{11}", alias = "a11", pr_type = type_s_real, ts_default_value = 1],
+		[parname = "a_{12}", pr_name = "a_12", pr_caption = "a_{12}", alias = "a12", pr_type = type_s_real, ts_default_value = 2],
+		[parname = "a_{13}", pr_name = "a_13", pr_caption = "a_{13}", alias = "a13", pr_type = type_s_real, ts_default_value = 3],
+		[parname = "a_{21}", pr_name = "a_21", pr_caption = "a_{21}", alias = "a21", pr_type = type_s_real, ts_default_value = 4],
+		[parname = "a_{22}", pr_name = "a_22", pr_caption = "a_{22}", alias = "a22", pr_type = type_s_real, ts_default_value = 5],
+		[parname = "a_{23}", pr_name = "a_23", pr_caption = "a_{23}", alias = "a23", pr_type = type_s_real, ts_default_value = 6],
+		[parname = "a_{31}", pr_name = "a_31", pr_caption = "a_{31}", alias = "a31", pr_type = type_s_real, ts_default_value = 7],
+		[parname = "a_{32}", pr_name = "a_32", pr_caption = "a_{32}", alias = "a32", pr_type = type_s_real, ts_default_value = 8],
+		[parname = "a_{33}", pr_name = "a_33", pr_caption = "a_{33}", alias = "a33", pr_type = type_s_real, ts_default_value = 9]],
+	solver = matrix_determinant_3x3]$
+push(informaltask_algebra_matrix_determinant_3x3, informaltasks)$
+/* ================================== */
+/* Найти собственные значения матрицы */
+/* ================================== */
+informaltask_algebra_matrix_eigenvalues : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "algebra_matrix_eigenvalues",
+	shortname = "ma_mev",
+	readiness = ts_test_readiness,
+	short_description = "Найти собственные значения матрицы",
+	text =
+		"Найти собственные значения матрицы $M=\\left(M_{ij}\\right)$",
+	taskparams = [
+		[parname = "M", pr_name = "M", pr_caption = "M",  alias = "M", pr_type = type_sq_m_real, 
+			ts_default_value = matrix([1, -2, 3, 4], [5, 6, 7, 8], [9, 8, 7, 6], [5, 4, 3, 2])]],
+	solver = algebra_matrix_eigenvalues]$
+push(informaltask_algebra_matrix_eigenvalues, informaltasks)$
+/* ======================================================== */
+/* Найти собственные значения и собственные векторы матрицы */
+/* ======================================================== */
+informaltask_algebra_matrix_eigenvalues_eigenvectors : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "algebra_matrix_eigenvalues_eigenvectors",
+	shortname = "ma_mevev",
+	readiness = ts_test_readiness,
+	short_description = "Найти собственные значения и собственные векторы матрицы",
+	text =
+		"Найти обственные значения и собственные векторы матрицы $M=\\left(M_{ij}\\right)$",
+	taskparams = [
+		[parname = "M", pr_name = "M", pr_caption = "M",  alias = "M", pr_type = type_sq_m_real, 
+			ts_default_value = matrix([1, -2, 3, 4], [5, 6, 7, 8], [9, 8, 7, 6], [5, 4, 3, 2])]],
+	solver = algebra_matrix_eigenvalues_eigenvectors]$
+push(informaltask_algebra_matrix_eigenvalues_eigenvectors, informaltasks)$
+/* ========================== */
+/* Найти определитель матрицы */
+/* ========================== */
+informaltask_algebra_matrix_determinant : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "algebra_matrix_determinant",
+	shortname = "ma_mdet",
+	readiness = ts_full_readiness,
+	short_description = "Найти определитель матрицы",
+	text =
+		"Найти определитель матрицы $M=\\left(M_{ij}\\right)$",
+	taskparams = [
+		[parname = "M", pr_name = "M", pr_caption = "M",  alias = "M", pr_type = type_sq_m_real, 
+			ts_default_value = matrix([1, 2, 3, 4], [5, 6, 7, 8], [9, 8, 7, 6], [5, 4, 3, 2])]],
+	solver = matrix_determinant]$
+push(informaltask_algebra_matrix_determinant, informaltasks)$
+/* ====================================================== */
+/* Решение системы линейных уравнений 3x3 методом Крамера */
+/* ====================================================== */
+informaltask_algebra_solve_linear_system_3x3_kramer : [
+	category = [ts_algebra],
+	name = "algebra_solve_linear_system_kramer",
+	shortname = "ma_slesk33",
+	readiness = ts_full_readiness,
+	short_description = "Решение системы линейных уравнений 3 на 3 методом Крамера",
+	text=
+		"Решить систему линейных уравнений методом Крамера $$\\left\\{\\begin{array}{l}a_{11}\\cdot x_{1}+a_{12}\\cdot x_{2}+a_{13}\\cdot x_{3}=b_{1},\\\\a_{21}\\cdot x_{1}+a_{22}\\cdot x_{2}+a_{23}\\cdot x_{3}=b_2,\\\\a_{31}\\cdot x_{1}+a_{32}\\cdot x_{2}+a_{33}\\cdot x_{3}=b_{3}.\\end{array}\\right.$$",
+	taskparams=[
+		[parname = "a_{11}", pr_name = "a_11", pr_caption = "a_{11}", alias = "a11", pr_type = type_s_real, ts_default_value = 11],
+		[parname = "a_{12}", pr_name = "a_12", pr_caption = "a_{12}", alias = "a12", pr_type = type_s_real, ts_default_value = 12],
+		[parname = "a_{13}", pr_name = "a_13", pr_caption = "a_{13}", alias = "a13", pr_type = type_s_real, ts_default_value = 13],
+		[parname = "a_{21}", pr_name = "a_21", pr_caption = "a_{21}", alias = "a21", pr_type = type_s_real, ts_default_value = 21],
+		[parname = "a_{22}", pr_name = "a_22", pr_caption = "a_{22}", alias = "a22", pr_type = type_s_real, ts_default_value = 22],
+		[parname = "a_{23}", pr_name = "a_23", pr_caption = "a_{23}", alias = "a23", pr_type = type_s_real, ts_default_value = 23],
+		[parname = "a_{31}", pr_name = "a_31", pr_caption = "a_{31}", alias = "a31", pr_type = type_s_real, ts_default_value = 31],
+		[parname = "a_{32}", pr_name = "a_32", pr_caption = "a_{32}", alias = "a32", pr_type = type_s_real, ts_default_value = 32],
+		[parname = "a_{33}", pr_name = "a_33", pr_caption = "a_{33}", alias = "a33", pr_type = type_s_real, ts_default_value = 33],
+		[parname = "b_{1}", pr_name = "b_1", pr_caption = "b_{1}", alias = "b1", pr_type = type_s_real, ts_default_value = -1],
+		[parname = "b_{2}", pr_name = "b_2", pr_caption = "b_{2}", alias = "b2", pr_type = type_s_real, ts_default_value = -2],
+		[parname = "b_{3}", pr_name = "b_3", pr_caption = "b_{3}", alias = "b3", pr_type = type_s_real, ts_default_value = -3]], 
+	solver = algebra_solve_linear_system_3x3_kramer]$
+push(informaltask_algebra_solve_linear_system_3x3_kramer, informaltasks)$
+/* ================================================= */
+/* Привести матрицу 3 на 3 к верхнетреугольному виду */
+/* ================================================= */
+informaltask_matrix_to_triangular_form_3x3 : [
+	category = [ts_algebra],
+	name = "matrix_to_upper_triangular_form_3x3",
+	shortname = "ma_mtutf33",
+	readiness = ts_full_readiness,
+	short_description = "Привести матрицу 3 на 3 к верхнетреугольному виду",
+	text=
+		"Привести к верхнетреугольному виду матрицу $\\begin{pmatrix} a_{11} & a_{12} & a_{13} \\\\ a_{21} & a_{22} & a_{23} \\\\ a_{31} & a_{32} & a_{33} \\end{pmatrix}$",
+	taskparams=[
+		[parname = "a_{11}", pr_name = "a_11", pr_caption = "a_{11}", alias = "a11", pr_type = type_s_real, ts_default_value = 1],
+		[parname = "a_{12}", pr_name = "a_12", pr_caption = "a_{12}", alias = "a12", pr_type = type_s_real, ts_default_value = 2],
+		[parname = "a_{13}", pr_name = "a_13", pr_caption = "a_{13}", alias = "a13", pr_type = type_s_real, ts_default_value = 3],
+		[parname = "a_{21}", pr_name = "a_21", pr_caption = "a_{21}", alias = "a21", pr_type = type_s_real, ts_default_value = 4],
+		[parname = "a_{22}", pr_name = "a_22", pr_caption = "a_{22}", alias = "a22", pr_type = type_s_real, ts_default_value = 5],
+		[parname = "a_{23}", pr_name = "a_23", pr_caption = "a_{23}", alias = "a23", pr_type = type_s_real, ts_default_value = 6],
+		[parname = "a_{31}", pr_name = "a_31", pr_caption = "a_{31}", alias = "a31", pr_type = type_s_real, ts_default_value = 7],
+		[parname = "a_{32}", pr_name = "a_32", pr_caption = "a_{32}", alias = "a32", pr_type = type_s_real, ts_default_value = 8],
+		[parname = "a_{33}", pr_name = "a_33", pr_caption = "a_{33}", alias = "a33", pr_type = type_s_real, ts_default_value = 9]], 
+	solver = matrix_to_upper_triangular_form]$
+push(informaltask_matrix_to_triangular_form_3x3, informaltasks)$
+/* ========================================== */
+/* Привести матрицу к верхнетреугольному виду */
+/* ========================================== */
+informaltask_matrix_to_upper_triangular_form : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "matrix_to_upper_triangular_form",
+	shortname = "ma_mtutf",
+	readiness = ts_full_readiness,
+	short_description = "Привести матрицу к верхнетреугольному виду",
+	text=
+		"Привести к верхнетреугольному виду матрицу $M=\\left(M_{ij}\\right)$",
+	taskparams=[
+		[parname = "M", pr_name = "M", pr_caption = "M", alias = "M", pr_type = type_m_real,
+			ts_default_value = matrix([-2, 0, 5], [6, 3, 8], [-9, 5, 1])]], 
+	solver = matrix_to_upper_triangular_form]$
+push(informaltask_matrix_to_upper_triangular_form, informaltasks)$
+/* ============================================= */
+/* Привести матрицу к верхнеунитреугольному виду */
+/* ============================================= */
+informaltask_matrix_to_upper_unitriangular_form : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "matrix_to_upper_unitriangular_form",
+	shortname = "ma_mtuutf",
+	readiness = ts_full_readiness,
+	short_description = "Привести матрицу к верхнеунитреугольному виду",
+	text=
+		"Привести к верхнеунитреугольному виду матрицу $M=\\left(M_{ij}\\right)$",
+	taskparams=[
+		[parname = "M", pr_name = "M", pr_caption = "M", alias = "M", pr_type = type_m_real,
+			ts_default_value = matrix([-2, 0, 5], [6, 3, 8], [-9, 5, 1])]], 
+	solver = matrix_to_upper_unitriangular_form]$
+push(informaltask_matrix_to_upper_unitriangular_form, informaltasks)$
+/* ===================================== */
+/* Привести матрицу к диагональному виду */
+/* ===================================== */
+informaltask_matrix_to_upper_unidiagonal_form : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "matrix_to_upper_unidiagonal_form",
+	shortname = "ma_mtuudf",
+	readiness = ts_full_readiness,
+	short_description = "Привести матрицу к диагональному виду",
+	text=
+		"Привести к диагональному виду матрицу $M=\\left(M_{ij}\\right)$",
+	taskparams=[
+		[parname = "M", pr_name = "M", pr_caption = "M", alias = "M", pr_type = type_m_real,
+			ts_default_value = matrix([-2, 0, 5], [6, 3, 8], [-9, 5, 1])]], 
+	solver = matrix_to_upper_unidiagonal_form]$
+push(informaltask_matrix_to_upper_unidiagonal_form, informaltasks)$
+/* ================================================ */
+/* Решить систему линейных уравнений методом Гаусса */
+/* ================================================ */
+informaltask_solve_linear_system_gauss : [
+	category = [ts_algebra],
+	ts_subcategory = ts_equations,
+	ts_subcategory = ts_matrixes,
+	name = "solve_linear_system_gauss",
+	shortname = "ma_slesg",
+	readiness = ts_full_readiness,
+	short_description = "Решить систему линейных уравнений методом Гаусса",
+	text=
+		"Решить систему линейных уравнений, заданную расширенной матрицей коэффициентов $M=\\left(M_{ij}\\right)$, методом Гаусса",
+	taskparams=[
+		[parname = "M", pr_name = "M", pr_caption = "M", alias = "M", pr_type = type_m_real,
+			ts_default_value = matrix([-2, 0, 5, 3], [6, 3, 8, 0], [-9, 5, 1, -1])]], 
+	solver = solve_linear_system_gauss]$
+push(informaltask_solve_linear_system_gauss, informaltasks)$
+/* ================================================= */
+/* Решить систему линейных уравнений методом Крамера */
+/* ================================================= */
+informaltask_solve_linear_system_kramer : [
+	category = [ts_algebra],
+	ts_subcategory = ts_equations,
+	name = "solve_linear_system_kramer",
+	shortname = "ma_slesk",
+	readiness = ts_full_readiness,
+	short_description = "Решить систему линейных уравнений методом Крамера",
+	text=
+		"Решить систему линейных уравнений, заданную расширенной матрицей коэффициентов $M=\\left(M_{ij}\\right)$, методом Крамера",
+	taskparams=[
+		[parname = "M", pr_name = "M", pr_caption = "M", alias = "M", pr_type = type_m_real,
+			ts_default_value = matrix([-2, 0, 5, 3], [6, 3, 8, 0], [-9, 5, 1, -1])]], 
+	solver = solve_linear_system_kramer]$
+push(informaltask_solve_linear_system_kramer, informaltasks)$
+/* ======================= */
+/* Перемножить две матрицы */
+/* ======================= */
+informaltask_matrix_multiplication : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "matrix_multiplication",
+	shortname = "ma_mm",
+	readiness = ts_full_readiness,
+	short_description = "Перемножить две матрицы",
+	text=
+		"Перемножить две матрицы $A=\\left(A_{ij}\\right)$ и $B=\\left(B_{ij}\\right)$",
+	taskparams=[
+		[parname = "A", pr_name = "A", pr_caption = "A", alias = "A", pr_type = type_m_real,
+			ts_default_value = matrix([1, 2, 3], [4, 5, 6])],
+		[parname = "B", pr_name = "B", pr_caption = "B", alias = "B", pr_type = type_m_real,
+			ts_default_value = matrix([11, 12], [13, 14], [15, 16])]], 
+	solver = matrix_multiplication]$
+push(informaltask_matrix_multiplication, informaltasks)$
+/* =============================== */
+/* Найти собственные числа матрицы */
+/* =============================== */
+informaltask_algebra_matrix_eigenvalues : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "algebra_matrix_eigenvalues",
+	shortname = "ma_mev",
+	readiness = ts_test_readiness,
+	short_description = "Найти собственные числа матрицы",
+	text =
+		"Найти собственные числа матрицы $M=\\left(M_{ij}\\right)$",
+	taskparams = [
+		[parname = "M", pr_name = "M", pr_caption = "M", alias = "M", pr_type = type_sq_m_real, 
+			pr_hint = "Квадратная матрица",
+			ts_default_value = matrix([1, 2], [-3, 4])]],
+	solver = matrix_eigenvalues]$
+push(informaltask_algebra_matrix_eigenvalues, informaltasks)$
+/* ============================================= */
+/* Найти обратную матрицу методом Гаусса-Жордана */
+/* ============================================= */
+informaltask_algebra_invert_matrix_gauss : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "algebra_invert_matrix_gauss",
+	shortname = "ma_img",
+	readiness = ts_full_readiness,
+	short_description = "Найти обратную матрицу методом Гаусса-Жордана",
+	text =
+		"Найти обратную матрицу для матрицы $M=\\left(M_{ij}\\right)$ методом Гаусса-Жордана.",
+	taskparams = [
+		[parname = "M", pr_name = "M", pr_caption = "M", alias = "M", pr_type = type_sq_m_real, 
+			pr_hint = "Квадратная матрица",
+			ts_default_value = matrix([1, 2], [-3, 4])]],
+	solver = algebra_invert_matrix_gauss]$
+push(informaltask_algebra_invert_matrix_gauss, informaltasks)$
+/* ================================================================== */
+/* Найти обратную матрицу с помощью матрицы алгебраических дополнений */
+/* ================================================================== */
+informaltask_algebra_invert_matrix_cofactors : [
+	category = [ts_algebra],
+	ts_subcategory = ts_matrixes,
+	name = "algebra_invert_matrix_gauss",
+	shortname = "ma_imc",
+	readiness = ts_full_readiness,
+	short_description = "Найти обратную матрицу с помощью матрицы алгебраических дополнений",
+	text =
+		"Найти обратную матрицу для матрицы $M=\\left(M_{ij}\\right)$ с помощью матрицы алгебраических дополнений.",
+	taskparams = [
+		[parname = "M", pr_name = "M", pr_caption = "M", alias = "M", pr_type = type_sq_m_real, 
+			pr_hint = "Квадратная матрица",
+			ts_default_value = matrix([1, 2], [-3, 4])]],
+	solver = algebra_invert_matrix_cofactors]$
+push(informaltask_algebra_invert_matrix_cofactors, informaltasks)$
+/* =================================== */
+/* Решить тригонометрическое уравнение */
+/* =================================== */
+informaltask_solve_trigonometric_equation : [
+	category = [ts_algebra],
+	ts_subcategory = ts_equations,
+	name = "informaltask_solve_trigonometric_equation",
+	shortname = "ma_ste",
+	readiness = ts_test_readiness,
+	short_description = "Решить тригонометрическое уравнение",
+	text =
+		"Решить тригонометрическое уравнение $F(x)=0$",
+	ts_notes = "Пока что могут быть решены лишь простейшие уравнения. В перспективе возможности решения будут расширены.",
+	taskparams = [
+		[parname = "F(x)", pr_name = "F_x", pr_caption = "F(x)", alias = "equation", pr_type = type_s_function_x, 
+			pr_hint = "Тригонометрическое уравнение или выражение",
+			ts_default_value = sin(2*x)+1/2]],
+	solver = solve_linear_trigonometric_equation_linear_argument]$
+push(informaltask_solve_trigonometric_equation, informaltasks)$
+/* ==================================================== */
+/* Решить тригонометрическое уравнение с отбором корней */
+/* ==================================================== */
+informaltask_solve_trigonometric_equation_select_roots : [
+	category = [ts_algebra],
+	ts_subcategory = ts_equations,
+	name = "informaltask_solve_trigonometric_equation_select_roots",
+	shortname = "ma_ste",
+	readiness = ts_test_readiness,
+	short_description = "Решить тригонометрическое уравнение с отбором корней",
+	text =
+		"Решить тригонометрическое уравнение $F(x)=0$ и указать его корни, принадлежащие промежутку от $a$ до $b$",
+	ts_notes = "Пока что могут быть решены лишь простейшие уравнения. В перспективе возможности решения будут расширены.",
+	taskparams = [
+		[parname = "a", pr_name = "a", pr_caption = "a", alias = "a", 
+			ts_hint = "Нижний предел отбора корней",
+			pr_type = type_s_real, ts_default_value = -%pi],
+		[parname = "b", pr_name = "b", pr_caption = "b", alias = "b", 
+			ts_hint = "Верхний предел отбора корней", 
+			pr_type = type_s_real, ts_default_value = %pi],
+		[parname = "F(x)", pr_name = "F_x", pr_caption = "F(x)", alias = "equation", 
+			ts_hint = "Тригонометрическое уравнение или выражение", 
+			pr_type = type_s_function_x, ts_default_value = sin(x)-1/2]],
+	solver = solve_trigonometric_equation]$
+push(informaltask_solve_trigonometric_equation_select_roots, informaltasks)$
+/* ================================================== */
+/* Составить таблицу истинности логического выражения */
+/* ================================================== */
+informaltask_truth_table_logical_expression : [
+	category = [ts_algebra],
+	ts_subcategory = ts_logic,
+	name = "algebra_truth_table_logical_expression",
+	shortname = "ma_ttle",
+	readiness = ts_full_readiness,
+	short_description = "Составить таблицу истинности логического выражения",
+	text = "Составить таблицу истинности логического выражения $P$.",
+	taskparams = [
+		[parname = "P", pr_name = "P", pr_caption = "P", alias = "logical expression", pr_type = type_s_expression, 
+			ts_default_value = (A and B)]],
+	solver = truth_table_logical_expression]$
+push(informaltask_truth_table_logical_expression, informaltasks)$
+/* ==================================================== */
+/* Записать комплексное число в тригонометрическом виде */
+/* ==================================================== */
+informaltask_complex_number_to_trig_form : [
+	category = [ts_algebra],
+	ts_subcategory = ts_complex_numbers,
+	name = "complex_number_to_trig_form",
+	shortname = "ma_cnttf",
+	readiness = ts_full_readiness,
+	short_description = "Записать комплексное число в тригонометрическом виде",
+	text=
+		"Записать комплексное число $z=x+y\\cdot i$ в тригонометрическом виде",
+	taskparams=[
+		[parname = "x", pr_name = "x", pr_caption = "x", alias = "x", pr_type = type_s_real, 
+			pr_hint = "Действительная часть",
+			ts_default_value = 1],
+		[parname = "y", pr_name = "y", pr_caption = "y", alias = "y", pr_type = type_s_real, 
+			pr_hint = "Мнимая часть",
+			ts_default_value = -2]], 
+	ts_parameters_extra = [
+		[parname = "x_name", pr_name = "x_name", pr_caption = "x_name", alias = "x name", pr_type = type_v_string, 
+			pr_hint = "Имя для действительной части",
+			ts_default_value = "x"],
+		[parname = "y_name", pr_name = "y_name", pr_caption = "y_name", alias = "y name", pr_type = type_v_string, 
+			pr_hint = "Имя для мнимой части",
+			ts_default_value = "y"]],
+	solver = complex_number_to_trig_form]$
+push(informaltask_complex_number_to_trig_form, informaltasks)$

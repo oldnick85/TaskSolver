@@ -1,0 +1,341 @@
+/* ================================================================== */
+/* ================ Функции автодокументирования проекта ============ */
+/* ================================================================== */
+debuglog("func_autodoc.mac", debug_message_module_load)$
+/* ================================================== */
+/* @type variable */
+/* @begin ts_project_files_maxima_code */
+/* @brief Список файлов с кодом максимы */
+/* @details Список файлов с кодом максимы */
+/* @end */
+ts_project_files_maxima_code : [
+		"code/ft_alg_equations.mac",
+		"code/func.mac", 
+		"code/func-autodoc.mac", 
+		"code/func-debug.mac", 
+		"code/func-latex.mac", 
+		"code/func-load.mac", 
+		"code/func-ts-cmdline.mac", 
+		"code/func-ts-web.mac",
+		"code/informaltasks.mac"]$
+/* ================================================== */
+/* @begin autodoc_collect_information_about_project */
+/* @type function */
+/* @brief Сбор информации для автодокументации всего проекта */
+/* @details Собирает информацию для автодокументирования со всех файлов проекта и возвращает */
+/* @result Список ассоциативных массивов с информацией для автодокументирования */
+/* @example autodoc_collect_information_about_project() -> [[ts_type = ts_function, ts_brief = "Brief", ...], [...], ...] */
+/* @todo Добавить автоматический поиск файлов проекта из определенных папок */
+/* @end */
+/* ================================================== */
+debuglog("autodoc_collect_information_about_project", debug_message_func_load)$
+autodoc_collect_information_about_project() := block(
+	[res, rs,
+	tex_str], 
+	debug_start_function("autodoc_collect_information_about_project", [fp_high_level, fp_common]),
+	res : [],
+	for project_file in ts_project_files_maxima_code do (
+		rs : autodoc_collect_information_from_file(project_file),
+		res : append(res, rs)),
+	tex_str : autodoc_information_to_tex(res),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin autodoc_collect_information_from_file */
+/* @type function */
+/* @brief Сбор информации для автодокументации из файла */
+/* @details Собирает информацию для автодокументирования из файла */
+/* @result Список ассоциативных массивов с информацией для автодокументирования */
+/* @example autodoc_collect_information_from_file("code/func.mac") -> [[ts_type = ts_function, ts_brief = "Brief", ...], [...], ...] */
+/* @end */
+/* ================================================== */
+debuglog("autodoc_collect_information_from_file", debug_message_func_load)$
+autodoc_collect_information_from_file(file_name) := block(
+	[res,
+	fl,																	/* дескриптор файла */
+	f_str_c,															/* счетчик строк */
+	s_line, 															/* строка, считанная из файла */
+	s,																	/* строка со всеми собранными комментариями */
+	ss,
+	s_tag, s_text,
+	s_cmnt,																/* текущая строка с комментарием */
+	s_lst,																/* список подстрок с описаниями */
+	s_pos, e_pos,														/* позиции начала и конца подстроки */
+	c_cur_doc_struct,
+	c_current_tag,
+	c_cur_elt,															/* данные текущего элемента */
+	c_state,															/* текущее состояние поиска тегов автодокументации */
+	is_comment_opened													/* текущее состояние чтения комментария */
+	], 
+	debug_start_function("autodoc_collect_information_from_file", [fp_high_level, fp_common]),
+	res : [], s : "",
+	/* собираем все комментарии в переменную s */
+	is_comment_opened : false,
+	c_cur_doc_struct : "",												/* изначально ничего не найдено */
+	c_cur_elt : [],
+	fl : openr(file_name),
+	f_str_c : 0,
+	tag_cycle1,															/* сюда возвращаемя за очередной строкой */
+	s_line : readline(fl),												/* читаем новую строчку */
+	if (s_line = false) then go(tag_exit1),								/* строки кончились - выходим */
+	f_str_c : f_str_c + 1,
+	s_cmnt : "",
+	if (is_comment_opened = true) 
+	then (
+		/* если комментарий был открыт но не закрыт */
+		e_pos : ssearch("*/", s_line),
+		if (e_pos = false) then (										/* вся строка - часть комментария */
+			s_cmnt : s_line
+		) else (														/* комментарий завершается */
+			s_cmnt : substring(s_line, 1, e_pos),
+			/* !NOTE! возможно, что на этой же строке открылся еще один комментарий, но это вряд ли :) */
+			is_comment_opened : false)
+		)
+	else (
+		s_pos : ssearch("/*", s_line),
+		if (s_pos # false) then (										/* если комментарий не был открыт и найдено начало комментария */
+			e_pos : ssearch("*/", s_line),
+			if (e_pos = false) then (
+				s_cmnt : substring(s_line, s_pos + 2),
+				is_comment_opened : true
+			) else (
+				s_cmnt : substring(s_line, s_pos + 2, e_pos),
+				is_comment_opened : false)
+			)
+		),
+	/* ищем начало */
+	s_pos : ssearch("@begin", s_cmnt),
+	if (s_pos # false) then
+	(
+		if (c_cur_doc_struct # "") then printf(true, "WARNING GENERATE AUTODOCUMENTATION"),
+		ss : substring(s_cmnt, s_pos + 6),
+		c_cur_elt : [[ts_tag = "@begin", ts_file = file_name, ts_file_string_num = f_str_c, ts_text = ss]],
+		s_cmnt : ss),
+	/* ищем конец */
+	s_pos : ssearch("@end", s_cmnt),
+	if (s_pos # false) then	(
+		c_cur_doc_struct : "",
+		res : append(res, [c_cur_elt]),
+		c_cur_elt : [],
+		s_cmnt : ""),
+	/* ищем остальные теги */
+	s_pos : ssearch("@", s_cmnt),
+	if (s_pos # false) then (
+		e_pos : ssearch(" ", s_cmnt, s_pos),
+		if (e_pos = false) then (
+			e_pos : length(s_cmnt),
+			s_tag : substring(s_cmnt, s_pos, e_pos),
+			s_text : "") 
+		else (
+			s_tag : substring(s_cmnt, s_pos, e_pos),
+			s_text : substring(s_cmnt, e_pos + 1)),
+		c_cur_elt : append(c_cur_elt, [[ts_tag = s_tag, ts_text = s_text]])),
+	go(tag_cycle1), tag_exit1,
+	close(fl),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin autodoc_information_to_tex */
+/* @type function */
+/* @brief Генерация ЛаТеХ текста автодокументации */
+/* @details Создает ЛаТеХ-строку из списка ассоциативных списков информации автодокументирования */
+/* @param ad_info - список ассоциативных списков с информацией об автодокументации */
+/* @result Строка с ЛаТеХ текстом */
+/* @example autodoc_information_to_tex([[...], [...]]) -> "..." */
+/* @end */
+/* ================================================== */
+debuglog("autodoc_information_to_tex", debug_message_func_load)$
+autodoc_information_to_tex(ad_info) := block(
+	[res, s,
+	s_pos, e_pos,
+	flstream], 
+	debug_start_function("autodoc_collect_information_from_file", [fp_high_level, fp_common]),
+	res : "", 
+	s : "",
+	for ad_lst in ad_info do block([t_txt],
+		t_txt : autodoc_information_elt_get_tag_text(ad_lst, "@type"),
+		debuglog(printf(false, "t_txt=~a", t_txt)),
+		if (t_txt # false) then
+			if (ssearch("variable", t_txt) # false) then
+				s : printf(false, "~a~a", s, autodoc_information_elt_to_tex(ad_lst)),
+		debuglog(printf(false, "s=~a", s))),
+	if (slength(s) > 0) then
+		res : printf(false, "~a\\section{Переменные и константы}~2%~a", res, s),
+	s : "",
+	for ad_lst in ad_info do block([t_txt],
+		t_txt : autodoc_information_elt_get_tag_text(ad_lst, "@type"),
+		if (t_txt # false) then
+			if (ssearch("function", t_txt) # false) then
+				s : printf(false, "~a~a", s, autodoc_information_elt_to_tex(ad_lst))),
+	if (slength(s) > 0) then
+		res : printf(false, "~a\\section{Функции}~2%~a", res, s),
+	s : "",
+	for ad_lst in ad_info do block([t_txt],
+		t_txt : autodoc_information_elt_get_tag_text(ad_lst, "@type"),
+		if (t_txt # false) then
+			if ((ssearch("variable", t_txt) = false) and (ssearch("function", t_txt) = false)) then
+				s : printf(false, "~a~a", s, autodoc_information_elt_to_tex(ad_lst))),
+	if (slength(s) > 0) then
+		res : printf(false, "~a\\section{Остальное}~2%~a", res, s),
+	res : printf(false, "\\tableofcontents~%\\newpage~%~a", res),
+	res : printf(false, "~a~a~a", 
+		latex_text_start_std, res, latex_text_end_std),
+	flstream : openw("description/autodoc/ts-autodoc.tex"),				/* открываем файл для записи */
+	printf(flstream, "~a", res),										/* записываем в него начало, текст и конец */
+	close(flstream),													/* закрываем файл */
+	compile_tex_file("ts-autodoc", "./description/autodoc/", 2),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin autodoc_information_elt_to_tex */
+/* @type function */
+/* @brief Текст для элемента автодокументации */
+/* @details Сформировать текст для данного элемента автодокументации. */
+/* @param ad_lst --- ассоциативный массив с метаданными описания элемента */
+/* @result Текст описания в формате ЛаТеХ. */
+/* @end */
+/* ================================================== */
+autodoc_information_elt_to_tex(ad_lst) := block(
+	[res, s],
+	res : "",
+	s : autodoc_information_elt_to_tex_tag_begin(ad_lst),
+	res : printf(false, "~a~a", res, s),
+	s : autodoc_information_elt_to_tex_tag(ad_lst, "@brief", "~a~a~2%"),
+	if (slength(s) > 0) then
+		res : printf(false, "~a\\textbf{Краткое описание: } ~a", res, s),
+	s : autodoc_information_elt_to_tex_tag(ad_lst, "@details", "~a~a~2%"),
+	if (slength(s) > 0) then
+		res : printf(false, "~a\\textbf{Развернутое описание: } ~a", res, s),
+	s : autodoc_information_elt_to_tex_tag(ad_lst, "@param", "~a\\item ~a~2%"),
+	if (slength(s) > 0) then
+		res : printf(false, "~a\\textbf{Параметры: }\\begin{itemize}~a\\end{itemize}", res, s),
+	s : autodoc_information_elt_to_tex_tag(ad_lst, "@result", "~a~a~2%"),
+	if (slength(s) > 0) then
+		res : printf(false, "~a\\textbf{Результат: }~a", res, s),
+	s : autodoc_information_elt_to_tex_tag(ad_lst, "@example", "~a~a~2%"),
+	if (slength(s) > 0) then
+		res : printf(false, "~a\\textbf{Пример использования: }~a", res, s),
+	res)$
+/* ================================================== */
+/* @begin autodoc_information_elt_to_tex_tag_begin */
+/* @type function */
+/* @brief Текст для тега @begin в элементе автодокументации */
+/* @details Сформировать текст для тега @begin в данном элементе автодокументации. */
+/* @param ad_lst --- ассоциативный массив с метаданными описания элемента */
+/* @result Текст описания для тэга в формате ЛаТеХ. */
+/* @end */
+/* ================================================== */
+autodoc_information_elt_to_tex_tag_begin(ad_lst) := block(
+	[res,
+	s_pos, e_pos
+	],
+	res : "",
+	for ad_elt in ad_lst do block([e_tag, e_text],
+		e_tag : assoc(ts_tag, ad_elt),
+		s_pos : ssearch("@begin", e_tag),
+		if (s_pos # false) then block([f_n, f_sc],
+			f_n : assoc(ts_file, ad_elt),
+			f_sc : assoc(ts_file_string_num, ad_elt),
+			e_text : assoc(ts_text, ad_elt),
+			e_text : ssubst("\\_", "_", e_text),						/* заменяем подчеркивания чтобы скомпилировался ЛаТеХ-файл */
+			e_text : ssubst("\\^", "^", e_text),
+			if (s_pos # false) then 
+				res : printf(false, "~a\\subsection{~a}~2%", res, e_text),
+			if ((f_n # false) and (f_sc # false)) then
+				res : printf(false, "~a \\textit{Местонахождение: ~a:~a}~2%", res, f_n, f_sc))),
+	res)$
+/* ================================================== */
+/* @begin autodoc_information_elt_to_tex_tag */
+/* @type function */
+/* @brief Текст для тега в элементе автодокументации */
+/* @details Сформировать текст для тега в данном элементе автодокументации. */
+/* @param ad_lst --- ассоциативный массив с метаданными описания элемента */
+/* @result Текст описания для тэга в формате ЛаТеХ. */
+/* @end */
+/* ================================================== */
+autodoc_information_elt_to_tex_tag(ad_lst, tag_str, format_str) := block(
+	[res,
+	s_pos, e_pos
+	],
+	res : "",
+	for ad_elt in ad_lst do block([e_tag, e_text],
+		e_tag : assoc(ts_tag, ad_elt),
+		s_pos : ssearch(tag_str, e_tag),
+		if (s_pos # false) then (
+			e_text : assoc(ts_text, ad_elt),
+			e_text : ssubst("\\_", "_", e_text),						/* заменяем подчеркивания чтобы скомпилировался ЛаТеХ-файл */
+			e_text : ssubst("\\^", "^", e_text),
+			if (s_pos # false) then res : printf(false, format_str, res, e_text))
+		),
+	res)$
+/* ================================================== */
+/* @begin autodoc_information_elt_get_tag_text */
+/* @type function */
+/* @brief Текст, соответствующий тегу */
+/* @details Возвращает текст, соответствующий данному тегу. */
+/* @param ad_lst --- ассоциативный массив с метаданными описания элемента */
+/* @param tag_str --- строка-тэг */
+/* @result Весь текст из комментариев для тэга. */
+/* @end */
+/* ================================================== */
+debuglog("autodoc_information_elt_get_tag_text", debug_message_func_load)$
+autodoc_information_elt_get_tag_text(ad_lst, tag_str) := block(
+	[res],
+	debug_start_function("autodoc_information_elt_get_tag_text", [fp_low_level, fp_common]),
+	res : false,
+	for ad_elt in ad_lst do block([e_tag, e_text],
+		e_tag : assoc(ts_tag, ad_elt),
+		debuglog(printf(false, "e_tag=~a", e_tag)),
+		if (e_tag = tag_str) then (
+			e_text : assoc(ts_text, ad_elt),
+			debuglog(printf(false, "e_text=~a", e_text)),
+			res : e_text)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin can_char_be_in_name_p */
+/* @type function */
+/* @brief Может ли символ быть частью имени */
+/* @details Предикат может ли символ быть частью имени функции или переменной. */
+/* @param c --- символ, если передать строку, то используется первый символ */
+/* @result true если символ может быть частью имени, false в остальных случаях. */
+/* @end */
+/* ================================================== */
+debuglog("can_char_be_in_name_p", debug_message_func_load)$
+can_char_be_in_name_p(c) := block(
+	[res],
+	debug_start_function("can_char_be_in_name_p", [fp_low_level, fp_common]),
+	res : false,
+	if (stringp(c) and (slength(c) > 0)) then (
+		res : ssearch(c[0], 
+			"1234567890abcdefghigklmnopqrstuvwxyz_", 
+			'sequalignore),
+		if (res # false) then res : true),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin autodoc_functions_dot_grapf */
+/* @type function */
+/* @brief Граф функций проекта */
+/* @details Создает файл на языке DOT описывающий взаимозависимости функций */
+/*          и переменных друг от друга.                                     */
+/* @result ?. */
+/* @todo Функция не сделана еще. */
+/* @end */
+/* ================================================== */
+/* graph graphname { 							*/
+/*      // label - видимое название вершины		*/
+/*      a [label="Foo"]; 						*/
+/*      // shape - определение формы вершины	*/
+/*      b [shape=box]; 							*/
+/*      // color - определение цвета ребра 		*/
+/*      a -- b -- c [color=blue]; 				*/
+/*      // style - определение стиля ребра 		*/
+/*      b -- d [style=dotted];} 				*/
+debuglog("autodoc_functions_dot_grapf", debug_message_func_load)$
+autodoc_functions_dot_grapf() := block(
+	[res],
+	debug_start_function("autodoc_functions_dot_grapf", [fp_low_level, fp_common]),
+	/* !TODO! */
+	debug_end_function(),
+	res)$

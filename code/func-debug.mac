@@ -1,0 +1,228 @@
+/* ======================================================================== */
+/* ================ Стандартные функции отладки =========================== */
+/* ======================================================================== */
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+printf(true, "Loading module func-debug.mac...~%")$
+debuglog_is_on : true$
+debug_state : [
+	0	/* уровень вложенности текущей выполняемой функции */
+	]$
+/* Переменная, определяющая направление вывода  */
+/* отладочной информации. Имеет вид таблицы.    */
+/* Значения строк описаны в комментариях к ним. */
+/* Первый столбец - вывод на экран,             */
+/* второй - вывод в файл                        */
+debug_out_string : ""$
+debug_out_directory : "/tmp"$
+debug_out_file : false$
+debug_out_file_name : false$
+history_out_string : ""$
+/* ============================================= */
+/* Макрос и функция вывода отладочной информации */
+/* ============================================= */
+/* debuglog([p]) ::= (if generate_debug_functions then apply(debuglog_func, p) else false)$ */
+debuglog([p]) := (if generate_debug_functions then apply(debuglog_func, p))$
+debuglog_func([prs]) := block([res, s, s_s, msg_type], res : true, s : prs[1], s_s : "", 
+	/* printf(true, "######## ~a~%", prs), */
+	if ((debuglog_is_on = true) and (tasksolver_processing_mode # ts_work)) then block([],
+		if length(prs)>1 then msg_type : prs[2] else msg_type : debug_message_normal,
+		if (debug_out_file = false) then block([dt_s],					/* если файл для отладочных сообщений не открыт */
+			dt_s : tokens(timedate())[1],								/* то получаем текущую дату */
+			debug_out_file : opena(printf(false, "~a/ts_debug_~a.log", debug_out_directory, dt_s))),		/* и открываем файл для записи */
+		if (debug_out_file = false) then go(tag_exit),
+		if (msg_type = debug_message_module_load) then block([],			/* если пришло сообщение загрузки функции */
+			if (debug_out_source[1][1] = true) then block([d_fcd],
+				s_s : printf(false, "Loading module <~a>~%", s),
+				printf(true, s_s)),
+			if (debug_out_source[1][2] = true) then block([d_fcd],
+				s_s : printf(false, "Loading module <~a>~%", s),
+				printf(debug_out_file, s_s))),
+		if msg_type=debug_message_func_load then block([],				/* если пришло сообщение загрузки функции */
+			if (debug_out_source[1][1] = true) then block([d_fcd],
+				s_s : printf(false, "... loading function '~a'~%", s),
+				printf(true, s_s)),
+			if (debug_out_source[1][2] = true) then block([d_fcd],
+				s_s : printf(false, "... loading function '~a'~%", s),
+				printf(debug_out_file, s_s))),
+		if (msg_type = debug_message_start_end) then block([],			/* если пришло сообщение начала или конца функции */
+			/* printf(true, "~2% !!!!!!!!!!~2%"), */
+			if (debug_out_source[1][1] = true) then block([d_fcd],
+				d_fcd : debug_state[1],
+				s_s : smake(d_fcd, "-"),
+				s_s : printf(false, "~a(~a)~a~%", s_s, d_fcd, s),
+				printf(true, s_s)),
+			if (debug_out_source[1][2] = true) then block([d_fcd],
+				d_fcd : debug_state[1],
+				s_s : smake(d_fcd, "-"),
+				s_s : printf(false, "~a(~a)~a~%", s_s, d_fcd, s),
+				printf(debug_out_file, "~a", s_s))),
+		if (msg_type = debug_message_normal) then block([],					/* если пришло обычное сообщение */
+			if (debug_out_source[2][1] = true) then block([d_fcd],
+				d_fcd : debug_state[1],
+				s_s : smake(d_fcd, " "),
+				s_s : printf(false, "~a~a~%", s_s, s),
+				printf(true, s_s)),
+			if (debug_out_source[2][2] = true) then block([d_fcd],
+				d_fcd : debug_state[1],
+				s_s : smake(d_fcd, " "),
+				s_s : printf(false, "~a~a~%", s_s, s),
+				printf(debug_out_file, "~a", s_s))),
+		if (msg_type = debug_message_in_cycle) then block([],		/* если пришло сообщение из цикла */
+			if (debug_out_source[3][1] = true) then block([d_fcd],
+				d_fcd : debug_state[1],
+				s_s : smake(d_fcd, " "),
+				s_s : printf(false, "~a~a~%", s_s, s),
+				printf(true, s_s)),
+			if (debug_out_source[3][2] = true) then block([d_fcd],
+				d_fcd : debug_state[1],
+				s_s : smake(d_fcd, " "),
+				s_s : printf(false, "~a~a~%", s_s, s),
+				printf(debug_out_file, "~a", s_s))),
+		tag_exit),
+	res)$
+/* ================================ */
+/* Сохранение отладочной информации */
+/* ================================ */
+debuglog("save_debuglog", debug_message_func_load);
+save_debuglog() := block([res, flstream, dt_s], res : true,
+	if ((debuglog_is_on=true) and (tasksolver_processing_mode # ts_work)) then
+		if debug_out_file#false then block([],
+			close(debug_out_file),
+			debug_out_file : false),
+	res)$
+/* ======================================= */
+/* Увеличивает уровень вложенности функций */
+/* ======================================= */
+debug_function_call_depth_inc() := block([], debug_state[1] : debug_state[1]+1)$
+/* ===================================== */
+/* Уменьшает уровень вложенности функций */
+/* ===================================== */
+debug_function_call_depth_dec() := block([], debug_state[1] : debug_state[1]-1)$
+current_function_debug_state_stack : []$
+current_function_debug_state : []$
+current_tsproject_debug_state : []$
+/* =============================== */
+/* Отладка проета - начало проекта */
+/* =============================== */
+debug_tsproject_start(p_name, p_timedate, p_input_type) := block([res], res : true,
+	debug_out_string : printf(false, 
+		"~a Start project ~a ~a ~a...~%", 
+		debug_out_string, p_name, p_timedate, p_input_type),	/* пишем в отладку начало проекта */
+	res)$
+/* =============================== */
+/* Отладка проета - конец проекта */
+/* =============================== */
+debug_tsproject_end() := block([res], res : true,
+	debug_out_string : printf(false, 
+		"~a ...end project~%", 
+		debug_out_string),	/* пишем в отладку конец проекта */
+	res)$
+/* ====================================== */
+/* Начальные действия для отладки функции */
+/* ====================================== */
+debuglog("debug_start_function", debug_message_func_load);
+debug_start_function(fname, fprop) := block([res, tmdt, erlt, ernt, s],
+	if ((debuglog_is_on = true) and (tasksolver_processing_mode # ts_work)) then block([],
+		debug_function_call_depth_inc(),								/* увеличиваем текущий уровень вложенности */
+		push(current_function_debug_state, 
+			current_function_debug_state_stack),						/* сохраняем данные о предыдущей функции в стек */
+		tmdt : timedate(),												/* получаем текущее время */
+		erlt : elapsed_real_time(),										/* получаем реальное время, прошедшее с начала работы */
+		ernt : elapsed_run_time(),										/* получаем внутреннее время, прошедшее с начала работы */
+		current_function_debug_state : [								/* устанавливаем состояние текущей функции */
+			start_elapsed_real_time=erlt, 
+			start_elapsed_run_time=ernt, 
+			function_name=fname, 
+			function_time_date=tmdt,
+			function_properties=fprop],
+		s : printf(false, "Start function ~a", fname),
+		debuglog(s, debug_message_start_end)),							/* посылаем сообщение для отладки о начале функции */
+	res)$
+/* ===================================== */
+/* Конечные действия для отладки функции */
+/* ===================================== */
+debuglog("debug_end_function", debug_message_func_load);
+debug_end_function() := block([res, erlt_s, ernt_s, erlt_e, ernt_e, c_dpth, f_n, f_prop, sp_rlt, sp_rnt],
+	if ((debuglog_is_on=true) and (tasksolver_processing_mode # ts_work)) then block([],
+		c_dpth : debug_state[1],
+		f_n : assoc(function_name, current_function_debug_state),
+		f_t_d : assoc(function_time_date, current_function_debug_state),
+		f_prop : assoc(function_properties, current_function_debug_state),
+		debuglog(printf(false, "...end function"), debug_message_start_end),	/* посылаем сообщение для отладки о конце функции */
+		debug_function_call_depth_dec(),	/* уменьшаем текущий уровень вложенности */
+		erlt_e : elapsed_real_time(),		/* получаем реальное время, прошедшее с начала работы */
+		ernt_e : elapsed_run_time(),		/* получаем внутреннее время, прошедшее с начала работы */
+		erlt_s : assoc(start_elapsed_real_time, current_function_debug_state), 
+		ernt_s : assoc(start_elapsed_run_time, current_function_debug_state),
+		sp_rlt : ernt_e - ernt_s,			/* вычисляем реальное затраченное время */
+		sp_rnt : erlt_e - erlt_s,			/* вычисляем внутреннее затраченное время */
+		update_function_calls_statistic(f_n, f_prop, f_t_d, c_dpth, sp_rlt, sp_rnt),	/* записываем статистику вызова функции */
+		current_function_debug_state : pop(current_function_debug_state_stack)),
+	res)$
+/* =============================================== */
+/* Сообщение для истории проектов                  */
+/* m_type - тип сообщения (t_session, t_meggage, t_project или t_task),  */
+/* m_name - имя сообщения,                         */
+/* m_prop - параметры сообщения.                   */
+/* =============================================== */
+debuglog("historylog", debug_message_func_load);
+historylog(m_type, m_name, m_prop) := block([res, s], res : true,
+	if m_type=t_session then s : printf(false, "[~a]", timedate()),
+	if m_type=t_project then s : printf(false, "[~a]", timedate()),
+	if m_type=t_task then s : "  ",
+	if m_type=t_message then s : "  ",
+	if length(m_prop)>0 then s : printf(false, "~a ~a ~a~%", s, m_name, m_prop)
+		else s : printf(false, "~a ~a~%", s, m_name),
+	if history_out_source[1]=true then 
+		printf(true, "~a", s),
+	if history_out_source[2]=true then 
+		history_out_string : printf(false,"~a~a", history_out_string, s),
+	res)$
+/* =========================== */
+/* Сохранение истории проектов */
+/* =========================== */
+debuglog("save_history", debug_message_func_load);
+save_history() := block([res, flstream], res : true,
+	flstream : opena("service_files/history.log"),		/* открываем файл для записи */
+	printf(flstream, "~a", history_out_string),			/* записываем в него историю запросов */
+	close(flstream),									/* закрываем файл */
+	res)$
+/* =========================== */
+/* Сохранение текущих настроек */
+/* =========================== */
+debuglog("save_settings", debug_message_func_load);
+save_settings() := block([res, fl], res : true,
+	fl : openw("service_files/settings.mac"),
+	printf(fl, "debug_out_source : ~a$~%history_out_source : ~a$~%", debug_out_source, history_out_source),
+	close(fl),
+	res)$
+/* =============================== */
+/* Инициализация локальных свойств */
+/* =============================== */
+debuglog("get_local_settings", debug_message_func_load);
+get_local_settings() := block([res], res : get_system_properties(),
+	if (atom(res) or (length(res) < 7)) then go(tag_exit),
+	usr_name : res[1],						/* имя пользователя, нужно для поиска файла с почтой */
+	host_name : res[2],						/* имя машины */
+	host_os : res[3],						/* информация об операционной системе машины */
+	maxima_version : res[4],				/* информация о версии максимы */
+	host_cpu : res[6],						/* информация о типе процессора машины */
+	host_mem : res[7],						/* информация о памяти машины */
+	tasksolver_directory : "~/TaskSolver",		/* папка где находится программа */
+	tag_exit,
+	res)$
+/* ======================= */
+/* Вывод локальных свойств */
+/* ======================= */
+debuglog("print_local_settings", debug_message_func_load);
+print_local_settings() := block([res], res : get_system_properties(),
+	printf(true, "User name = ~a~%", usr_name),
+	printf(true, "Host name = ~a~%", host_name),
+	printf(true, "OS = ~a~%", host_os),
+	printf(true, "Maxima version = ~a~%", maxima_version),
+	printf(true, "Processor = ~a~%", host_cpu),
+	printf(true, "Memory = ~a~%", host_mem),
+	printf(true, "TS directory = ~a~%", tasksolver_directory),
+	res)$
+/* function_calls_statistical_data : []$ project_processing_statistical_data : []$ */
+printf(true,"... module func-debug.mac loaded~%")$

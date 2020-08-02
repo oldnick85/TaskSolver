@@ -1,0 +1,1694 @@
+/* ======================================================================== */
+/* ================ Стандартные функции общего пользования ================ */
+/* ======================================================================== */
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+debuglog("func.mac", debug_message_module_load)$
+/* ================================================== */
+/* @begin ts_op_integrate */
+/* @type variable */
+/* @brief Символ интеграла */
+/* @details Cимвол интеграла приходится генерировать, поскольку иначе его не получить */
+/* @end */
+/* ================================================== */
+ts_op_integrate : op(integrate(tan(x)/x, x))$
+/* ================================================== */
+/* @begin correct_maxima_syntaxis_p */
+/* @type function */
+/* @brief Проверка корректности синтаксиса Maxima */
+/* @details Функция проверяет корректность синтаксиса строки s как выражения Maxima */
+/* @param s - строка с выражением Maxima */
+/* @result Возвращает true, если строка корректна и false, если возникает синтаксическая ошибка */
+/* @example correct_maxima_syntaxis_p("a+b") -> true; correct_maxima_syntaxis_p("a+*+b") -> false; */
+/* @end */
+/* ================================================== */
+debuglog("correct_maxima_syntaxis_p", debug_message_func_load)$
+correct_maxima_syntaxis_p(s):=block(
+	[res, 																/* результат функции */
+	s_sys, 																/* строка с системной командой для выполнения */
+	fl_n, 																/* полное имя файла с выводом системной команды */
+	fl, 																/* файловая переменная */
+	rl, 																/* строка, считываемая из файла */
+	b_f_o], 															/* логическая переменная найден ли (%o1) в выводе */
+	res : true,
+	debug_start_function("correct_maxima_syntaxis_p", [fp_low_level, fp_common, fp_predicate]),
+	debuglog(printf(false, "s=~a", s)),
+	if (slength(s) > 20) then res : false,								/* в целях безопасности отбрасываем слишком длинные строки */
+	if ((ssearch(":", s, sequalignore) # false) or
+		(ssearch("\'", s, sequalignore) # false) or
+		(ssearch("lisp", s, sequalignore) # false) or
+		(ssearch("ev", s, sequalignore) # false) or
+		(ssearch("eval", s, sequalignore) # false) or
+		(ssearch("system", s, sequalignore) # false) or 
+		(ssearch("for", s, sequalignore) # false) or
+		(ssearch("if", s, sequalignore) # false) or
+		(ssearch("open", s, sequalignore) # false) or
+		(ssearch("save", s, sequalignore) # false) or
+		(ssearch("close", s, sequalignore) # false) or
+		(ssearch("load", s, sequalignore) # false))
+		then (res : false, go(tag_exit)),								/* а также содержащие небезопасные команды */
+	fl_n : printf(false, "/tmp/ts_synt_~x~x~x~x", random(16), random(16), random(16), random(16)),
+	s_sys : printf(false, "maxima --batch-string='~a;' > ~a", s, fl_n),
+	debuglog(printf(false, "s_sys=~a", s_sys)),
+	system(s_sys),														/* выполняем командную строку */
+	fl : openr(fl_n),													/* открываем файл с результатом выполнения */
+	if fl = false then (res : false, go(tag_exit)),
+	rl : true,
+	b_f_o : false,
+	while (rl # false) do block(										/* читаем строки файла */
+		rl : readline(fl),
+		debuglog(printf(false, "rl=~a", rl), debug_message_in_cycle),
+		if stringp(rl) then
+			(if (ssearch("(\%o1)", rl) # false) then (b_f_o : true)),
+		if stringp(rl) then block([b1, b2, b3],
+			b1 : ssearch("incorrect syntax", rl), b2 : ssearch("error", rl), b2 : ssearch("Error", rl),
+			if ((b1 # false) or (b2 # false) or (b3 # false)) then res : false),
+		debuglog(printf(false, "b_f_o=~a; res=~a", b_f_o, res), debug_message_in_cycle)),
+	if (b_f_o = true) then (res : true) else (res : false),
+	close(fl),															/* закрываем файл */
+	s_sys : printf(false, "rm '~a'", fl_n),								/* удаляем файл с выводом максимы */
+	system(s_sys),
+	tag_exit,
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin parse_maxima_string */
+/* @type function */
+/* @brief Парсинг строки */
+/* @details Функция парсит строку s как выражение Maxima */
+/* @param s - строка с выражением Maxima */
+/* @result Возвращает выражение Maxima, если строка корректна и false, если возникает синтаксическая ошибка */
+/* @example correct_maxima_syntaxis_p("a+b") -> a+b; correct_maxima_syntaxis_p("a+*+b") -> false; */
+/* @end */
+/* ================================================== */
+debuglog("parse_maxima_string", debug_message_func_load);
+parse_maxima_string(s):=block([res, s_c], 
+	debug_start_function("parse_maxima_string", [fp_low_level, fp_common]),
+	debuglog(printf(false,"s=~a", s)),
+	s_c : correct_maxima_syntaxis_p(s),
+	if s_c then res : parse_string(s) else res : false,
+	debuglog(printf(false,"res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin eval_maxima_string */
+/* @type function */
+/* @brief Вычисление строки */
+/* @details Функция вычисляет строку как выражение Maxima */
+/* @param s - вычисляемая строка */
+/* @result Возвращает выражение Maxima, если строка корректна и false, если возникает синтаксическая ошибка */
+/* @example eval_maxima_string("1+2") -> 3 */
+/* @end */
+/* ================================================== */
+debuglog("eval_maxima_string", debug_message_func_load);
+eval_maxima_string(s):=block([res, s_c], 
+	debug_start_function("eval_maxima_string", [fp_low_level, fp_common]),
+	debuglog(printf(false,"s=~a", s)),
+	s_c : correct_maxima_syntaxis_p(s),
+	if s_c then res : eval_string(s) else res : false,
+	debuglog(printf(false,"res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin totex_calc */
+/* @type function */
+/* @brief Подробное вычисление выражения */
+/* @details Функция вычисляет выражение e с учетом списка подстановок s, возвращая пошаговое вычисление в виде строки ЛаТеХ */
+/* @param e - выражение вида a+b */
+/* @param s - список подстановок вида [a = 1, b = 2] */
+/* @result строка с пошаговым вычислением выражения в формате ЛаТех */
+/* @example totex_calc(a+b, [a = 1, b = 2]) -> "1 + 2 = 3" */
+/* @end */
+/* ================================================== */
+debuglog("totex_calc", debug_message_func_load);
+totex_calc(e, s) := block([res, rs],
+	debug_start_function("totex_calc", [fp_low_level, fp_common]),
+	debuglog(printf(false,"e=~a, s=~a", e, s)),
+	res : false,
+	rs : algebra_arithmetical_calculation(
+		[[alias = "expression", value = e],
+		[alias= "substitutions", value = s]]),
+	res : getprop(rs, solution),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin totex_calc_val */
+/* @type function */
+/* @brief ПОдробное вычисление выражения с результатом */
+/* @details Функция вычисляет выражение e с учетом списка подстановок s, возвращая пару: пошаговое вычисление в виде строки ЛаТеХ и результат вычисления, в виде списка из двух элементов */
+/* @param e - выражение вида a+b */
+/* @param s - список подстановок вида [a = 1, b = 2] */
+/* @result строка с пошаговым вычислением выражения в формате ЛаТех */
+/* @example totex_calc_val(a+b, [a = 1, b = 2]) -> ["1 + 2 = 3", 3] */
+/* @end */
+/* ================================================== */
+debuglog("totex_calc_val", debug_message_func_load);
+totex_calc_val(e, s) := block([res, rs, v],
+	debug_start_function("totex_calc_val", [fp_low_level, fp_common]),
+	debuglog(printf(false, "e=~a, s=~a", e, s)),
+	res : false,
+	rs : algebra_arithmetical_calculation(
+		[[alias = "expression", value = e], 
+		[alias = "substitutions", value = s]]),
+	v : getprop(rs, answer),
+	v : getprop(v[1], value),
+	res : [getprop(rs, solution), v],
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin totex_calc_val_approx */
+/* @type function */
+/* @brief ПОдробное вычисление выражения с приблизительным результатом */
+/* @details Функция вычисляет выражение e с учетом списка подстановок s, возвращая пару: пошаговое вычисление в виде строки ЛаТеХ и приблизительный результат вычисления, в виде списка из двух элементов */
+/* @param e - выражение вида a+b */
+/* @param s - список подстановок вида [a = 1, b = 2] */
+/* @result строка с пошаговым вычислением выражения в формате ЛаТех */
+/* @example totex_calc_val_approx(a/b, [a = 1, b = 3]) -> ["\\frac{1}{3} \\approx 0.333333", 0.333333] */
+/* @end */
+/* ================================================== */
+debuglog("totex_calc_val_approx", debug_message_func_load)$
+totex_calc_val_approx(e, s) := block([res, ss, vv],
+	debug_start_function("totex_calc_val_approx", [fp_low_level, fp_common]),
+	debuglog(printf(false, "e=~a, s=~a", e, s)),
+	res : false,
+	[ss, vv] : totex_calc_val(e, s),
+	if not(floatnump(vv)) then (
+		vv : float(vv),
+		ss : printf(false, "~a\\approx ~a", ss, totex(vv))),
+	res : [ss, vv],
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin totex_calc_val_formula */
+/* @type function */
+/* @brief Функция проводит подробные вычисления по формуле с параметрами */
+/* @details Функция проводит подробные вычисления по формуле f с параметрами p_l. Это нужно, чтобы провести подробные */
+/*          вычисления с числами, избегая автоматического вычисления числовых выражений Maxima. */
+/* @param f --- формула */
+/* @param p_l --- список аргументов */
+/* @result строка с пошаговым вычислением результата подстановки аргументов в формулу в формате ЛаТеХ */
+/* @example totex_calc_val_formula(lambda([p1,p2,p3], (1/p3)*sum(p1[i]*p2[j],i,1,n)), [[1,2,3], [0.1,0.2,0.3], 3]) */
+/* @end */
+/* ================================================== */
+debuglog("totex_calc_val_formula", debug_message_func_load)$
+totex_calc_val_formula(f, p_l) := block(
+	[res, 																/* результат */
+	pp_l,																/* список символов, соответствующих значениям */
+	pv_l,																/* список подстановок */
+	ps],																/* сгенерированный символ */
+	debug_start_function("totex_calc_val_formula", [fp_low_level, fp_common]),
+	[pp_l, pv_l] : tcvf_lists(p_l),
+	res : totex_calc_val(apply(f, pp_l[1]), pv_l),
+	debug_end_function(),
+	res)$
+/* ??? */
+debuglog("tcvf_lists", debug_message_func_load)$
+tcvf_lists(p) := block([res, pp_l, pv_l, ps],
+	debug_start_function("tcvf_lists", [fp_low_level, fp_common]),
+	pp_l : [], pv_l : [],
+	if (listp(p) or matrixp(p)) then block([pl, ppp_l, ppv_l],
+		pl : [],
+		for pi in p do ([ppp_l, ppv_l] : tcvf_lists(pi), pl : append(pl, ppp_l), pv_l : append(pv_l, ppv_l)),
+		pp_l : append(pp_l, [pl]))
+	else (ps : gensym("ps"), pp_l : append(pp_l, [ps]),	pv_l : append(pv_l, [ps = p])),
+	res : [pp_l, pv_l],
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin totex */
+/* @type function */
+/* @brief Выражение в строку ЛаТеХ */
+/* @details Функция делает из выражения expr его представление в ЛаТеХе */
+/* @param parlst --- список параметров, первый из которых - выражение, */
+/*                   которое нужно преобразовать в строку ЛаТеХ, а остальные -   */
+/*                   опции вида имя_опции = значение_опции                         */
+/*                   опция put_round_brackets_if_minus (короткая форма "prbim")  */
+/*                   добавляет внешние круглые скобки, если перед                */
+/*                   выражением стоит минус, значение по умолчанию - false       */
+/*                   опция put_plus_if_no_minus (короткая форма "ppinm")         */
+/*                   добавляет внешний знак плюса, если перед                    */
+/*                   выражением не стоит минус, значение по умолчанию - false    */
+/* @result строка в формате ЛаТеХ */
+/* @example totex(a+b/c, "sub" = [a = x]) -> "x+\\frac{b}{c}" */
+/* @end */
+/* ================================================== */
+debuglog("totex", debug_message_func_load);
+totex([parlst]) := block(
+	[res,																/* результат функции */
+	expr,																/* выражение для обработки */
+	sbstns,																/* подстановки */
+	optns,																/* опции */
+	is_put_round_brackets_if_minus,										/* ставить ли внешние круглые скобки, если первый минус */
+	is_put_plus_if_no_minus,											/* добавлять ли плюс, если перед выражением нет минуса */
+	ext_bind_pwr,														/* внешний приоритет над выражением */
+	as_ex],																/* есть ли выражение в списке подстановок */
+	debug_start_function("totex", [fp_low_level, fp_common]),
+	debuglog(printf(false, "parlst=~a", parlst)),
+	res : "",															/* инициализация переменных */
+	if (length(parlst) = 0) then go(tag_exit),							/* если список параметров пуст, то выходим */
+	expr : parlst[1],													/* получаем выражение */
+	/* Получаем необходимые подстановки */
+	sbstns : assoc(substitutions, rest(parlst)),
+	if (sbstns = false) then sbstns : assoc("sub", rest(parlst)),
+	if (sbstns = false) then sbstns : [],
+	/* Получаем необходимые опции */
+	optns : assoc(options,rest(parlst)),
+	if (optns = false) then optns : assoc("opt", rest(parlst)),
+	if (optns = false) then optns : [],
+	/* Получаем нужны ли дополнительные скобки */
+	is_put_round_brackets_if_minus : assoc(put_round_brackets_if_minus, rest(parlst)),
+	if (is_put_round_brackets_if_minus = false) then is_put_round_brackets_if_minus : assoc("prbim", rest(parlst)),
+	/* Получаем нужен ли дополнительный плюс */
+	is_put_plus_if_no_minus : assoc(is_put_plus_if_no_minus, rest(parlst)),
+	if is_put_plus_if_no_minus = false then is_put_plus_if_no_minus : assoc("ppinm", rest(parlst)),
+	/* Получаем внешний приоритет над выражением */
+	ext_bind_pwr : assoc(external_binding_power, rest(parlst)),
+	if (ext_bind_pwr = false) then (ext_bind_pwr : 0),
+	/* Проверка структуры выражения */
+	as_ex : assoc(expr, sbstns),										/* если выражение целиком есть в списке подстановок, */
+	if (as_ex # false) then res : totex(as_ex),							/* то вместо него берем подставляемую часть */
+	if (as_ex # false) then go(tag_end_cases),							/* и перепрыгиваем через разбор структуры выражения */
+	if (expr = x) then block([],										/* если выражение это просто икс... */
+		debuglog(printf(false, "x found")),
+		res : "\\x")													/* ... то возвращаем команду латеха для икса */
+	elseif (expr = %pi) then block([],									/* если выражение является числом пи... */
+		debuglog(printf(false, "pi number expression=~a", expr)),
+		res : "\\pi")													/* ... то вставляем команду ЛаТеХа */
+	elseif integerp(expr) then block([],								/* если выражение является целым числом... */
+		debuglog(printf(false, "integer number expression=~a", expr)),
+		res : tex1(subst(sbstns,expr)))									/* ... то делаем подстановки и вызываем встроенную функцию */
+	elseif floatnump(expr) then block([fnum],							/* если выражение является числом с плавающей точкой... */
+		debuglog(printf(false, "float number expression=~a", expr)),
+		fnum : expr,
+		fnum : float(round(fnum*10^4)/(10^4)),
+		res : printf(false, "~,4f", fnum),
+		res : strimr("0", res),
+		res : strimr(".", res))											/* ... то округляем до 4 знаков после запятой */
+	elseif stringp(expr) then block([],									/* если выражение является строкой... */
+		debuglog(printf(false, "string expression=~a", expr)),
+		res : expr)														/* ... то ее же и возвращаем */
+	elseif matrixp(expr) then block([],									/* если выражение является матрицей... */
+		debuglog(printf(false, "matrix expression=~a", expr)),
+		res : to_tex_matr_arr_rb(expr))									/* ... то генерируем матрицу с круглыми скобочками */
+	elseif atom(expr) then block([],									/* если выражение атомарное... */
+		debuglog(printf(false, "atomic expression=~a", expr)),
+		res : tex1(expr))												/* ...то заменяем его в соответствии с данными заменами и возвращаем код латеха */
+	elseif operatorp(expr, "-") then block([],							/* если первая операция это минус... */
+		debuglog(printf(false, " - in expression=~a", expr)),
+		res : printf(false, "-~a",										 /* ...то пририсовываем минус к коду аргумента */
+			totex(first(expr), 
+				substitutions = sbstns, 
+				options = optns, 
+				put_round_brackets_if_minus = true)))
+	elseif operatorp(expr, "*") then block([],							/* если первая операция - умножение... */
+		debuglog(printf(false, " * in expression=~a", expr)),
+		res : printf(false, "~a", 
+			totex(first(expr), 
+				substitutions = sbstns, 
+				options = optns, 
+				external_binding_power = 120, 
+				put_round_brackets_if_minus = true)),
+		for i : 2 thru length(expr) do block([s], s : part(expr, i),
+			res : printf(false, "~a \\cdot ~a", 
+				res, 
+				totex(s, 
+					substitutions = sbstns, 
+					options = optns, 
+					external_binding_power = 120,  
+					put_round_brackets_if_minus = true))))
+	elseif operatorp(expr, "/") then block([],							/* если первая операция - деление... */
+		debuglog(printf(false," / in expression=~a", expr)),
+		res : printf(false,"\\frac{~a}{~a}",
+			totex(first(expr), substitutions = sbstns, options = optns),
+			totex(second(expr), substitutions = sbstns, options = optns)))
+	elseif operatorp(expr, "^") then block([],							/* если первая операция - степень... */
+		debuglog(printf(false," ^ in expression=~a", expr)),
+		res : printf(false,"{~a}^{~a}",
+				totex(first(expr), substitutions=sbstns, options=optns, external_binding_power=140, put_round_brackets_if_minus=true),
+				totex(second(expr), substitutions=sbstns, external_binding_power=139, options=optns)),
+		if ext_bind_pwr > 140 then
+			res : printf(false, "(~a)", res))
+	elseif operatorp(expr, "+") then block([a_s],						/* если первая операция - сумма... */
+		debuglog(printf(false," + in expression=~a", expr)),
+		a_s : args(expr), 												/* список слагаемых */
+		a_s : sort_args_for_sum(a_s),
+		/* a_s : sort(a_s, 'sort_order_for_plus_p), */
+		res : printf(false, "~a", totex(a_s[1], substitutions = sbstns)),
+		for i : 2 thru length(a_s) do block([s,sg], s : a_s[i],
+			if atom(s) then sg : "+" else block(if op(s) = "-" then sg : "" else sg : "+"),
+			res : printf(false, "~a~a~a", res, sg, totex(s, substitutions = sbstns))),
+		if (ext_bind_pwr > 100) then
+			res : printf(false, "(~a)", res))
+	elseif operatorp(expr, "=") then block([],
+		res : printf(false, "~a = ~a",
+				totex(first(expr), substitutions=sbstns, options=optns),
+				totex(second(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, "and") then block([a_s],
+		debuglog(printf(false," and in expression=~a", expr)),
+		a_s : args(expr),
+		res : printf(false, "~a", totex(a_s[1], substitutions = sbstns, options = optns, external_binding_power = 65)),
+		for i : 2 thru length(a_s) do block([s], s : a_s[i],
+			res : printf(false, "~a\\wedge ~a", res, totex(s, substitutions = sbstns, options = optns, external_binding_power = 65))),
+		if (ext_bind_pwr > 65) then
+			res : printf(false, "(~a)", res))
+	elseif operatorp(expr, "or") then block([a_s],
+		debuglog(printf(false," and in expression=~a", expr)),
+		a_s : args(expr),
+		res : printf(false, "~a", totex(a_s[1], substitutions = sbstns, options = optns, external_binding_power = 60)),
+		for i : 2 thru length(a_s) do block([s], s : a_s[i],
+			res : printf(false, "~a\\vee ~a", res, totex(s, substitutions = sbstns, options = optns, external_binding_power = 60))),
+		if (ext_bind_pwr > 60) then
+			res : printf(false, "(~a)", res))
+	elseif operatorp(expr, "not") then block([],
+		res : printf(false, "\\overline{~a}", totex(first(expr), substitutions = sbstns, options = optns)))
+	elseif operatorp(expr, l_implication) then block([],
+		res : printf(false, 
+			"{~a}\\rightarrow{~a}", 
+			totex(first(expr), substitutions = sbstns, options = optns), totex(second(expr), substitutions = sbstns, options = optns)))
+	elseif operatorp(expr, l_equivalence) then block([],
+		res : printf(false, 
+			"{~a}\\leftrightarrow{~a}", 
+			totex(first(expr), substitutions = sbstns, options = optns), totex(second(expr), substitutions = sbstns, options = optns)))
+	elseif operatorp(expr, "!") then block([],
+		res : printf(false, "{~a !}", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, sqrt) then block([],
+		res : printf(false, "\\sqrt{~a}", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, sin) then block([],
+		res : printf(false, "\\sin(~a)", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, cos) then block([],
+		res : printf(false, "\\cos(~a)", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, tan) then block([],
+		res : printf(false, "\\tg(~a)", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, cot) then block([],
+		res : printf(false, "\\ctg(~a)", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, asin) then block([],
+		res : printf(false, "\\arcsin(~a)", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, acos) then block([],
+		res : printf(false, "\\arccos(~a)", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, atan) then block([],
+		res : printf(false, "\\arctg(~a)", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, acot) then block([],
+		res : printf(false, "\\arcctg(~a)", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, log) then block([],
+		res : printf(false, "\\ln(~a)", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, abs) then block([],							/* модуль - палочками */
+		res : printf(false, "\\left| ~a\\right| ", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif operatorp(expr, ts_equations_system) then block([],			/* система уравнений */
+		res : totex_eq_system(expr))
+	elseif operatorp(expr, ts_diff_x) then block([],					/* производная по икс - обозначается штрихом */
+		res : printf(false, "(~a)'", totex(first(expr), substitutions=sbstns, options=optns)))
+	elseif (operatorp(expr, ts_simple_interval) or operatorp(expr, ts_union_intervals)) then block([],		/* числовые интервалы */
+		res : to_tex_interval(expr))
+	elseif operatorp(expr, ts_periodic_value) then block([],			/* периодические значения */
+		res : to_tex_periodic_value(expr))
+	elseif op(expr) = ts_op_integrate then block([op_integrate],
+		res : printf(false, "\\iint ~a \\; d{~a}",
+				totex(first(expr), substitutions=sbstns, options=optns),
+				totex(second(expr), substitutions=sbstns, options=optns)))
+	else res : tex1(expr),												/* если ничего не подошло, то используем встроенную функцию */
+	tag_end_cases,
+	/* Проверка нужно ли поставить дополнительный плюс */
+	if is_put_plus_if_no_minus then
+		if not(cequal(charat(res,1),"-")) then res : printf(false, "+~a", res),
+	/* Проверка нужно ли поставить дополнительные скобки */
+	if is_put_round_brackets_if_minus then block([],
+		if cequal(charat(res,1),"-") then								/* если первый символ - минус */
+			res : printf(false,"(~a)",res)),							/* то ставим скобки вокруг результата */
+	tag_exit,
+	res : ssubst("-", "+-", res),										/* !TODO! - костыль, исправляющий появление минуса непосредственно после плюса */
+	debuglog(printf(false,"res=~a", res)),
+	debug_end_function(),
+	res)$
+/* Предикат упорядочивания выражений для выражений-сумм (оператор "+") */
+debuglog("sort_order_for_plus_p", debug_message_func_load)$
+sort_order_for_plus_p(x,y):=block([res],
+	if (numberp(x) and numberp(y)) then res : is(x < y) 
+		elseif (numberp(x) and not numberp(y)) then res : false 
+		elseif (not numberp(x) and numberp(y)) then res : true 
+		else res : orderlessp(y, x), res)$
+debuglog("to_tex", debug_message_func_load)$
+to_tex([prs]) := block([expr,sbstt,res], 
+	debuglog(printf(false,"prs=~a",prs)),
+	expr : prs[1], 
+	if (length(prs) >= 2) then block(sbstt : prs[2], 
+		if ((listp(sbstt) = true) or (operatorp(sbstt,"=") = true)) then expr : subst(sbstt,expr)), 
+	res : tex1(expr), 
+	res)$
+/* ================================================== */
+debuglog("totex_eq_system", debug_message_func_load)$
+totex_eq_system(e) := block(
+	[res,
+	s_al, s_eq],
+	debug_start_function("totex_eq_system", [fp_low_level, fp_common]),
+	res : "",
+	if atom(e) then go(tag_exit),
+	e_as : args(e),
+	res : "", s_al : "", s_eq : "",
+	for e_a in e_as do (
+		s_eq : printf(false, "~a~a \\\\~%", s_eq, totex(e_a)),
+		s_al : printf(false, "l~a", s_al)),
+	res : printf(false, 
+		"\\left\\{\\begin{array}{~a}~a\\end{array}\\right.",
+		s_al, s_eq),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin sort_args_for_sum */
+/* @type function */
+/* @brief Сортировка аргументов суммы */
+/* @details Сортировка аргументов суммы для красивого вывода. */
+/* @param l --- список аргументов */
+/* @result отсортированный список аргументов */
+/* @example sort_args_for_sum([b, 1, a]) -> [1, a, b] */
+/* @end */
+/* ================================================== */
+debuglog("sort_args_for_sum", debug_message_func_load)$
+sort_args_for_sum(l) := block([res],
+	debug_start_function("sort_args_for_sum", [fp_low_level, fp_common]),
+	if atom(l) then (
+		res : l,
+		go(tag_exit)),
+	res : [],
+	for el in l do (
+		if numberp(el) 
+			then res : append(res, [el])
+			else res : append([el], res)),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin totex_calc_val_formula */
+/* @type function */
+/* @brief Представление в ЛаТеХе для периодического значения */
+/* @details Функция создает представление в ЛаТеХе для периодического значения. */
+/*          Такие значения появляются при решении тригонометрических уравнений. */
+/* @param p_v --- периодическое значение */
+/* @result строка в формате ЛаТеХ */
+/* @example to_tex_periodic_value(ts_periodic_value(1, 2)) -> "1 + 2k" */
+/* @end */
+/* ================================================== */
+debuglog("to_tex_periodic_value", debug_message_func_load)$
+to_tex_periodic_value(pv) := block([res, b, p], res : false,
+	debug_start_function("to_tex_periodic_value", [fp_low_level, fp_common]),
+    if (op(pv) # ts_periodic_value) then go(tag_exit),
+    b : first(pv), p : second(pv),
+    res : printf(false, "~a ~a\\cdot k", totex(b), totex(p, "ppinm" = true)),
+    tag_exit,
+    debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin to_tex_matr_arr */
+/* @type function */
+/* @brief Представление в ЛаТеХе для матрицы */
+/* @details Функция делает из матрицы её представление в ЛаТеХе         */
+/*          как табличку без ограничителей, т.е. скобочки или палочки   */
+/*          вокруг матрицы нужно ставить вручную                        */
+/* @param M --- матрица */
+/* @result строка в формате ЛаТеХ */
+/* @example to_tex_matr_arr(matrix([1,2],[3,4])) -> "..." */
+/* @end */
+/* ================================================== */
+debuglog("to_tex_matr_arr", debug_message_func_load)$
+to_tex_matr_arr(M) := block([res, ms, mh, mw],
+	debug_start_function("to_tex_matr_arr", [fp_low_level, fp_common]),
+    [mh, mw] : matrix_size(M),											/* получаем размеры матрицы */
+    debuglog(printf(false, "mh=~a, mw=~a", mh, mw)),
+    res : printf(false, "\\begin{array}{"),
+    for j : 1 thru mw do res : printf(false, "~ac", res),				/* формируем заголовок массива - все по центру */
+    res : printf(false, "~a}~%", res),
+    for i : 1 thru mh do block(
+		for j : 1 thru mw-1 do block(
+			res : printf(false, "~a ~a &", res, totex(M[i, j]))),
+		res : printf(false, "~a ~a ", res, totex(M[i, mw])),
+		res : printf(false, "~a\\\\~%", res)),
+    res : printf(false, "~a\\end{array}", res),
+    debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin to_tex_matr_arr */
+/* @type function */
+/* @brief Представление в ЛаТеХе для матрицы (с круглыми скобками) */
+/* @details Функция делает из матрицы её представление в ЛаТеХе */
+/*          как табличку ограниченную круглыми скобками         */
+/* @param M --- матрица */
+/* @result строка в формате ЛаТеХ */
+/* @example to_tex_matr_arr_rb(matrix([1,2],[3,4])) -> "..." */
+/* @end */
+/* ================================================== */
+debuglog("to_tex_matr_arr_rb", debug_message_func_load)$
+to_tex_matr_arr_rb(M) := block([res, ms, mh, mw],
+	debug_start_function("to_tex_matr_arr_rb", [fp_low_level, fp_common]),
+	res : to_tex_matr_arr(M),
+    res : printf(false, "\\left(~a\\right)", res),
+    debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin to_tex_table */
+/* @type function */
+/* @brief Представление в ЛаТеХе для матрицы в виде таблицы */
+/* @details Функция делает из матрицы или списка строк её представление в ЛаТеХе в виде таблицы с заголовками */
+/*          Принимает от один или два аргумента: первый - таблица, второй - список опций (шапки таблицы);     */
+/*          ts_top_captions - верхняя шапка, ts_bottom_captions - нижняя шапка,                               */
+/*          ts_left_captions - левая шапка, ts_right_captions - правая шапка.                                  */
+/* @param prs --- список аргументов */
+/* @result строка в формате ЛаТеХ */
+/* @example to_tex_table() -> "..." */
+/* @end */
+/* ================================================== */
+debuglog("to_tex_table", debug_message_func_load)$
+to_tex_table([prs]) := block([res, s, tbl, opt, mh, mw, tc, bc, lc, rc], res : "",
+	debug_start_function("to_tex_table", [fp_low_level, fp_common]),
+	tbl : prs[1],														/* первый аргумент - таблица */
+	if listp(tbl) then tbl : apply(matrix, tbl),						/* если таблица - список, то делаем из него матрицу */
+	if matrixp(tbl) 													/* если матрицы нет, то выходим */
+		then [mh, mw] : matrix_size(tbl) 
+		else go(tag_exit),
+	if length(prs)>1 then opt : prs[2] else opt : [],					/* если параметров больше одного, то получаем еще и опции */
+	tc : getprop(opt, ts_top_captions), 								/* получаем верхнюю шапку */
+	bc : getprop(opt, ts_bottom_captions),								/* получаем нижнюю шапку */
+	lc : getprop(opt, ts_left_captions),								/* получаем левую шапку */
+	rc : getprop(opt, ts_right_captions),								/* получаем правую шапку */
+	debuglog(printf(false, "mh=~a, mw=~a", mh, mw)),
+	debuglog(printf(false, "tbl=~a", tbl)),
+	debuglog(printf(false, "tc=~a, bc=~a, lc=~a, rc=~a", tc, bc, lc, rc)),
+	/* Начало таблицы */
+	debuglog(printf(false, "table start")),
+	s : printf(false, "\\begin{tabular}{|"),							/* начало заголовка таблицы */
+	if lc # false then s : printf(false, "~ac|", s),
+	for i : 1 thru mw do s : printf(false, "~ac|", s),					/* формируем заголовок массива - все по центру */
+	if rc # false then s : printf(false, "~ac|", s),
+	s : printf(false, "~a}~%\\hline~%", s),								/* заголовок кончился */
+	/* Верхняя шапка */
+	debuglog(printf(false, "table top")),
+	if (tc # false) then block([],										/* верхняя шапка */
+		if (lc # false) then s : printf(false, "~a & ", s),
+		for i : 1 thru mw do block([ss],
+			if (i > length(tc)) 
+				then ss : "" 
+				else (if stringp(tc[i]) then ss : printf(false, "~a", tc[i]) else ss : printf(false, "$~a$", totex(tc[i]))),
+			s : printf(false, "~a ~a ~a", s, if i=1 then "" else "&", ss)),
+		if rc#false then s : printf(false, "~a & ", s),
+		s : printf(false, "~a\\\\~%\\hline~%", s)),
+	/* Тело таблицы */
+	debuglog(printf(false, "table body")),
+	for i : 1 thru mh do block([],
+		debuglog(printf(false, "j=~a", j)),
+		if (lc # false) then s : printf(false, "~a ~a & ", s, lc[i]),	/* элемент левой шапки */
+		for j : 1 thru mw do block([ss],
+			debuglog(printf(false, "i=~a", i)),
+			if stringp(tbl[i][j]) then ss : printf(false, "~a", tbl[i][j]) else ss : printf(false, "$~a$", totex(tbl[i][j])),
+			s : printf(false, "~a ~a ~a", s, if j=1 then "" else "&", ss)),
+		if rc#false then s : printf(false, "~a ~a & ", s, rc[i]),		/* элемент правой шапки */
+		s : printf(false, "~a\\\\~%\\hline~%", s)						/* конец строки */
+		),
+	/* Нижняя шапка */
+	debuglog(printf(false, "table bottom")),
+	if bc # false then block([],										/* верхняя шапка */
+		if lc#false then s : printf(false, "~a ~a & ", rc[j], s),
+		for i : 1 thru mw do block([ss],
+			if i>length(bc) 
+				then ss : "" 
+				else (if stringp(bc[i]) then ss : printf(false, "~a", bc[i]) else ss : printf(false, "$~a$", totex(bc[i]))),
+			s : printf(false, "~a ~a ~a", s, if i=1 then "" else "&", ss)),
+		if rc#false then s : printf(false, "~a & ", s),
+		s : printf(false, "~a\\\\~%\\hline~%", s)),
+	/* Конец таблицы */
+	debuglog(printf(false, "table end")),
+	s : printf(false, "~a\\end{tabular}", s),
+	res : s,
+	tag_exit,
+    debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin val_in_interval_p */
+/* @type function */
+/* @brief Предикат принадлежности значения интервалу */
+/* @details Функция определяет принадлежит ли значение v интервалу i  */
+/* @param v --- значение */
+/* @param i --- интервал */
+/* @result true --- принадлежит, false --- не принадлежит */
+/* @example val_in_interval_p(2, ts_simple_interval(1,3)) -> true */
+/* @end */
+/* ================================================== */
+debuglog("val_in_interval_p", debug_message_func_load)$
+val_in_interval_p(v, i) := block([res, o, a], res : false,
+	debug_start_function("val_in_interval_p", [fp_low_level, fp_common]),
+	if v = i then (res : true, go(tag_exit)),
+	if atom(i) then go(tag_exit),
+	o : op(i), a : args(i),
+	if (o = ts_simple_interval) then block([i1, i2, id],
+		i1 : a[1], i2 : a[2], 
+		if length(i) > 2 then id : a[3] else id : [false, false],
+		if ((v < i2) and (v > i1)) then res : true,
+		if ((id[1] = true) and (v = i1)) then res : true,
+		if ((id[2] = true) and (v = i2)) then res : true),
+	/* !TODO! добавить обработку сотавных интервалов */
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin to_tex_rv_table */
+/* @type function */
+/* @brief Представление в ЛаТеХе матрицы высоты 2 как таблицы вероятностей */
+/* @details Функция делает из матрицы высоты 2 её представление */
+/*          в ЛаТеХе как таблицу вероятностей                   */
+/* @param prs --- список параметров. первый аргумент - сама таблица, */
+/*        второй опциональный аргумент - имена для строк             */
+/* @result строка в формате ЛаТеХ */
+/* @example to_tex_rv_table() -> "..." */
+/* @end */
+/* ================================================== */
+debuglog("to_tex_rv_table", debug_message_func_load)$
+to_tex_rv_table([prs]) := block([res, xp_tbl, n, x_nm, p_nm],
+	debug_start_function("to_tex_rv_table", [fp_low_level, fp_common]),
+	[x_nm, p_nm] : [false, false],
+	xp_tbl : prs[1], 
+	n : length(xp_tbl[1]),
+	debuglog(printf(false, "n=~a", n)),
+	if (length(prs) > 1) then [x_nm, p_nm] : prs[2],
+	if (x_nm = false) then x_nm : "x",
+	if (p_nm = false) then p_nm : "p",
+	debuglog(printf(false, "x_mn=~a, p_nm=~a", x_nm, p_nm)),
+	res : printf(false, "\\begin{tabular}{|"),
+	for i : 1 thru n+1 do res : printf(false, "~ac|", res),				/* формируем заголовок массива - все по центру */
+	res : printf(false, "~a}~%\\hline~%", res),
+	res : printf(false, "~a$~a_i$", res, x_nm),
+    for i : 1 thru n do
+		res : printf(false, "~a & $~a$", res, totex(xp_tbl[1][i])),
+	res : printf(false, "~a\\\\~%\\hline~%", res),
+	res : printf(false, "~a$~a_i$", res, p_nm),
+    for i : 1 thru n do
+		res : printf(false, "~a & $~a$", res, totex(xp_tbl[2][i])),
+	res : printf(false, "~a\\\\~%\\hline~%", res),
+    res : printf(false, "~a\\end{tabular}", res),
+    debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin to_tex_vector */
+/* @type function */
+/* @brief Представление вектора в ЛаТеХе без ограничителей */
+/* @details Функция делает из вектора его представление в ЛаТеХе                */
+/*          как последовательность значений, разделенных ";" без ограничителей, */
+/*          т.е. скобочки или палочки вокруг вектора нужно ставить вручную      */
+/* @param v --- список-вектор             */
+/* @result строка в формате ЛаТеХ */
+/* @example to_tex_vector() -> "..." */
+/* @end */
+/* ================================================== */
+debuglog("to_tex_vector", debug_message_func_load)$
+to_tex_vector(v):=block([res],
+	debug_start_function("to_tex_vector", [fp_low_level, fp_common]),
+    res : "",
+    for i : 1 thru length(v) do block([dlmtr],
+		if (i = 1) then dlmtr : "" else dlmtr : "; ",
+		res : printf(false, "~a~a~a", res, dlmtr, totex(v[i]))),
+    debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin to_tex_system */
+/* @type function */
+/* @brief Представление системы (уравнений) в ЛаТеХе */
+/* @details Функция делает из системы уравнений ее представление в ЛаТеХе                */
+/* @param ss --- список уравнений             */
+/* @result строка в формате ЛаТеХ */
+/* @example to_tex_system() -> "..." */
+/* @end */
+/* ================================================== */
+debuglog("to_tex_system", debug_message_func_load)$
+to_tex_system(ss) := block([res],
+	debug_start_function("to_tex_system", [fp_low_level, fp_common]),
+    res : "",
+    if (atom(ss) or (length(ss) = 0)) then go(tag_exit),
+    for i : 1 thru length(ss) do block([dlmtr],
+		res : printf(false, "~a~a; \\\\~%", res, totex(ss[i]))),
+	res : printf(false, 
+		"\\left\\{\\begin{array}{~a}~%~a\\end{array}\\right.", 
+		smake(length(ss), "l"), res),
+	tag_exit,
+    debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin to_tex_vector_rb */
+/* @type function */
+/* @brief Представление вектора в ЛаТеХе  с круглыми скобками */
+/* @details Функция делает из вектора его представление в ЛаТеХе как последовательность */
+/*          значений, разделенных ";", ограниченных круглыми скобками. */
+/* @param v --- список-вектор             */
+/* @result строка в формате ЛаТеХ */
+/* @example to_tex_vector_rb() -> "..." */
+/* @end */
+/* ================================================== */
+debuglog("to_tex_vector_rb", debug_message_func_load)$
+to_tex_vector_rb(v):=block([res],
+	debug_start_function("to_tex_vector_rb", [fp_low_level, fp_common]),
+    res : printf(false, "\\left(~a\\right)", to_tex_vector(v)),
+    debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin to_tex_interval */
+/* @type function */
+/* @brief Представление числового интервала в ЛаТеХе */
+/* @details Функция делает из числового интервала его представление в ЛаТеХе. */
+/* @param i --- числовой интервал             */
+/* @result строка в формате ЛаТеХ */
+/* @example to_tex_interval() -> "..." */
+/* @end */
+/* ================================================== */
+debuglog("to_tex_interval", debug_message_func_load)$
+to_tex_interval(i) := block([res], res : "",
+	debug_start_function("to_tex_interval", [fp_low_level, fp_common]),
+	if atom(i) then go(tag_exit),
+	if (op(i) = ts_simple_interval) then block([i_a, a1, a2, p, b1, b2],
+		i_a : args(i), 
+		a1 : i_a[1],
+		if (length(i_a) = 0) then (res : "\\emptyset", go(tag_es1)),
+		if (length(i_a) > 1) then a2 : i_a[2] else a2 : a1,
+		if (length(i_a) > 2) then p : i_a[3] else p : [false, false],
+		if p[1] then b1 : "[" else b1 : "(",
+		if p[2] then b2 : "]" else b2 : ")",
+		if (a1 = a2) 
+			then res : printf(false, "\\{ ~a \\}", totex(a1))
+			else res : printf(false, " ~a ~a; ~a ~a ", b1, totex(a1), totex(a2), b2),
+		tag_es1),
+	if (op(i) = ts_union_intervals) then block([i_a],
+		i_a : args(i),
+		if (length(i_a) = 0) then (res : "\\emptyset", go(tag_es2)),
+		for s_i in i_a do res : printf(false, "~a\\cup ~a", res, totex(s_i)),
+		tag_es2),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin getprop */
+/* @type function */
+/* @brief Получить значение параметра по его имени */
+/* @details Возвращает параметр из списка prlst, соответствующее имени параметра prname. */
+/*          Если параметров с данным именем несколько, то из соответствующих значений
+ *          формируется список, который и возвратит функция. */
+/* @param prlst --- список параметров */
+/* @param prname --- имя параметра */
+/* @result значение; если не найдено --- false */
+/* @example getprop([a = 1, b = 2], a) -> 1 */
+/* @end */
+/* ================================================== */
+debuglog("getprop", debug_message_func_load)$
+getprop(prlst, prname) := block([res], res : [], 
+	/* debug_start_function("getprop", [fp_low_level, fp_common]), */
+	for pr in prlst do block([],
+		if (first(pr) = prname) then block(push(second(pr), res))),
+	if 		(length(res) = 0) then res : false
+	elseif 	(length(res) = 1) then res : res[1],
+	/* debug_end_function(), */
+	res)$
+get_prop(prlst, prname) := getprop(prlst, prname)$
+/* ================================================== */
+/* @begin setprop */
+/* @type function */
+/* @brief Установить значение параметра по его имени */
+/* @details Присваивает параметру из списка prlst с именем параметра prname значение val */
+/* @param prlst --- список параметров */
+/* @param prname --- имя параметра */
+/* @param val --- присваиваемое значение */
+/* @result список параметров с новым значением */
+/* @example setprop([a = 1, b = 2], a, -1) -> [a = -1, b = 2] */
+/* @end */
+/* ================================================== */
+debuglog("setprop", debug_message_func_load)$
+setprop(prlst, prname, val) := block([res, not_found], res : prlst, not_found : true,
+	debug_start_function("setprop", [fp_low_level, fp_common]),
+	for i : 1 thru length(res) while not_found do
+		if (first(res[i]) = prname) then block([],
+			res[i] : prname = val,
+			not_found : false),
+	if not_found then push(prname = val, res),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin project_save_and_compile */
+/* @type function */
+/* @brief Сохранить текст решений проекта и скомпилировать теховский файл */
+/* @details Сохраняет текст решений textext проекта с именем projname и компилирует теховский файл */
+/* @param projname --- имя проекта */
+/* @param textext --- текст с решениями */
+/* @example project_save_and_compile(...) -> ... */
+/* @end */
+/* ================================================== */
+debuglog("project_save_and_compile", debug_message_func_load);
+project_save_and_compile(projname, textext) := block(
+	[sspdftex,
+	ssmvpdf,
+	ssmvaux,
+	ssmvlog
+	],
+	debug_start_function("project_save_and_compile", [fp_high_level, fp_common]),
+	make_tex_file(projname, textext),
+    sspdftex : printf(false,"pdflatex './projects/~a'", projname),
+    debuglog(printf(false,"try to bash string = ~a", sspdftex)),
+    system(sspdftex),
+    ssmvpdf : printf(false,"mv '~a.pdf' './projects/~a.pdf'", projname, projname),
+    debuglog(printf(false,"try to bash string = ~a", ssmvpdf)),
+    system(ssmvpdf),
+    ssmvaux : printf(false,"mv '~a.aux' './projects/~a.aux'", projname, projname),
+    debuglog(printf(false,"try to bash string = ~a", ssmvaux)),
+    system(ssmvaux),
+    ssmvlog : printf(false,"mv '~a.log' './projects/~a.log'", projname, projname),
+    debuglog(printf(false,"try to bash string = ~a", ssmvlog)),
+    system(ssmvlog),
+    debug_end_function())$
+/* ================================================== */
+/* @begin standart_search */
+/* @type function */
+/* @brief Стандартная функция сравнения */
+/* @details Возвращает процентное содержание слов запроса в тексте задачи */
+/* @param intext --- текст */
+/* @param taskparams --- параметры задания (?) */
+/* @result процент содержания */
+/* @end */
+/* ================================================== */
+debuglog("standart_search", debug_message_func_load)$
+standart_search(intext, taskparams) := block(
+	[res,
+	itxt,
+	itxtwl,
+	ttxt],
+	debug_start_function("standart_search", [fp_low_level, fp_common]),
+	res : 0,
+	intext : sdowncase(intext),
+	itxtwl : split(intext),
+	ttxt : getprop(taskparams, text),
+	ttxt : sdowncase(ttxt),
+	ttxt : sremove(",", ttxt, 'sequalignore),
+	for i in itxtwl do if numberp(ssearch(i,ttxt)) then res : res+1,
+	res : res/length(itxtwl),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin parameter_from_string */
+/* @type function */
+/* @brief Запрос параметра задания из командной строки */
+/* @details Функция запрашивает параметры для задания из командной строки */
+/* @param prm --- метаданные считываемого параметра */
+/* @param s_l --- список строк-параметров */
+/* @result Возвращает наряду со значением параметра value=r_val          */
+/*         и значениеми ошибок p_error=r_err, p_error_message=r_err_msg  */
+/*         остаток строк-параметров p_rest_string_list=r_s_l             */
+/* @example parameter_from_string() -> ... */
+/* @end */
+/* ================================================== */
+debuglog("parameter_from_string", debug_message_func_load)$
+parameter_from_string(prm, s_l) := block([res, inp, nm, dflt, als, prmtype, r_val, r_err, r_err_msg, r_s_l], 
+	debug_start_function("parameter_from_string", [fp_high_level, fp_common]),
+	res : [], r_err : false, r_err_msg : "", r_s_l : s_l,				/* начальные значения переменных */
+	debuglog(printf(false, "prm=~a~%  s=~a", prm, s_l)),
+	nm : getprop(prm, parname),											/* получаем имя параметра */
+	dflt : getprop(prm, default),										/* получаем значение параметра по умолчанию */
+	als : getprop(prm, alias),											/* получаем алиас параметра */
+	prmtype : getprop(prm, type), 										/* получаем тип параметра */
+	/* Чтение параметра */
+	if (prmtype = numreal) then block([ems],							/* если параметр должен быть числом */
+		s : pop(s_l), r_s_l : s_l,										/* вынимаем первую строку из списка строк-параметров */
+		if (slength(s) = 0) then r_val : dflt							/* если строка пустая, то присваиваем значение по умолчанию */
+		else block(														/* если строка не пустая */
+			ems : eval_maxima_string(s), 								/* вычисляем строку-параметр */
+			if (ems = false) then block([],								/* если вычисление закончилось неудачно */
+				r_err_msg : printf(false, 						 		/* формируем значение ошибки синтаксиса */
+					"Требуется ввести синтаксически верное выражение"),
+				r_err : err_incorrect_syntax)
+			else block(													/* если вычисление закончилось удачно */
+				if not(num_expr_p(ems)) then block([],					/* если результат вычисления строки - не число */
+					r_err_msg : printf(false, 							/* формируем значение ошибки несоответствия типу */
+						"Требуется ввести действительное число"),
+					r_err : err_not_real_number)
+				else r_val : ems)),										/* иначе, если все в порядке, то формируем значение */
+	if ((prmtype = expr) or (prmtype = expression)) then block([pms],	/* если параметр должен быть выражением */
+			s : pop(s_l), r_s_l : s_l,									/* вынимаем первую строку из списка строк-параметров */
+			if (slength(s) = 0) then r_val : dflt						/* если строка пустая, то присваиваем значение по умолчанию */
+			else block([],												/* если строка не пустая */
+				pms : parse_maxima_string(s),							/* парсим строку-параметр */
+				if (pms = false) then block(							/* если парсинг закончился неудачно */
+					r_err_msg : printf(false, 						 	/* формируем значение ошибки синтаксиса */
+						"Требуется ввести синтаксически верное выражение"),
+					r_err : err_incorrect_syntax)
+				else block(r_val : pms)))),								/* если парсинг закончился удачно, то формируем значение */
+	res : [value = r_val, 
+		p_error = r_err, 
+		p_error_message = r_err_msg, 
+		p_rest_string_list = r_s_l],
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin standart_get_parameters */
+/* @type function */
+/* @brief Запрос параметров задания из командной строки */
+/* @details Стандартная функция запроса параметров из командной строки. */
+/* @param prs --- список параметров из неформального задания */
+/* @result список параметров со значениями [alias=?,value=?]             */
+/* @example standart_get_parameters() -> ... */
+/* @end */
+/* ================================================== */
+debuglog("standart_get_parameters", debug_message_func_load)$
+standart_get_parameters(prs) := block([res], 
+	debug_start_function("standart_get_parameters", [fp_high_level, fp_common]),
+	res : [],
+	for prm in prs do block([inp, nm, dflt, als, prmtype, pvl, p_v, p_e],
+		nm : getprop(prm, parname),										/* получаем имя параметра */
+		dflt : getprop(prm, default),									/* получаем значение параметра по умолчанию */
+		als : getprop(prm, alias),										/* получаем алиас параметра */
+		prmtype : getprop(prm, type),									/* получаем тип параметра */
+		tag_loop,														/* метка для цикла чтения строки со значением параметра */
+		printf(true, "Enter parameter ~a (~a): ", 						/* приглашение ввести значение */
+			getprop(prm, parname), dflt),
+		inp : readlinestdio(),											/* чтение строки из терминала */
+		pvl : parameter_from_string(prm, [inp]),						/* преобразуем введенную строку в значение */
+		p_e : getprop(pvl, p_error),									/* получаем ошибку результата преобразования */
+		if (p_e # false) then block([],									/* если есть ошибка, то выводим сообщение об ошибке */
+			printf(true, "~a~%", getprop(pvl, p_error_message))),
+		if (p_e # false) then go(tag_loop),								/* если есть ошибка, то идем назад для повторного ввода */
+		p_v : getprop(pvl, value),										/* если ошибки нет, то получаем значение */
+		push([alias = als, value = p_v], res)),							/* и заворачиваем его в список для результата */
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin get_task_from_terminal */
+/* @type function */
+/* @brief Запрос параметров задания из командной строки */
+/* @details Стандартная функция запроса параметров неформального задания через терминал */
+/*          на основе метаданных неформального задания inftask возвращает задание       */
+/*          типа ts_type_task, запрашивая значения параметров с клавиатуры.             */
+/* @param inftask --- неформальное задание */
+/* @result задание типа ts_type_task */
+/* @example get_task_from_terminal(...) -> ... */
+/* @end */
+/* ================================================== */
+debuglog("get_task_from_terminal", debug_message_func_load)$
+get_task_from_terminal(inftask) := block([res, slvr, slvrres, prms],
+	debug_start_function("get_task_from_terminal", [fp_high_level, fp_common]),
+	debuglog(printf(false, "inftask name=~a", getprop(inftask, name))),
+	res : make_new_task(),	
+	printf(true, "~a~%", getprop(inftask, text)),						/* выводим текст задания */
+	prms : get_informaltask_parameters_from_terminal(getprop(inftask, taskparams)),		/* запрашиваем параметры */
+	debuglog(printf(false, "prms=~a", prms)),
+	slvr : getprop(inftask, solver),									/* находим решатель неформального задания */
+	debuglog(printf(false, "slvr=~a", slvr)),
+	slvrres : apply(slvr, [prms]),										/* передаем параметры в решатель */
+	debuglog(printf(false, "inftask name=~a", slvrres)),
+	res : setprop(res, task_parameters, prms),
+	res : setprop(res, task_get_time, timedate()),
+	res : setprop(res, solver_result, slvrres),
+	/* !TODO! */														/* сохраняем результат решения */
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin proc_informal_task_terminal */
+/* @type function */
+/* @brief Ввод задания из командной строки и его решение */
+/* @details Выводит текст задания, запрашивает его параметры из командной строки, */
+/*          решает его и возвращает результат решения */
+/* @param inftask --- неформальное задание */
+/* @result результат решения */
+/* @example proc_informal_task_terminal(...) -> ... */
+/* @end */
+/* ================================================== */
+debuglog("proc_informal_task_terminal", debug_message_func_load)$
+proc_informal_task_terminal(inftask) := block([res, prms, slvr, slvrres],
+	debug_start_function("proc_informal_task_terminal", [fp_high_level, fp_common]),
+	debuglog(printf(false, "inftask name=~a", getprop(inftask, name))),
+	printf(true, "~a~%", getprop(inftask, text)),						/* выводим текст задания */
+	prms : standart_get_parameters(getprop(inftask, taskparams)),		/* запрашиваем параметры */
+	slvr : getprop(inftask, solver),									/* находим решатель неформального задания */
+	slvrres : apply(slvr, [prms]),										/* передаем параметры в решатель */
+	res : slvrres,														/* сохраняем результат решения как результат функции */
+	debuglog(printf(false, "result=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin get_val_by_alias */
+/* @type function */
+/* @brief Получить значение по его псевдониму */
+/* @details Функция ищет в списке параметров тот у которого нужный псевдоним */
+/*          и возвращает его значение или false если такой параметр не найден */
+/* @param prs --- Каждый параметр передаётся в решатель в виде списка [alias=...,value=...]. */
+/*                Третий необязательный параметр - значение по умолчанию,                    */
+/*                возвращается вместо false. Вместо alias и value могут использоваться ts_alias и ts_value. */
+/* @result значение параметра */
+/* @example get_val_by_alias([[alias = "a", value = 1]], "a") -> 1 */
+/* @end */
+/* ================================================== */
+debuglog("get_val_by_alias", debug_message_func_load)$
+get_val_by_alias([prs]) := block([res, prv, als],
+	debug_start_function("get_val_by_alias", [fp_low_level, fp_common]),
+	prv : prs[1], als : prs[2],
+	debuglog(printf(false, "prv=~a; als=~a", prv, als)),
+	if (length(prs) >= 3) then res : prs[3] else res : false,
+	for el in prv do block([gals, gvl],
+		gals : getprop(el, alias),
+		if (gals = false) then gals : getprop(el, ts_alias),
+		gvl : getprop(el, value),
+		if (gvl = false) then gvl : getprop(el, ts_value),
+		debuglog(printf(false, "el=~a; gals=~a; als=~a; gvl=~a", el, gals, als, gvl)),
+		if ((gals = als) or sequal(gals, als)) then res : gvl),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin get_vals_by_aliases */
+/* @type function */
+/* @brief Получить значения по их псевдонимам */
+/* @details  Функция ищет в списке параметров те, у которых нужные псевдонимы           */
+/*           и возвращает список их значений (false если параметр не найден) */
+/* @param prs --- Каждый параметр передаётся в решатель в виде списка [alias=...,value=...]. */
+/*                Третий необязательный параметр - значение по умолчанию,                    */
+/*                возвращается вместо false. Вместо alias и value могут использоваться ts_alias и ts_value. */
+/* @result значение параметра */
+/* @example get_vals_by_aliases([[alias = "a", value = 1], [alias = "b", value = 2]], ["a", "b"]) -> [1, 2] */
+/* @end */
+/* ================================================== */
+debuglog("get_vals_by_aliases", debug_message_func_load)$
+get_vals_by_aliases(prv, alss) := block([res], res : [],
+	debug_start_function("get_vals_by_aliases", [fp_low_level, fp_common]),
+	for als in alss do block([vl],
+		vl : get_val_by_alias(prv, als),
+		res : append(res, [vl])),
+	debug_end_function(),
+	res)$
+/* */  
+debuglog("similar_expression", debug_message_func_load)$
+similar_expression(expr_e, expr_s) := block([res, coefs],
+	debug_start_function("similar_expression", [fp_high_level, fp_common]),
+	coefs : [-5,-4,-3,-2,-1,1,2,3,4,5],	res : [],
+	for coef in coefs do block([expr_n, expr_d], 
+		expr_n : subst(coef*x, x, expr_s),
+		expr_d : expr_e/expr_n,
+		print(expr_d),
+		if freeof(x, expr_d) then res : [expr_d, coef],
+		if res#[] then return(true)),
+	debug_end_function(),
+	res)$
+/* ============================================= */
+/* Генерация текста решений из списка решений ss */
+/* ============================================= */
+debuglog("gen_solutions_text", debug_message_func_load)$
+gen_solutions_text(ss) := block([res, s_c], res : "", s_c : 0,
+	debug_start_function("gen_solutions_text", [fp_high_level, fp_common]),
+	for s in ss do block([tsk_capt],
+		tsk_capt : getprop(s, taskcaption),
+		if tsk_capt=false then block([],
+			s_c : s_c+1,
+			tsk_capt : printf(false, "Задание ~d", s_c)),
+		res : printf(false, "~a~%\\begin{center}\\bf ~a \\end{center}~%", res, tsk_capt),
+		res : printf(false, "~a~a~%", res, getprop(s, solution_title)),
+		res : printf(false, "~a~a~%", res, getprop(s, solution)),
+		res : printf(false, "~a~%~a~%", res, gen_answer_text(getprop(s, answer)))),
+	debuglog(printf(false, "res=~a", res)),
+	debug_end_function(),
+	res)$
+/* ====================================================== */
+/* Функция получает задания из текста электронного письма */
+/* ====================================================== */
+debuglog("get_tasks_from_email_text", debug_message_func_load)$
+get_tasks_from_email_text(s) := block([res, ps, s_f], res : [],
+	debug_start_function("get_tasks_from_email_text", [fp_mid_level, fp_common]),
+	debuglog(printf(false, "s=~a", s)),
+	s_f : printf(false, "::"),											/* ключевая последовательность, */
+	ps : ssearch(s_f, s),												/* позицию которой ищем в строке */
+	while ps#false do block([ps1, ps2, s_f1, s_f2, s_sn, s_cmd, tsk],	/* если ключевая последовательность найдена */
+		s : substring(s, ps+slength(s_f)),								/* оставляем от строки все после нее */
+		s_f1 : printf(false, "("),										/* параметры начнутся после скобки */
+		ps1 : ssearch(s_f1, s),											/* ищем открывающуюся круглую скобку */
+		s_sn : substring(s, 1, ps1),									/* все что до нее - короткое имя команды */
+		s_f2 : printf(false, ");"),
+		ps2 : ssearch(s_f2, s),
+		s_cmd : substring(s, 1, ps2+slength(s_f2)),
+		s : substring(s, ps2+slength(s_f2)),
+		historylog(t_message, printf(true, "> найдено новое задание ~a", s_cmd), []),
+		tsk : get_task_from_string(s_cmd, false), 						/* получаем задание из строки (вместе с решением) */
+		res : append(res, [tsk]),										/* добавляем задание в список */
+		ps : ssearch(s_f, s)),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin generate_web_informaltasks_by_category */
+/* @type function */
+/* @brief Список номеров неформальных заданий, удовлетворяющих предикату */
+/* @details Функция возвращает список номеров неформальных заданий, */
+/*          каждое из которых удовлетворяет предикату p */
+/* @param p --- предикат */
+/* @result список номеров неформальных заданий, удовлетворяющих предикату */
+/* @end */
+/* ================================================== */
+debuglog("get_inftasks_nums_by_predicate", debug_message_func_load)$
+get_inftasks_nums_by_predicate(p) := block([res, r], res : [],
+	debug_start_function("get_inftasks_nums_by_predicate", [fp_mid_level, fp_common]),
+	debuglog(printf(false, "p=~a", p)),
+	for i : 1 thru length(informaltasks) do block([i_t],
+		i_t : informaltasks[i],
+		r : apply(p, [i_t]),
+		if (r = true) then res : append(res, [i])),
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin get_inftasks_nums_by_category */
+/* @type function */
+/* @brief Список номеров неформальных заданий по категории и степени готовности */
+/* @details Функция возвращает список номеров неформальных заданий        */
+/*          определенной категории и степени готовности                   */
+/* @param prs --- список параметров:  */
+/*                первый параметр --- категория или ассоциативный список метеданных категории,     */
+/*                второй (если есть) --- true для готовых заданий и false для тестируемых заданий */
+/* @result список номеров неформальных заданий */
+/* @end */
+/* ================================================== */
+debuglog("get_inftasks_nums_by_category", debug_message_func_load)$
+get_inftasks_nums_by_category([prs]) := block(
+	[res, 																/* результат функции */
+	c, 																	/* категория или ассоциативный список метеданных категории */
+	c_cat,																/* категория */
+	tst,																/* параметр готовности/неготовности */ 
+	r], 																/*  */
+	res : [],
+	debug_start_function("get_inftasks_nums_by_category", [fp_mid_level, fp_common]),
+	c : prs[1],
+	if atom(c)
+		then c_cat : c
+		else c_cat : assoc(ts_category, c),
+	if (length(prs) > 1) then tst : prs[2] else tst : [],
+	debuglog(printf(false, "c=~a, c_cat=~a", c, c_cat)),
+	for i : 1 thru length(informaltasks) do block([i_t],
+		i_t : informaltasks[i],
+		r : false,
+		if member(c_cat, getprop(i_t, category)) then (
+			if listp(tst) then r : true,
+			if ((tst = true) and (getprop(i_t, readiness) = ts_full_readiness)) then r : true,
+			if ((tst = false) and (getprop(i_t, readiness) = ts_test_readiness)) then r : true),
+		if (r = true) then res : append(res, [i])),
+	debug_end_function(),
+	res)$
+/* ========================================= */
+/* Предикат численной вычислимости выражения */
+/* ========================================= */
+debuglog("num_expr_p (realnum_p)", debug_message_func_load)$
+num_expr_p(e) := numberp(float(e))$
+realnum_p : num_expr_p$
+/* ====================================== */
+/* Предикат тригонометрического выражения */
+/* ====================================== */
+debuglog("expression_trigonometric_p", debug_message_func_load)$
+expression_trigonometric_p(e) := block([res, e_op, e_args], res : false,
+	if atom(e) then go(tag_exit),
+	e_op : op(e),
+	if ((e_op = sin) or (e_op = cos) or (e_op = tan)) then (res : true, go(tag_exit)),
+	/* !TODO! */
+	tag_exit,
+	res)$
+/* ================================================== */
+/* @begin arg_in_expression_p */
+/* @type function */
+/* @brief Предикат наличия аргумента в выражении */
+/* @details Предикат наличия аргумента a в выражении e */
+/* @param a --- аргумент  */
+/* @param e --- выражение  */
+/* @result true, если аргумент входит в выражение; false --- в противном случае */
+/* @example arg_in_expression_p(x, a+5*sin(b-x)) -> true */
+/* @end */
+/* ================================================== */
+debuglog("arg_in_expression_p", debug_message_func_load)$
+arg_in_expression_p(a, e) := block([res, e_ars], res : false,
+	debuglog(printf(false, "a=~a, e=~a", a, e)),
+	if atom(e) then (
+		if (e = a) then res : true,
+		go(tag_exit)),
+	e_ars : args(e),
+	for e_ar in e_ars do
+		if arg_in_expression_p(a, e_ar) then res : true,
+	tag_exit,
+	debuglog(printf(false, "res=~a", res)),
+	res)$
+/* ================================================== */
+/* @begin op_in_expression_p */
+/* @type function */
+/* @brief Предикат наличия оператора в выражении */
+/* @details Предикат наличия оператора o в выражении e */
+/* @param o --- оператор  */
+/* @param e --- выражение  */
+/* @result true, если оператор входит в выражение; false --- в противном случае */
+/* @example op_in_expression_p(sin, a+5*sin(b-x)) -> true */
+/* @end */
+/* ================================================== */
+debuglog("op_in_expression_p", debug_message_func_load)$
+op_in_expression_p(o, e) := block([res, e_op, e_ar], res : false,
+	debuglog(printf(false, "o=~a, e=~a", o, e)),
+	if atom(e) then go(tag_exit),
+	e_op : op(e),
+	if (e_op = o) then (res : true,
+		go(tag_exit)),
+	e_ar : args(e),
+	for a in e_ar do
+		if op_in_expression_p(o, a) then res : true,
+	tag_exit,
+	debuglog(printf(false, "res=~a", res)),
+	res)$
+/* ================================== */
+/* Генерация результата для решателей */
+/* p_st - заголовок,                  */
+/* p_s_l -список строк,               */
+/* p_answ - ответ                     */
+/* ================================== */
+debuglog("gen_solver_res", debug_message_func_load)$
+gen_solver_res(p_st, p_s_l, p_answ) := block([res],
+	debug_start_function("gen_solver_res", [fp_low_level, fp_common]),
+	debuglog(printf(false, "starting")),
+	res : [	solution_title = p_st,
+			solution = apply(sconcat, p_s_l),
+			solution_steps = p_s_l,
+			answer = p_answ],
+	debuglog(printf(false, "ending")),
+	debug_end_function(),
+	res)$
+/* ======================================== */
+/* Предикат смог ли решатель решить задание */
+/* rs - результат решателя или ответ        */
+/* ======================================== */
+debuglog("can_solve_p", debug_message_func_load)$
+can_solve_p(rs) := block([res, rs_ans], res : true,
+	debuglog(printf(false, "1")),
+	if ((rs = false) or atom(rs) or not(listp(rs)) or (length(rs) = 0)) then (res : false, go(tag_exit)),
+	debuglog(printf(false, "2")),
+	if (listp(rs[1]) and (getprop(rs[1], type) = cant_find_solution)) then (res : false, go(tag_exit)),
+	if (listp(rs[1]) and (getprop(rs[1], type) # false)) then go(tag_exit),
+	debuglog(printf(false, "3")),
+	if (getprop(rs, type) = cant_find_solution) then (res : false, go(tag_exit)),
+	debuglog(printf(false, "4")),
+	rs_ans : getprop(rs, answer),
+	debuglog(printf(false, "5")),
+	if rs_ans = false then (res : false, go(tag_exit)),
+	debuglog(printf(false, "6")),
+	if (listp(rs_ans) and (getprop(rs_ans[1], type) = cant_find_solution)) then (res : false, go(tag_exit)),
+	if (getprop(rs_ans, type) = cant_find_solution) then (res : false, go(tag_exit)),
+	tag_exit,
+	res)$
+/* =================================================== */
+/* Макрос для добавления строки из printf в список s_l */
+/* =================================================== */
+append_to_s_l([p]) ::= buildq([l : append([false], p)], s_l : append(s_l, [printf(splice(l))]))$
+/* ==================================================================== */
+/* Макрос для добавления и присваивания строки s из printf в список s_l */
+/* ==================================================================== */
+append_s_to_s_l([p]) ::= buildq([l : append([false], p)], (s : printf(splice(l)),  s_l : append(s_l, [s])))$
+/* ================================= */
+/* Нужное склонение слова "значение" */
+/* ================================= */
+debuglog("correct_word_znacheniye", debug_message_func_load)$
+correct_word_znacheniye(n) := 
+	printf(false, 
+		"~[значение~;значения~;значений~]", 
+		if ((n = 0) or (n >= 5)) then 3 elseif (n = 1) then 1 else 2)$
+/* ================================================== */
+/* @begin string_to_downcase */
+/* @type function */
+/* @brief В строчные буквы */
+/* @details Функция все символы (включая русские буквы) строки делает строчными. */
+/* @param s --- исходная строка */
+/* @result строка со строчными буквами */
+/* @end */
+/* ================================================== */
+debuglog("string_to_downcase", debug_message_func_load)$
+string_to_downcase(s) := block([res, c_l],
+	res : sdowncase(s),
+	c_l : [["а", "А"], ["б", "Б"], ["в", "В"], ["г", "Г"], ["д", "Д"], ["е", "Е"], ["ё", "Ё"], ["ж", "Ж"],
+	["з", "З"], ["и", "И"], ["й", "Й"], ["к", "К"], ["л", "Л"],	["м", "М"], ["н", "Н"], ["о", "О"], ["п", "П"],
+	["р", "Р"], ["с", "С"], ["т", "Т"], ["у", "У"], ["ф", "Ф"], ["х", "Х"], ["ц", "Ц"], ["ч", "Ч"],
+	["ш", "Ш"], ["щ", "Щ"], ["ь", "Ь"], ["ы", "Ы"], ["ъ", "Ъ"], ["э", "Э"], ["ю", "Ю"], ["я", "Я"]],
+	for cc in c_l do res : ssubst(cc[1], cc[2], res),
+	res)$
+/* ==================================================== */
+/* Строковые описания категории                         */
+/* Вход: символическое имя категории                    */
+/* Выход: список из двух строк                          */
+/* первая строка - английское имя для технических нужд; */
+/* вторая - имя на русском для отображения.             */
+/* !TODO! устаревшая функция, избавиться от нее */
+/* ==================================================== */
+debuglog("string_descriptions_for_category", debug_message_func_load)$
+string_descriptions_for_category(c) := block([res, c_s_en, c_s_ru],
+	[c_s_en, c_s_ru] : ["", ""],
+	if (c = ts_algebra) then (c_s_en : "algebra", c_s_ru : "Алгебра"),
+	if (c = ts_geometry) then (c_s_en : "geometry", c_s_ru : "Геометрия"),
+	if (c = ts_chances) then (c_s_en : "chances", c_s_ru : "Теория вероятностей"),
+	if (c = ts_matanaliz) then (c_s_en : "matanaliz", c_s_ru : "Математический анализ"),
+	if (c = ts_stat) then (c_s_en : "stat", c_s_ru : "Статистика"),
+	if (c = ts_number_theory) then (c_s_en : "number_theory", c_s_ru : "Теория чисел"),
+	res : [c_s_en, c_s_ru],
+	res)$
+/* ================================================== */
+/* @begin cpu_load_average */
+/* @type function */
+/* @brief Загруженность ресурсов системы */
+/* @details Получить параметры загруженности ресурсов системы. */
+/*          Параметры берутся из результата выполнения системной команды "w". */
+/* @result число --- коэффициент нагрузки процессора за последнюю минуту */
+/* @end */
+/* ================================================== */
+debuglog("cpu_load_average", debug_message_func_load)$
+cpu_load_average() := block([res, fn, fl, rl, pos_la, s_f, rl_l],
+	res : true, fn : "/tmp/tscpuload.dat",
+	system(printf(false, "w > ~a", fn)),
+	fl : openr(fn),
+	rl : readline(fl),
+	s_f : "load average:",
+	pos_la : ssearch(s_f, rl) + slength(s_f),
+	rl : substring(rl, pos_la),
+	rl : ssubst(" ", ", ", rl),
+	rl : ssubst(".", ",", rl),
+	rl_l : split(rl),
+	res : parse_maxima_string(rl_l[1]),
+	close(fl),
+	res)$
+/* ================================================== */
+/* @begin load_text_from_file */
+/* @type function */
+/* @brief Считать файл как строку */
+/* @details Возвращает все содержимое файла как строку. */
+/* @param fn --- имя файла */
+/* @end */
+/* ================================================== */
+debuglog("load_text_from_file", debug_message_func_load)$
+load_text_from_file(fn) := block([res, fl, rl],
+	res : false, 
+	fl : openr(fn),
+	if (fl = false) then go(tag_exit),
+	res : "",
+	tag_cycle,
+	rl : readline(fl),
+	if (rl = false) then go(tag_exit1),
+	if (slength(res) = 0) 
+		then res : scopy(rl)
+		else res : printf(false, "~a~%~a", res, rl),
+	go(tag_cycle),
+	tag_exit1,
+	close(fl),
+	tag_exit,
+	res)$
+/* ================================================== */
+/* @begin make_solid_program */
+/* @type function */
+/* @brief Объединить код с внешними включениями */
+/* @details Функция "вклеивает" в файл максимы все подгружаемые внешние файлы. */
+/* @param fn1 --- имя исходного файла */
+/* @param fn2 --- имя файла, в который запишется результат */
+/* @end */
+/* ================================================== */
+debuglog("make_solid_program", debug_message_func_load)$
+make_solid_program(fn1, fn2) := block(
+	[res, ss, s1, fl2, fnn, sn, sf, ps1, ps2, psn1, psn2, sfn, ps, res], 
+	res : [],
+	debug_start_function("make_solid_program", [fp_mid_level, fp_common]),
+	s1 : load_text_from_file(fn1),										/* загружаем содержимое начального файла */
+	ss : printf(false, "~%load(\""),									/* инициализируем строку загрузки модулей для поиска */
+	tag_cycle,															/* метка цикла */
+	ps1 : ssearch(ss, s1),												/* ищем возможную команду загрузки модуля */
+	if (ps1 = false) then go(tag_writefile),							/* если таких нет, то переходим к записи файла-результата */
+	ps2 : ssearch(")$", s1, sequal, ps1) + 1,							/* ищем завершение команды загрузки модуля */
+	if (ps2 = false) then (												/* если завершения не найдено... */
+		ssubstfirst("l_o_a_d_(", "load(", s1, sequal, ps1), 			/* меняем команду на строку-заглушку */
+		go(tag_cycle)),													/* и продолжаем цикл */
+	sn : substring(s1, ps1, ps2),
+	printf(true, "~%~a~%", sn),
+	ps : ssearch(".mac", sn),
+	if (ps = false) then (												/* если завершения не найдено... */
+		s1 : ssubstfirst("l_o_a_d_(", "load(", s1, sequal, ps1), 		/* меняем команду на строку-заглушку */
+		go(tag_cycle)),
+	psn1 : ssearch("(", sn),
+	psn2 : ssearch(")", sn),
+	/* printf(true, "~a - ~a~%", psn1, psn2), */
+	sn : substring(sn, psn1 + 2, psn2 - 1),
+	sfn : load_text_from_file(sn),
+	sfn : confuse_maxima_code(sfn),
+	/* printf(true, "(~a;~a)", ps1, ps2), */
+	s1 : sconcat(substring(s1, 1, ps1), sfn, substring(s1, ps2 + 1)),
+	/* printf(true, "#"), */
+	go(tag_cycle),
+	/* !TODO! */
+	tag_writefile,														/* метка записи файла-результата */
+	/* s1 : confuse_maxima_code(s1), */
+	fl2 : openw(fn2),													/* открываем файл для записи */
+	s1 : ssubst("load(", "l_o_a_d_(", s1),								/* меняем строки-заглушки обратно */
+	printf(fl2, "~a", s1),												/* выводим строку в файл */
+	close(fl2),															/* закрываем файл */
+	tag_exit,															/* метка выхода */
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin confuse_maxima_code */
+/* @type function */
+/* @brief Запутать код проекта */
+/* @details Функция запутывает код максимы. */
+/*          Удаляет все комментарии */
+/*          и меняет названия функций на бессмысленные */
+/*          с целью усложнить обратный инженеринг. */
+/* @end */
+/* ================================================== */
+debuglog("confuse_maxima_code", debug_message_func_load)$
+confuse_maxima_code(s) := block(
+	[res, ps1, ps2, ps3],
+	debug_start_function("confuse_maxima_code", [fp_mid_level, fp_common]),
+	ps1 : 1,
+	tag_cycle,
+	ps1 : ssearch("\/\*", s, sequal, ps1 + 1),
+	printf(true, "."),
+	/* printf(true, "~a; ", ps1), */
+	if (ps1 = false) then go(tag_next_step),
+	ps2 : ssearch("\*\/", s, sequal, ps1 + 1),
+	ps3 : ssearch(printf(false, "~%"), s, sequal, ps1 + 1),
+	/* printf(true, "(~a;~a;~a)", ps1, ps2, ps3), */
+	if ((ps3 = false) or (ps2 < ps3)) then
+		(s : sconcat(substring(s, 1, ps1), substring(s, ps2 + 2))),
+	go(tag_cycle),
+	tag_next_step,
+	printf(true, "+"),
+	s : ssubst(printf(false, "~%"), printf(false, "~2%"), s),
+	printf(true, "+"),
+	s : confuse_maxima_code_crypt_func(s),
+	printf(true, "+"),
+	tag_exit,
+	res : s,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin confuse_maxima_code_crypt_func */
+/* @type function */
+/* @brief Шифрация функций */
+/* @details Функция шифрует названия функций. */
+/*          Меняет их названия на бессмысленные */
+/*          с целью усложнить обратный инженеринг. */
+/* @end */
+/* ================================================== */
+debuglog("confuse_maxima_code_crypt_func", debug_message_func_load)$
+confuse_maxima_code_crypt_func(s) := block(
+	[res],
+	debug_start_function("confuse_maxima_code_crypt_func", [fp_low_level, fp_common]),
+	s : ssubst("f000", "totex_calc_val_formula", s),
+	s : ssubst("f001", "load_settings", s),
+	s : ssubst("f002", "update_function_calls_statistic", s),
+	s : ssubst("f003", "compare_strings", s),
+	s : ssubst("f004", "getprop", s),
+	s : ssubst("f005", "generate_task_solution", s),
+	s : ssubst("f006", "setprop", s),
+	s : ssubst("f007", "get_informaltask_parameters_from_string", s),
+	s : ssubst("f008", "get_informaltask_parameter_from_string", s),
+	s : ssubst("f009", "totex", s),
+	s : ssubst("f010", "value_for_string_with_predicate_list", s),
+	s : ssubst("f011", "get_parameter_from_terminal", s),
+	s : ssubst("f012", "parse_maxima_string", s),
+	s : ssubst("f013", "is_predicate_list_p", s),
+	s : ssubst("f014", "is_predicate_p", s),
+	s : ssubst("f015", "generate_predicates_list_description", s),
+	s : ssubst("f016", "is_ts_real_p", s),
+	s : ssubst("f017", "is_ts_integer_p", s),
+	s : ssubst("f018", "is_ts_natural_p", s),
+	s : ssubst("f019", "is_ts_positive_p", s),
+	s : ssubst("f020", "is_ts_negative_p", s),
+	s : ssubst("f021", "is_ts_nonpositive_p", s),
+	s : ssubst("f022", "is_ts_nonnegative_p", s),
+	s : ssubst("f023", "is_ts_nonzero_p", s),
+	s : ssubst("f024", "is_ts_greater_1_p", s),
+	s : ssubst("f025", "is_ts_greater_eq_1_p", s),
+	s : ssubst("f026", "is_ts_less_1_p", s),
+	s : ssubst("f027", "is_ts_less_eq_1_p", s),
+	s : ssubst("f028", "is_ts_polynom_x_p", s),
+	s : ssubst("f029", "is_ts_function", s),
+	s : ssubst("f030", "is_ts_var_x", s),
+	s : ssubst("f031", "gen_answer_text", s),
+	s : ssubst("f032", "to_tex_vector_rb", s),
+	s : ssubst("f033", "to_tex_matr_arr", s),
+	s : ssubst("f034", "make_tex_file", s),
+	s : ssubst("f035", "string_to_downcase", s),
+	s : ssubst("f036", "get_inftasks_nums_by_category", s),
+	s : ssubst("f037", "algebra_arithmetical_calculation", s),
+	s : ssubst("f038", "tcvf_lists", s),
+	s : ssubst("f039", "to_tex_matr_arr_rb", s),
+	s : ssubst("f040", "to_tex_interval", s),
+	s : ssubst("f041", "to_tex_periodic_value", s),
+	s : ssubst("f042", "num_expr_p", s),
+	s : ssubst("f043", "arg_in_expression_p", s),
+	s : ssubst("f044", "op_in_expression_p", s),
+	s : ssubst("f045", "confuse_maxima_code", s),
+	s : ssubst("f046", "matanaliz_find_indefinite_integral", s),
+	s : ssubst("f047", "aac_calc_low_lewels", s),
+	s : ssubst("f048", "aas_subst_has_no_affect_p", s),
+	s : ssubst("f049", "aas_calc_low_lewels", s),
+	s : ssubst("f050", "matrix_determinant_3x3", s),
+	s : ssubst("f051", "matrix_to_upper_unitriangular_form", s),
+	s : ssubst("f052", "matrix_to_upper_triangular_form", s),
+	s : ssubst("f053", "get_matrix_from_prs", s),
+	s : ssubst("f054", "matrix_determinant", s),
+	s : ssubst("f055", "find_polynome_roots_bezout_theorem", s),
+	s : ssubst("f056", "find_polynome_roots_poly_of_special_form", s),
+	s : ssubst("f057", "poly_coeffs", s),
+	s : ssubst("f058", "divide_polynomials_by_column", s),
+	s : ssubst("f059", "dpc_c2tex", s),
+	s : ssubst("f060", "solve_linear_trigonometric_equation_linear_argument", s),
+	s : ssubst("f061", "expr_linear_trig_linear_x", s),
+	s : ssubst("f062", "expr_trig_data_x", s),
+	s : ssubst("f063", "select_roots_in_interval", s),
+	s : ssubst("f064", "expr_mult_external", s),
+	s : ssubst("f065", "trig_func_p", s),
+	s : ssubst("f066", "generate_webpages_project_info", s),
+	s : ssubst("f067", "generate_webpage_informaltasks_all", s),
+	s : ssubst("f068", "generate_webpages_informaltasks_by_categories", s),
+	s : ssubst("f069", "generate_webpage_informaltasks", s),
+	s : ssubst("f070", "generate_web_informaltasks_all", s),
+	s : ssubst("f071", "latex_string_to_latex_html", s),
+	s : ssubst("f072", "generate_webpage_informaltasks_by_category", s),
+	s : ssubst("f073", "generate_web_informaltasks_by_category", s),
+	s : ssubst("f074", "generate_web_informaltask", s),
+	s : ssubst("f075", "make_web_parameter_defvalue_string", s),
+	s : ssubst("f076", "generate_task_test_random_variant", s),
+	res : s,
+	/* !TODO! */
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin kill_lingering_web_processes */
+/* @type function */
+/* @brief Остановка зависших процессов */
+/* @details Ищет процессы с именем "maxima" и убивает те, которые работают больше определенного времени */
+/* @end */
+/* ================================================== */
+debuglog("kill_lingering_web_processes", debug_message_func_load)$
+kill_lingering_web_processes() := block(
+	[res, 
+	fn, 
+	fl, rl, rl_l, 
+	s_pid, s_time, s_comm, s_cmd, tm_sec,
+	sys_s, s], 
+	debug_start_function("kill_lingering_web_processes", [fp_high_level, fp_common]),
+	printf(true, "Start!!!~%"),
+	res : true, fn : "/tmp/tsps.dat",
+	sys_s : printf(false, "ps -eo pid,comm,time > ~a", fn),
+	printf(true, "Command: ~a~%", sys_s),
+	system(sys_s),														/* информация о процессах - во временный файл */
+	fl : openr(fn),														/* открываем этот файл */
+	if (fl = false) then go(tag_exit),									/* если файл не открылся, то выходим */
+	printf(true, "File ~a opened...~%", fn),
+	tag_cycle,															/* метка начала цикла */
+	rl : readline(fl),													/* читаем строчку*/
+	/* printf(true, "~a~%", rl), */
+	if (rl = false) then go(tag_exit1),									/* если строк больше нет, то на выход с закрытием файла */
+	rl_l : split(rl),													/* делим строку на части, разделенные пробелами */
+	if (length(rl_l) # 3) then go(tag_cycle),							/* в строке должно быть 4 части */
+	[s_pid, s_comm, s_time] : rl_l,										/* присваиваем каждую часть своей переменной */
+	/* printf(true, "(~a)~%", s_comm), */
+	if sequal(s_comm, "maxima") then block([tm_sl, tm_l],				/* если процесс максимы... */
+		tm_sl : split(s_time, ":"),										/* делим время на часы-минуты-секунды по двоеточиям */
+		tm_l : map(parse_maxima_string, tm_sl),							/* переводим строки в значения */
+		tm_sec : 3600 * tm_l[1] + 60 * tm_l[2] + tm_l[3],				/* вчитаем сколько секунд работает процесс */
+		printf(true, "~a : ~a~%", s_comm, tm_sec),
+		if (tm_sec >= 300) then											/* если больше определенного времени */
+			system(printf(false, "kill ~a", s_pid))),					/* то убиваем его */
+	if rl # false then go(tag_cycle),
+	tag_exit1,
+	close(fl),															/* закрываем файл */
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin cartesian_product_lists */
+/* @type function */
+/* @brief Прямое (декартово) произведение списков */
+/* @details Прямое (декартово) произведение списков. */
+/* @param ll --- списки-сомножители */
+/* @result список списков-комбинаций */
+/* @example cartesian_product_lists([1, 2], [a, b]) -> [[1, a], [1, b], [2, a], [2, b]] */
+/* @end */
+/* ================================================== */
+debuglog("cartesian_product_lists", debug_message_func_load)$
+cartesian_product_lists([ll]) := block(
+	[res, cll], 
+	debug_start_function("cartesian_product_lists", [fp_high_level, fp_common]),
+	res : [[]],															/* список-накопитель списков */
+	for l in ll do block([],											/* проходим по спискам для прямого произведения */
+		cll : res,
+		res : [],
+		for cl in cll do block([],
+			for a in l do ([nl],										/* каждый элемент списка добавляем к списку списков */
+				nl : copylist(cl),
+				nl : append(nl, [a]),
+				res : append(res, [nl])))),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin cartesian_power_lists */
+/* @type function */
+/* @brief Декартова степень списка */
+/* @details Возводит список l в декартову степень n. */
+/* @param l --- список */
+/* @param n --- степень */
+/* @result список списков-комбинаций */
+/* @example cartesian_power_lists([a, b], 2) -> [[a, a], [a, b], [b, a], [b, b]] */
+/* @end */
+/* ================================================== */
+debuglog("cartesian_power_lists", debug_message_func_load)$
+cartesian_power_lists(l, n) := block(
+	[res, ll], 
+	debug_start_function("cartesian_power_lists", [fp_high_level, fp_common]),
+	res : false,
+	if (n < 1) then go(tag_exit),
+	ll : [],
+	for i : 1 thru n do block([nl],
+		nl : copylist(l),
+		ll : append(ll, [nl])),
+	res : apply(cartesian_product_lists, ll),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ================================================== */
+/* @begin get_vals_by_aliases */
+/* @type function */
+/* @brief Список всех подвыражений данного выражения */
+/* @details  Функция составляет список всех подвыражений данного выражения */
+/* @param expr --- выражение. */
+/* @result список подвыражений */
+/* @example get_all_subexpressions(a*b+c^d) -> [a*b, c^d, a, b, c, d] */
+/* @end */
+/* ================================================== */
+debuglog("get_all_subexpressions", debug_message_func_load)$
+get_all_subexpressions(expr) := block(
+	[res], 
+	debug_start_function("get_all_subexpressions", [fp_high_level, fp_common]),
+	res : [],
+	if atom(expr) then (
+		res : [expr], 
+		go(tag_exit))
+	else block([ars],
+		ars : args(expr),
+		res : append(res, ars),
+		for ar in ars do 
+			res : append(res, get_all_subexpressions(ar))),
+	tag_exit,
+	debug_end_function(),
+	res)$

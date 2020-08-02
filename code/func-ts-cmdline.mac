@@ -1,0 +1,606 @@
+debuglog("func-ts-cmdline.mac", debug_message_module_load)$
+/* ============================================================ */
+/* Функция запрашивает неформальное задание из командной строки */
+/* и возвращает его номер в списке informaltasks или false      */
+/* ============================================================ */
+debuglog("get_informaltask_from_cmdline", debug_message_func_load);
+get_informaltask_from_cmdline() := block([res, i_n, inp, i_t_l], res : false,
+	debug_start_function("get_informaltask_from_cmdline", [fp_high_level, fp_common]),
+	tag_new_cycle,
+	printf(true, "Выберите категорию:~%"),
+	printf(true, "a. Алгебра~%"),
+	printf(true, "g. Геометрия~%"),
+	printf(true, "m. Математический анализ~%"),
+	printf(true, "c. Теория вероятностей~%"),
+	printf(true, "s. Статистика~%"),
+	printf(true, "n. Теория чисел~%"),
+	printf(true, "A. Все задания~%"),
+	printf(true, "R. Все готовые задания~%"),
+	printf(true, "T. Все тестируемые задания~%"),
+	printf(true, "0. Выход~%"),
+	inp : readlinestdio(),
+	debuglog(printf(false, "inp=~a", inp)),
+	if ((inp = "0") or (slength(inp) = 0)) then go(tag_exit),
+	i_t_l : [],
+	if (inp = "a") then (
+		for i : 1 thru length(informaltasks) do block([i_t, i_t_cat, s],
+		i_t : informaltasks[i],
+		i_t_cat : getprop(i_t, category),
+		if (listp(i_t_cat) and member(ts_algebra, i_t_cat)) then (
+			i_t_l : append(i_t_l, [i]),
+			if ((getprop(i_t, readiness)=false) or (getprop(i_t, readiness)=ts_test_readiness)) then s : " [TEST]" else s : "",
+			printf(true, "~3d.~a ~a~%", length(i_t_l), s, getprop(i_t, short_description))))),
+	if (inp = "g") then (
+		for i : 1 thru length(informaltasks) do block([i_t, i_t_cat, s],
+		i_t : informaltasks[i],
+		i_t_cat : getprop(i_t, category),
+		if (listp(i_t_cat) and member(ts_geometry, i_t_cat)) then (
+			i_t_l : append(i_t_l, [i]),
+			if ((getprop(i_t, readiness)=false) or (getprop(i_t, readiness)=ts_test_readiness)) then s : " [TEST]" else s : "",
+			printf(true, "~3d.~a ~a~%", length(i_t_l), s, getprop(i_t, short_description))))),
+	if (inp = "m") then (
+		for i : 1 thru length(informaltasks) do block([i_t, i_t_cat, s],
+		i_t : informaltasks[i],
+		i_t_cat : getprop(i_t, category),
+		if (listp(i_t_cat) and member(ts_matanaliz, i_t_cat)) then (
+			i_t_l : append(i_t_l, [i]),
+			if ((getprop(i_t, readiness)=false) or (getprop(i_t, readiness)=ts_test_readiness)) then s : " [TEST]" else s : "",
+			printf(true, "~3d.~a ~a~%", length(i_t_l), s, getprop(i_t, short_description))))),
+	if (inp = "c") then (
+		for i : 1 thru length(informaltasks) do block([i_t, i_t_cat, s],
+		i_t : informaltasks[i],
+		i_t_cat : getprop(i_t, category),
+		if (listp(i_t_cat) and member(ts_chances, i_t_cat)) then (
+			i_t_l : append(i_t_l, [i]),
+			if ((getprop(i_t, readiness) = false) or (getprop(i_t, readiness) = ts_test_readiness)) 
+				then s : " [TEST]" 
+				else s : "",
+			printf(true, "~3d.~a ~a~%", length(i_t_l), s, getprop(i_t, short_description))))),
+	if (inp = "s") then (
+		for i : 1 thru length(informaltasks) do block([i_t, i_t_cat, s],
+		i_t : informaltasks[i],
+		i_t_cat : getprop(i_t, category),
+		if (listp(i_t_cat) and member(ts_stat, i_t_cat)) then (
+			i_t_l : append(i_t_l, [i]),
+			if ((getprop(i_t, readiness)=false) or (getprop(i_t, readiness)=ts_test_readiness)) then s : " [TEST]" else s : "",
+			printf(true, "~3d.~a ~a~%", length(i_t_l), s, getprop(i_t, short_description))))),
+	if (inp = "n") then (
+		for i : 1 thru length(informaltasks) do block([i_t, i_t_cat, s],
+		i_t : informaltasks[i],
+		i_t_cat : getprop(i_t, category),
+		if (listp(i_t_cat) and member(ts_number_theory, i_t_cat)) then (
+			i_t_l : append(i_t_l, [i]),
+			if ((getprop(i_t, readiness) = false) or (getprop(i_t, readiness) = ts_test_readiness)) 
+				then s : " [TEST]" 
+				else s : "",
+			printf(true, "~3d.~a ~a~%", length(i_t_l), s, getprop(i_t, short_description))))),
+	if (inp = "A") then (
+		for i : 1 thru length(informaltasks) do block([i_t, i_t_cat, s],
+			i_t : informaltasks[i],
+			i_t_l : append(i_t_l, [i]),
+			if ((getprop(i_t, readiness) = false) or (getprop(i_t, readiness) = ts_test_readiness)) 
+				then s : " [TEST]" 
+				else s : "",
+			printf(true, "~3d.~a ~a~%", length(i_t_l), s, getprop(i_t, short_description)))),
+	if (inp = "R") then (
+		for i : 1 thru length(informaltasks) do block([i_t, i_t_cat, s],
+			i_t : informaltasks[i],
+			i_t_cat : getprop(i_t, category),
+			if (getprop(i_t, readiness) = ts_full_readiness) then (
+				i_t_l : append(i_t_l, [i]),
+				printf(true, "~3d. ~a~%", length(i_t_l), getprop(i_t, short_description))))),
+	if (inp = "T") then (
+		for i : 1 thru length(informaltasks) do block([i_t, i_t_cat, s],
+			i_t : informaltasks[i],
+			i_t_cat : getprop(i_t, category),
+			if ((getprop(i_t, readiness) = false) or (getprop(i_t, readiness) = ts_test_readiness)) then (
+				i_t_l : append(i_t_l, [i]),
+				printf(true, "~3d.[TEST] ~a~%", length(i_t_l), getprop(i_t, short_description))))),
+	if (length(i_t_l) = 0) then (
+		printf(true, "Не найдено заданий для выбранной категории"),
+		go(tag_new_cycle)),
+	printf(true, "Ваш выбор: "),
+	inp : readlinestdio(),
+	debuglog(printf(false, "inp=~a", inp)),
+	if ((inp = "0") or (slength(inp) = 0)) then go(tag_new_cycle),
+	i_n : parse_string(inp),
+	if not(integerp(i_n)) then go(tag_exit),
+	if ((i_n < 1) or (i_n > length(i_t_l))) then go(tag_exit),
+	res : i_t_l[i_n],
+	debuglog(printf(false, "i_n=~a; i_t_l=~a, res=~a", i_n, i_t_l, res)),
+	tag_exit,
+	debug_end_function(),
+	res)$
+/* ==================== */
+/* Команды тестирования */
+/* ==================== */
+command_line_testing() := block([res, inp], res : true,
+	printf(true, "Выберите тест: ~%"),
+	printf(true, " 0. Выйти~%"),
+	printf(true, " u. Запустить все юнит-тесты~%"),
+	printf(true, " a. Сгенерировать тестовый проект~%"),
+	printf(true, " aa. Сгенерировать тестовый проект~%"),
+	printf(true, " 1. Тест totex(a-b, substitutions=[a=3, b=-2])~%"),
+	printf(true, " 1a. Тест totex(((x-2)^2)*(2*x))~%"),
+	printf(true, " 1b. Тест poly_coeffs(5*x^5+4*x^4-3*x^3+10, x)~%"),
+	printf(true, " 2. Тест algebra_arithmetical_calculation([[alias=expression, value=a^2-4*b*c],[alias=substitutions, value=[a=-7,b=-2,c=-3]]])~%"),
+	printf(true, " 3. Тест correct_maxima_syntaxis_p(!1+2)~%"),
+	printf(true, " 4. Тест get_system_properties()~%"),
+	printf(true, " 5. Тест compare_strings()~%"), 
+	printf(true, " 6. Тест function_calls_statistical_data~%"), 
+	printf(true, " 7. matrix_to_triangular_form~%"), 
+	printf(true, " 8. gen_text_function_calls_statistical_data~%"), 
+	printf(true, " 9. expr_diff_x(e)~%"),
+	printf(true, "10. simple_trig_x_p(3*sin(x)-2, x)~%"),
+	printf(true, "11. totex_calc_val(pv[3]*(pv[2]+pv[1]), [pv=[1,2,3]])~%"),
+	printf(true, "12. totex_calc_val_formula(lambda([p1, p2, p3], (1/p3)*sum(p1[i]*p2[i],i,1,n)), [x_l, y_l, n])~%"),
+	printf(true, "14. expr_quadratic_trig_x(expr, x)~%"),
+	printf(true, "15. expr_trig_data_x(expr, x)~%"),
+	printf(true, "16. cpu_load_average()~%"),
+	printf(true, "17. kill_lingering_web_processes()~%"),
+	printf(true, "18. cartesian_product_lists()~%"),
+	printf(true, "19. cartesian_power_lists()~%"),
+	printf(true, "Ваш выбор: "),
+	inp : readlinestdio(),
+	if (inp = "a") then block([tps, p_tsks, p, ct],  tps : "",
+		tps : printf(false, "~a::ma_sqe(1, 3, -4);~%", tps),
+		tps : printf(false, "~a::ma_sqe(2, 3/7, sqrt(6));~%", tps),
+		tps : printf(false, "~a::ma_minv33(1, 2, 3, -4, -5, 6, 7, -8, 9);~%", tps),
+		tps : printf(false, "~a::ma_minv33(1/3, 2/7, 3, -4, -sqrt(5), 6, 97, -8, 9);~%", tps),
+		tps : printf(false, "~a::ma_mdet33(1, 2, 3, -4, -5, 6, 7, -8, 9);~%", tps),
+		tps : printf(false, "~a::ma_mdet33(1/3, 2/7, 3, -4, -sqrt(5), 6, 97, -8, 9);~%", tps),
+		tps : printf(false, "~a::ma_slesk33(1, 2, 3, -4, 5, 7, -9, 8, 6, -5, 0, 2);~%", tps),
+		tps : printf(false, "~a::ma_slesk33(1/7, 0, -3, 3/13, -5, 9, -1, 8, 6, 7/3, -7, 2);~%", tps),
+		tps : printf(false, "~a::mm_iint(3*x^7/13);~%", tps),
+		tps : printf(false, "~a::mm_iint(x+sin(x));~%", tps),
+		tps : printf(false, "~a::mm_dint(2*x^2, -1, 1);~%", tps),
+		tps : printf(false, "~a::mm_dint(x+sin(x), 0, 1);~%", tps),
+		tps : printf(false, "~a::mc_crvdfev(2*x, 0, 1);~%", tps),
+		tps : printf(false, "~a::mc_crvdfdev(2*x, 0, 1);~%", tps),
+		tps : printf(false, "~a::mg_vl(2, 3/5, 4/5);~%", tps),
+		tps : printf(false, "~a::mg_vl(3, 1, sqrt(2), sqrt(5));~%", tps),
+		tps : printf(false, "~a::mg_vsp(3, 1, 2, 7, 3, -5/7, -1, 4);~%", tps),
+		tps : printf(false, "~a::ma_divpoly(x^3+4*x^2-2*x-7, x+5);~%", tps),
+		tps : printf(false, "~a::ma_mtutf(4, 4, 2, -2, 3, 2/7, -1, -2, 9, 0, -3/7, 0, 0, 0, 0, 3, -7, 1);~%", tps),
+		tps : printf(false, "~a::ma_mtuudf(4, 4, -4, 2, 6, 2, 5, -1, 0, 9, -3, 1, 1, 4, 4, 5, 6, 0);~%", tps),
+		tps : printf(false, "~a::mg_vvp(1, 2, 3, -3, -2, -1);~%", tps),
+		tps : printf(false, "~a::mg_vvp(3/4, -5/13, 0, 2/7, 7/9, -1/3);~%", tps),
+		tps : printf(false, "~a::mg_vmp(11, 12, 13, 21, -22, 23, 31, 32, 33);~%", tps),
+		tps : printf(false, "~a::mg_vmp(2/13, -7/9, 2, 0, -5/7, 3, 1/17, -2, 7);~%", tps),
+		tps : printf(false, "~a::ma_gcd2ea(2345, 135);~%", tps),
+		tps : printf(false, "~a::ma_gcd2ea(8, 17);~%", tps),
+		tps : printf(false, "~a::mg_ta3cvp(-1, -3, 8, 2, 7, 0, 0, 4, 13);~%", tps),
+		tps : printf(false, "~a::mg_tv3cmp(-2, -1, 7, 3, 0, 6, 5, 0, 12, -5, 7, 11);~%", tps),
+		ct : elapsed_run_time(),
+		p : make_new_project(),
+		p_tsks : get_tasks_from_email_text(tps),
+		p : setprop(p, project_tasks, p_tsks),
+		p : setprop(p, 
+			text_preamble, 
+			printf(false, "Решения сгенерированы на основе следующих команд:~2%\\begin{verbatim}~a\\end{verbatim}", tps)),
+		p : generate_project_solution(p),
+		make_project_tex_file_and_compile(p, ""),
+		/* printf(true, "~a~2%", p), */
+		printf(true, "Spend run time = ~a~%", elapsed_run_time()-ct)),
+	if (inp = "aa") then block([tps, p_tsks, p, ct],  tps : "",
+		tps : printf(false, "~a::mg_vl(2, 3/5, 4/5);~%", tps),
+		tps : printf(false, "~a::mg_vl(3, 1, sqrt(2), sqrt(5));~%", tps),
+		tps : printf(false, "~a::mg_vsp(3, 1, 2, 7, 3, -5/7, -1, 4);~%", tps),
+		ct : elapsed_run_time(),
+		p : make_new_project(),
+		p_tsks : get_tasks_from_email_text(tps),
+		p : setprop(p, project_tasks, p_tsks),
+		p : generate_project_solution(p),
+		make_project_tex_file_and_compile(p, ""),
+		printf(true, "~a~2%", p),
+		printf(true, "Spend run time = ~a~%", elapsed_run_time()-ct)),
+	if (inp = "u") then block([], 
+		run_all_unittests()),
+	if (inp = "1") then block([rs], 
+		rs : totex(a - b, substitutions = [a = 3, b = -2]), 
+		printf(true, "Totex res:~%~a~%", rs)),
+	if (inp = "1a") then block([rs], 
+		rs : totex(totex(((x - 2)^2)*(2*x))), 
+		printf(true, "Totex res:~%~a~%", rs)),
+	if (inp = "1b") then block([rs], 
+		rs : poly_coeffs(5*x^5+4*x^4-3*x^3+10, x), 
+		printf(true, "Totex res:~%~a~%", rs)),
+	if (inp = "2") then block([rs],
+		rs : algebra_arithmetical_calculation(
+			[[alias = "expression", value = a^2-4*b*c],
+			[alias = "substitutions", value = [a = -7, b = -2, c = -3]]]), 
+		printf(true, "Calc res:~%~a~%", rs)),
+	if (inp = "3") then block([rs],
+		rs : correct_maxima_syntaxis_p("!1+2"), 
+		printf(true, "Maxima output:~%~a~%", rs)),
+	if (inp = "4") then block([rs],
+		rs : get_system_properties(), 
+		printf(true, "System properties:~%~a~%", rs)),
+	if (inp = "5") then block([],
+		printf(true, "compare_strings(2015-10-14,2015-10-15): ~a~%", compare_strings("2015-10-14", "2015-10-15")),
+		printf(true, "compare_strings(2015-10-15,2015-10-14): ~a~%", compare_strings("2015-10-15", "2015-10-14")),
+		printf(true, "compare_strings(2015-10-14,2015-11-15): ~a~%", compare_strings("2015-10-14", "2015-11-15")),
+		printf(true, "compare_strings(2015-11-15,2015-10-14): ~a~%", compare_strings("2015-11-15", "2015-10-14"))),
+	if inp = "6" then block([],
+		printf(true, "function_calls_statistical_data : ~a~%", function_calls_statistical_data)),
+	if inp = "7" then block([prs, A],
+		A : matrix([1,2,3],[4,5,6],[7,8,9]),
+		prs : [[alias="A", value=A]],
+		printf(true, "matrix_to_triangular_form : ~a~%", matrix_to_triangular_form(prs))),
+	if inp = "8" then block([s],
+		solve_q_eq([]),
+		s : gen_text_function_calls_statistical_data(),
+		printf(true, "gen_text_function_calls_statistical_data=~%~a~%", s)),
+	if inp = "9" then block([s],
+		s : expr_diff_x(ts_diff_x(x*sin(x))),
+		printf(true, "expr_diff_x(x)=~a~%", s)),
+	if inp = "10" then block([s],
+		/* s : expr_linear_external_linear_x(3*sin(x)-2, x),		printf(true, "expr_linear_external_linear_x(3*sin(x)-2, x)=~a~%", s),*/
+		s : expr_linear_external_linear_x(-sin(x/2+pi)-2, x),
+		printf(true, "expr_linear_external_linear_x(-sin(x/2+pi)-2, x)=~a~%", s),
+		s : simple_linear_trig_x_p(3*sin(x)-2, x),
+		printf(true, "simple_linear_trig_x_p(3*sin(x)-2, x)=~a~%", s),
+		s : simple_linear_trig_x_p(3*sin(x), x),
+		printf(true, "simple_linear_trig_x_p(3*sin(x), x)=~a~%", s),
+		s : linear_trig_lin_arg_x_p(sin(x)-1, x),
+		printf(true, "linear_trig_lin_arg_x_p(sin(x)-1, x)=~a~%", s),
+		s : simple_quad_trig_x_p(3*sin(x)^2+sin(x)-2, x),
+		printf(true, "simple_quad_trig_x_p(3*sin(x)^2+sin(x)-2, x)=~a~%", s),
+		s : simple_quad_trig_x_p(3*sin(x)^2+cos(x)-2, x),
+		printf(true, "simple_quad_trig_x_p(3*sin(x)^2+cos(x)-2, x)=~a~%", s)),
+	if inp = "11" then block([s, v],
+		[s, v] : totex_calc_val(pv[3]*(pv[2]+pv[1]), [pv=[1,2,3]]),
+		printf(true, "totex_calc_val(pv[3]*(pv[2]+pv[1]), [pv=[1,2,3]])=~a~%v=~a~%", s, v)),
+	if inp = "12" then block([s, v, x_l, y_l, n],
+		x_l : [1, 2, 3], y_l : [-2, -3, -4], n : 11,
+		[s, v] : totex_calc_val_formula(lambda([p1, p2, p3], (1/p3)*sum(p1[i]^2*p2[i],i,1,3)), [x_l, y_l, n]),
+		printf(true, "totex_calc_val_formula(lambda([p1, p2, p3], (1/p3)*sum(p1[i]^2*p2[i],i,1,3)), [x_l, y_l, n])=~a~%v=~a~%", s, v)),
+	if inp = "13" then block([s, v, x_l, y_l, n],
+		x_l : [1, 2, 3], y_l : [[-2, -3], [-4, 7], [8, 9]], n : 11,
+		[s, v] : totex_calc_val_formula(lambda([p1, p2, p3], (1/p3)*sum(sum(p1[i]^2*p2[i][j]^3,i,1,3),j,1,2)), [x_l, y_l, n]),
+		printf(true, "totex_calc_val_formula(lambda([p1, p2, p3], (1/p3)*sum(p1[i]^2*p2[i],i,1,3)), [x_l, y_l, n])=~a~%v=~a~%", s, v)),
+	if inp = "14" then block([s],
+		s : expr_quadratic_trig_x(2*sin(x)^2+sin(2*x)+4, x),
+		printf(true, "expr_quadratic_trig_x(2*sin(x)^2+sin(2*x)+4=~a~%", s),
+		s : expr_quadratic_trig_x(2*sin(2*x+1)^2+sin(2*x+1)+4, x),
+		printf(true, "expr_quadratic_trig_x(2*sin(2*x+1)^2+sin(2*x+1)+4, x)=~a~%", s),
+		s : expr_quadratic_trig_x(2*tan(2*x+1)^2+tan(2*x+1), x),
+		printf(true, "expr_quadratic_trig_x(2*tan(2*x+1)^2+tan(2*x+1), x)=~a~%", s)),
+	if inp = "15" then block([s],
+		s : expr_trig_data_x(2*sin(x)^2+sin(2*x)+4, x),
+		printf(true, "expr_trig_data_x(2*sin(x)^2+sin(2*x)+4, x)=~a~%", s),
+		s : expr_trig_data_x(2*tan(x+1)^2+sin(2*x)+x^2, x),
+		printf(true, "expr_trig_data_x(2*tan(x+1)^2+sin(2*x)+x^2, x)=~a~%", s)),
+	if inp = "16" then block([s],
+		s : cpu_load_average(),
+		printf(true, "cpu_load_average()=~a~%", s)),
+	if inp = "17" then block([s],
+		s : kill_lingering_web_processes(),
+		printf(true, "kill_lingering_web_processes()=~a~%", s)),
+	if inp = "18" then block([s],
+		s : cartesian_product_lists([a, b], [1, 2]),
+		printf(true, "cartesian_product_lists([a, b], [1, 2])=~a~%", s),
+		s : cartesian_product_lists([false, true], [false, true], [false, true], [false, true]),
+		printf(true, "cartesian_product_lists([false, true], [false, true], [false, true], [false, true])=~%  ~a~2%", s)),
+	if inp = "19" then block([s],
+		s : cartesian_power_lists([false, true], 3),
+		printf(true, "cartesian_power_lists([false, true], 3)=~a~%", s),
+		s : cartesian_power_lists([a, 1, %pi], 2),
+		printf(true, "cartesian_power_lists([a, 1, %pi], 2)=~a~%", s)),
+	res)$
+/* ================= */
+/* Системные команды */
+/* ================= */
+command_line_system_commands() := block([res, inp], res : true,
+	printf(true, "Выберите команду: ~%"),
+	printf(true," 0. Выйти~%"),
+	printf(true," 1. Ввести команду вручную~%"),
+	printf(true," 2. Сгенерировать описание неформальных заданий для решения по e-mail~%"),
+	printf(true," 3. Сбросить текущую статистику~%"),
+	printf(true," 4. Удалить логи отладки~%"),
+	printf(true," 5. Удалить логи истории~%"),
+	printf(true," 6. Рассчитать статистику~%"),
+	printf(true," 7. Сгенерировать описание неформальных заданий~%"),
+	printf(true," 8. Показать используемые переменные~%"),
+	printf(true," a. Автодокументирование~%"),
+	printf(true," b. Сделать архив текущей версии TaskSolver~%"),
+	printf(true," c. Скомпилировать проект~%"),
+	printf(true," sw. Сохранить проект с кодом для веб-сервера~%"),
+	printf(true," cf. Скомпилировать код проекта~%"),
+	printf(true," w. Создать веб страницы для сайта~%"),
+	printf(true," web. Создать все для сайта~%"),
+	printf(true, "Ваш выбор: "),
+	inp : readlinestdio(),
+	if inp = "a" then block([],
+		autodoc_collect_information_about_project()),
+	if inp = "b" then block([],
+		clear_work_directories(ts_all_files),
+		archieve_current_tasksolver_version()),
+	if inp = "1" then block([e_rs], 
+		printf(true, "Введите команду: "),
+		inp : readlinestdio(),
+		e_rs : eval_string(inp),
+		printf(true, "Результат вызова: ~a", e_rs)),
+	if inp = "2" then make_informaltasks_description_email_tex_file(),
+	if inp = "3" then block([], 
+		function_calls_statistical_data : []
+		/* project_processing_statistical_data : [] */),
+	if inp = "4" then system("rm service_files/debug*.log"),
+	if inp = "5" then system("rm service_files/history.log"),
+	if inp = "6" then block([rs, s],
+		debuglog_is_on : false,
+		rs : calculate_function_calls_statistic(),
+		debuglog_is_on : true,
+		s : text_function_calls_statistic(rs),
+		printf(true, "~%function_calls_statistical_data:~%~a~%", s)),
+	if inp = "7" then make_informaltasks_description_tex_file(),
+	if inp = "8" then print(values),
+	if inp = "c" then compile(all),
+	if inp = "cf" then (
+		compile_file("ts-web.mac")
+		),
+	if inp = "sw" then (
+		make_solid_program("ts-web.mac", "ts_web_all.mac"),
+		translate_file("ts_web_all.mac")),
+	if inp = "w" then (
+		load("code/func-ts-web.mac"),
+		generate_webpages()),
+	if inp = "web" then (
+		load("code/func-ts-web.mac"),
+		generate_webpages(),
+		make_solid_program("ts-web.mac", "ts_web_all.mac"),
+		translate_file("ts_web_all.mac")),
+	res)$
+/* ================== */
+/* Изменить настройки */
+/* ================== */
+command_line_change_settings() := block([res, inp], res : true,
+	printf(true, "Выберите настройки: ~%"),
+	printf(true," 1. Вывод отладочной информации~%"),
+	printf(true," 1a. Установить вывод всей отладочной информации и на экран и в файл~%"),
+	printf(true," 1b. Установить вывод всей отладочной информации только в файл~%"),
+	printf(true," 1c. Установить вывод всей отладочной информации только на экран~%"),
+	printf(true," 1d. Запретить вывод отладочной информации~%"),
+	printf(true," 2. Вывод истории запросов~%"),
+	printf(true," 3. Ведение статистики~%"),
+	printf(true," 4. Параметры окружения~%"),
+	printf(true, "Ваш выбор: "),
+	inp : readlinestdio(),
+	if inp = "1" then block([], 
+		printf(true, "~a~%", debug_out_source),
+		printf(true, "Выводить на экран сообщения начала и конца функции (да)? (y/n): "),
+		inp : readlinestdio(),
+		debug_out_source[1][1] : not(is((inp="n") or (inp="no"))),
+		printf(true, "Выводить в файл сообщения начала и конца функции (да)? (y/n): "),
+		inp : readlinestdio(),
+		debug_out_source[1][2] : not(is((inp="n") or (inp="no"))),
+		if debug_out_source[1][1] then block([],
+			printf(true, "Выводить на экран обычные сообщения функции (да)? (y/n): "),
+			inp : readlinestdio(),
+			debug_out_source[2][1] : not(is((inp="n") or (inp="no"))))
+			else debug_out_source[2][1] : false,
+		if debug_out_source[1][2] then block([],
+			printf(true, "Выводить в файл обычные сообщения функции (да)? (y/n): "),
+			inp : readlinestdio(),
+			debug_out_source[2][2] : not(is((inp="n") or (inp="no"))))
+			else debug_out_source[2][2] : false,
+		if debug_out_source[2][1] then block([],
+			printf(true, "Выводить на экран внутрицикловые сообщения функции (да)? (y/n): "),
+			inp : readlinestdio(),
+			debug_out_source[3][1] : not(is((inp="n") or (inp="no"))))
+			else debug_out_source[3][1] : false,
+		if debug_out_source[2][2] then block([],
+			printf(true, "Выводить в файл внутрицикловые сообщения функции (да)? (y/n): "),
+			inp : readlinestdio(),
+			debug_out_source[3][2] : not(is((inp="n") or (inp="no"))))
+			else debug_out_source[3][2] : false,
+		save_settings(),
+		printf(true, "~a~%", debug_out_source),
+		printf(true, "Новые опции сохранены~%")),
+	if inp = "1a" then block([], 
+		debug_out_source : [[true, true], [true, true], [true, true]],
+		printf(true, "~a~%", debug_out_source),
+		save_settings()),
+	if inp = "1b" then block([], 
+		debug_out_source : [[false, true], [false, true], [false, true]],
+		printf(true, "~a~%", debug_out_source),
+		save_settings()),
+	if inp = "1c" then block([], 
+		debug_out_source : [[true, false], [true, false], [true, false]],
+		printf(true, "~a~%", debug_out_source),
+		save_settings()),
+	if inp = "1d" then block([], 
+		debug_out_source : [[false, false], [false, false], [false, false]],
+		printf(true, "~a~%", debug_out_source),
+		save_settings()),
+	res)$
+/* ===================== */
+/* Начало нового проекта */
+/* ===================== */
+/* tsproject[entity_type=...,name=...,creation_time=...,compil_time=...,is_compiled=...,tasks=[...]] */
+/* tstask[entity_type=...,name=...,inf_task=...,parameters=[...]] */
+command_line_new_project() := block(
+	[res, ss_pr, 
+	tm_dt, prj, prj_textext, 
+	tsk, projname, tasksolutions, 
+	inp, i_n, textext, 
+	curres, inpquit, 
+	renewtask, taskcount, 
+	tscap], 
+	debug_start_function("command_line_new_project", [fp_high_level, fp_interface]),
+	res : true,
+	tasksolutions : [], inpquit : false, renewtask : false, taskcount : 0, tscap : "",
+	tm_dt : timedate(),
+	projname : sconcat("Project ", tm_dt),
+	printf(true, "Enter new project name~% (~a): ", projname),
+	inp : readlinestdio(),
+	if slength(inp) > 0 then projname : inp,
+	debug_tsproject_start(projname, tm_dt, "command-line"),
+	/* ~~~~~~~~~ */
+	ss_pr : get_system_properties(),
+	prj : make_new_project(),											/* Создаем новый проект */
+	prj : setprop(prj, project_name, projname),
+	prj : setprop(prj, creation_time, timedate()),
+	prj : setprop(prj, project_source, ts_cmdline),
+	prj : setprop(prj, project_source_name, ss_pr[1]),
+	debuglog(printf(false, "ts-cmdline: prj=~%~a~%", prj)),
+	/* ~~~~~~~~~ */
+	/* Выбор заданий */
+	tag_new_task,
+	i_n : get_informaltask_from_cmdline(),								/* запрашиваем номер задания из командной строки */
+	debuglog(printf(false, "i_n=~a", i_n)),
+	if i_n = false then go(tag_task_quit),								/* если номер не получен, то выходим */
+	tsk : get_task_from_terminal(informaltasks[i_n]),					/* получаем параметры задания из командной строки */
+	debuglog(printf(false, "tsk= ~a~%", tsk)),
+	if (inpquit=true) then go(tag_task_quit),							/* если флаг окончания выбора установлен, то идем на выход */
+	printf(true, "Задание решено.~%"),
+	taskcount : taskcount+1,											/* увеличиваем номер задания */
+	printf(true, "Введите название задания (Задание ~a): ", taskcount),
+	inp : readlinestdio(),												/* читаем название задания из командной строки */
+	if (slength(inp) > 0) 												/* если строка пустая, то генерируем название */
+		then tscap : inp 
+		else tscap : printf(false, "Задание ~a", taskcount),
+	tsk : setprop(tsk, task_name, tscap),
+	prj : add_task_to_project(tsk, prj),
+	debuglog(printf(false, "~a~%", prj)),
+	go(tag_new_task),													/* возвращаемся чтобы добавить новое задание */
+	tag_task_quit,														/* метка для выхода из цикла ввода заданий */
+	/* Конечный выбор действий */
+	printf(true, "Выбор заданий закончен.~%~%Что делать дальше?~%"),
+	printf(true, " 0. Выйти~% 1. Показать текст решений~% 2. Сохранить решения~%"),
+	printf(true, " 3. Сохранить решения и скомпилировать файл~% 4. Вернуться к вводу заданий~%"),
+	inp : readlinestdio(),
+	inpquit : false,
+	if (inp = "1") then block(
+		printf(true, "~a~%", textext))
+	elseif (inp = "2") then block(
+		/*make_tex_file(projname, textext),*/
+		make_project_tex_file(prj, ""),
+		historylog(t_project, projname, [input_source = from_terminal, tex_file_saved = true, tex_file_compiled = false]))
+	elseif (inp = "3") then block([],
+		make_project_tex_file_and_compile(prj, ""),
+		historylog(t_project, projname, [input_source = from_terminal, tex_file_saved = true, tex_file_compiled = true]))
+	elseif (inp = "4") then block(
+		renewtask : true)
+	elseif ((inp = "0") or (slength(inp) = 0)) then block(inpquit : true),
+	if (renewtask = true) then go(tag_new_task),
+	debug_tsproject_end(),
+	debug_end_function(),
+	res)$
+/* =========================== */
+/* Новый проект создания теста */
+/* =========================== */
+command_line_new_project_test() := block(
+	[res, ss_pr, 
+	tm_dt, prj, prj_textext, 
+	tsk, projname, tasksolutions, 
+	inp, i_n, textext, 
+	curres, inpquit, 
+	renewtask, taskcount, 
+	tscap], 
+	debug_start_function("command_line_new_project_test", [fp_high_level, fp_interface]),
+	res : true,
+	/* Создаем новый проект для теста */
+	tm_dt : timedate(),
+	projname : sconcat("Project ", tm_dt),
+	printf(true, "Enter new project name~% (~a): ", projname),
+	inp : readlinestdio(),
+	if slength(inp) > 0 then projname : inp,
+	prj : make_new_project(),							/* Создаем новый проект */
+	prj : setprop(prj, project_type, ts_project_test),
+	prj : setprop(prj, project_name, projname),
+	prj : setprop(prj, creation_time, timedate()),
+	prj : setprop(prj, project_source, ts_cmdline),
+	prj : setprop(prj, project_source_name, ss_pr[1]),
+	debuglog(printf(false, "ts-cmdline: prj=~%~a~%", prj)),
+	/* Запрашиваем общие опции генерации теста */
+	printf(true, "Введите количество вариантов (1): "),		/* количество вариантов */
+	inp : readlinestdio(),
+	var_num : parse_maxima_string(inp),
+	prj : setprop(prj, ts_test_variants_num, var_num),
+		/* количество вариантов ответов для каждого задания */
+		/* варианты ответов генерируются для каждого задания или для всех сразу */
+	/* Начало цикла с запросом типа неформального задания */
+	/* Запрашиваем тип неформального задания */
+	/* Запрашиваем общие опции генерации этого задания */
+	/* Запрашиваем опции генерации параметров задания */
+	/* Конец цикла с запросом типа неформального задания */
+	/* !TODO! */
+	/* ~~~~~~~~~ */
+	ss_pr : get_system_properties(),
+	/* ~~~~~~~~~ */
+	/* Выбор заданий */
+	tag_new_task,
+	debuglog(printf(false, "inp=~a", inp)),
+	if (inp = "0" or slength(inp)=0) then go(tag_task_quit),
+	i_n : parse_string(inp),
+	if not(integerp(i_n)) then go(tag_task_quit),
+	if ((i_n<1) or (i_n>length(informaltasks))) then go(tag_task_quit),
+	debuglog(printf(false, "i_n=~a", i_n)),
+	tsk : get_task_from_terminal(informaltasks[i_n]),
+	debuglog(printf(false, "tsk= ~a~%", tsk)),
+	if (inpquit=true) then go(tag_task_quit),							/* если флаг окончания выбора установлен, то идем на выход */
+	printf(true, "Задание решено.~%"),
+	taskcount : taskcount+1,											/* увеличиваем номер задания */
+	printf(true, "Введите название задания (Задание ~a): ", taskcount),
+	inp : readlinestdio(),												/* читаем название задания из командной строки */
+	if (slength(inp) > 0)												/* если строка пустая, то генерируем название */
+		then tscap : inp 
+		else tscap : printf(false, "Задание ~a", taskcount),
+	tsk : setprop(tsk, task_name, tscap),
+	prj : add_task_to_project(tsk, prj),
+	debuglog(printf(false, "~a~%", prj)),
+	go(tag_new_task),													/* возвращаемся чтобы добавить новое задание */
+	tag_task_quit,														/* метка для выхода из цикла ввода заданий */
+	/* Конечный выбор действий */
+	printf(true, "Выбор заданий закончен.~%~%Что делать дальше?~%"),
+	printf(true, " 0. Выйти~% 1. Показать текст решений~% 2. Сохранить решения~%"),
+	printf(true, " 3. Сохранить решения и скомпилировать файл~% 4. Вернуться к вводу заданий~%"),
+	inp : readlinestdio(),
+	inpquit : false,
+	if      (inp = "1") then block(
+		printf(true,"~a~%",textext))
+	elseif  (inp = "2") then block(
+		/*make_tex_file(projname, textext),*/
+		make_project_tex_file(prj, ""),
+		historylog(t_project, projname, [input_source=from_terminal, tex_file_saved=true, tex_file_compiled=false]))
+	elseif  (inp = "3") then block([],
+		make_project_tex_file_and_compile(prj, ""),
+		historylog(t_project, projname, [input_source=from_terminal, tex_file_saved=true, tex_file_compiled=true]))
+	elseif  (inp = "4") then block(
+		renewtask : true)
+	elseif ((inp = "0") or (slength(inp) = 0)) then block(
+		inpquit : true),
+	if (renewtask = true) then go(tag_new_task),
+	debug_tsproject_end(),
+	debug_end_function(),
+	res)$
+/* ========================= */
+/* Главная исполняемая часть */
+/* ========================= */
+ts_cmdline_main() := block([inp, inpquit], 
+	debug_start_function("ts_cmdline_main", [fp_high_level, fp_interface]),
+	historylog(t_session, "Start session", 
+			[session_time = timedate(), session_mode = "Command line"]),
+	inpquit : false,
+	while inpquit = false do block([],
+		printf(true, "Выберите действие: ~%"),
+		printf(true, " 0. Выйти~%"),
+		printf(true, " s. Создать новый проект~%"),
+		printf(true, " t. Создать новый тест~%"),
+		printf(true, " +. Тестирование~%"),
+		printf(true, " !. Изменить настройки~%"),
+		printf(true, " *. Системные команды~%"),
+		inp : readlinestdio(),
+		if ((inp = "0") or (inp = "")) then inpquit : true,
+		if (inp = "s") then command_line_new_project(),
+		if (inp = "t") then command_line_new_project_test(),
+		if (inp = "+") then command_line_testing(),
+		if (inp = "!") then command_line_change_settings(),
+		if (inp = "*") then command_line_system_commands()),
+	historylog(t_session, "End session", [session_time=timedate(), session_mode="Command line"]),
+	archive_function_calls_statistic(),
+	save_statistic(),
+	save_debuglog(),
+	save_history(),
+	debug_end_function())$

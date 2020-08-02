@@ -1,0 +1,42 @@
+/* ===================== */
+/* === TASK SOLVER ===== */
+/* == Version 0.0.494 == */
+/* ===================== */
+printf(true, "===============================~%")$
+printf(true, "== Task Solver welcomes you! ==~%")$
+printf(true, "===============================~%~%")$
+tasksolver_version : "0.0.494"$											/* версия программы TaskSolver */
+do_compile_functions_in_ts : false$										/* нужно ли скомпилировать все функции после загрузки */
+make_tex_solution : true$												/* генерировать ли строки решения (нужно, чтобы для ускорения работы, отключить функции типа totex) */
+/* Подгружаем необходимые модули */
+load("basic")$
+load("linearalgebra")$
+load("stringproc")$
+load("to_poly_solve")$
+load("sym")$
+load("distrib")$
+load("code/func-load.mac")$
+load_statistic()$
+load_settings()$
+load("code/func-debug.mac")$
+get_local_settings()$
+printf(true, "got local settings~%")$
+print_local_settings()$
+printf(true, "printed local settings~%")$
+load("code/func-stat.mac")$
+load("code/func-structure-type.mac")$
+load("code/func-latex.mac")$
+load("code/func-handling.mac")$
+load("code/func.mac")$
+load("code/func-autodoc.mac")$
+load("code/formaltasks.mac")$
+load("code/informaltasks.mac")$
+load("code/func-testproj.mac")$
+printf(true, "...all necessary modules are loaded.~%")$
+if do_compile_functions_in_ts then block([e_rn_t, e_rl_t],
+	e_rn_t : elapsed_run_time(),
+	e_rl_t : elapsed_real_time(),
+	compile(all),
+	printf(true, "Compiled with ~a run time and ~a real time~%", elapsed_run_time()-e_rn_t, elapsed_real_time()-e_rl_t))$
+/* Все готово! */
+printf(true, "Ready for work!~%")$
