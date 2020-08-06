@@ -1,0 +1,22 @@
+sudo apt-get install finger
+
+# Установка максимы
+sudo apt-get install maxima -y
+
+# Установка латеха
+sudo apt-get install texlive-full -y
+
+# Установка апача
+sudo apt-get install apache2 -y
+
+# Перезагрузить веб сервер
+sudo /etc/init.d/apache2 restart
+
+# Установка ПХП
+sudo apt-get install php5 libapache2-mod-php5 -y
+
+# Чтобы на сервере работал ЛаТеХ:
+В /etc/texmf/texmf.d/00debian.cnf добавить
+TEXMFVAR = $TEXMFMAIN
+TEXMFCONFIG = $TEXMFMAIN
+потом запустить update-texmf

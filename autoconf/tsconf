@@ -1,0 +1,23 @@
+#!/bin/sh
+#sudo apt-get update
+sudo apt-get install sendmail
+sudo apt-get install fetchmail msmtp mpack sharutils 
+#sudo apt-get install ssmtp
+touch conf-fetchmailrc
+touch conf-msmtprc
+#touch conf-ssmtp.conf
+#touch conf-revaliases
+cp /etc/mail/sendmail.mc conf-sendmail.mc
+maxima --very-quiet -b "conf-autogen.mac"
+cp conf-sendmail.mc /etc/mail/sendmail.mc
+cp conf-client-info /etc/mail/auth/client-info
+chmod 600 /etc/mail/auth/*
+sendmailconfig
+cp conf-fetchmailrc ~/.fetchmailrc
+cp conf-msmtprc ~/.msmtprc
+#sudo cp conf-ssmtp.conf /etc/ssmtp/ssmtp.conf
+#sudo cp conf-revaliases /etc/ssmtp/revaliases
+chmod 600 ~/.fetchmailrc
+chmod 600 ~/.msmtprc
+#chmod 600 /etc/ssmtp/ssmtp.conf
+#chmod 600 /etc/ssmtp/revaliases

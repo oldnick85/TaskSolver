@@ -1,0 +1,8 @@
+/* =============================================== */
+/* == Режим обработки почтовых сообщений ========= */
+/* =============================================== */
+tasksolver_processing_source : ts_email$
+tasksolver_processing_mode : ts_test$
+load("ts.mac")$
+load("code/func-ts-email.mac")$
+ts_email_main()$

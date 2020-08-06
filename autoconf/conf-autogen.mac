@@ -1,0 +1,70 @@
+print("------------------------------------------------")$
+print("Автогенерация файлов настройки почтовых программ")$
+print("------------------------------------------------")$
+load("../func-load.mac")$					/* загружаем необходимые модули */
+load("../lispfunc.lisp")$
+/* =================================== */
+/* Функция читает все содержимое файла */
+/* и возвращает в виде строки          */
+/* =================================== */
+read_whole_file_to_string(fname) := block([res, s, fl], res : "", s : "",
+	fl : openr(fname),
+	while (s # false) do block([],
+		res : sconcat(res, s),
+		s : readline(fl)),
+	close(fl),
+	res)$
+block([s_p, u_n, s_inp, m_l, m_p, fl, s, i1, i2],
+	s_p : get_system_properties(),			/* получаем системные параметры */
+	/* Инициализация имени пользователя */
+	u_n : s_p[1],
+	printf(true, "Введите имя пользователя (~a): ", u_n),
+	s_inp : readlinestdio(),				/* запрашиваем имя пользователя */
+	if slength(s_inp)>0 then u_n : s_inp,		/* если пустая строка, то берем системный параметр */
+	/* Инициализация логина почты */
+	m_l : "psb0vlml",
+	printf(true, "Введите логин почты gmail (~a): ", m_l),
+	s_inp : readlinestdio(),				/* запрашиваем логин почты */
+	if slength(s_inp)>0 then m_l : s_inp,		/* если пустая строка, то берем по умолчанию */
+	/* Инициализация пароля почты */
+	m_p : "3n0ri7uz1blamupo",
+	printf(true, "Введите пароль почты (~a): ", m_p),
+	s_inp : readlinestdio(),				/* запрашиваем пароль почты */
+	if slength(s_inp)>0 then m_p : s_inp,		/* если пустая строка, то берем по умолчанию */
+	/* Конфигурация fetchmail */
+	fl : openw("conf-fetchmailrc"),			/* открываем файл настроек fetchmail */
+	printf(fl, "# Configuration created ~a by TaskSolver ~a conf-autogen~%", timedate(), s_p[5]),
+	printf(fl, "set postmaster ~a~%set bouncemail~%set no spambounce~%set softbounce~%set properties \"\"~%set daemon 60~%", u_n),
+	printf(fl, "poll pop.gmail.com proto pop3 port 995~%    user '~a' with pass '~a' is ~a here ssl;~%", m_l, m_p, u_n),
+	close(fl),								/* закрываем файл настроек fetchmail */
+	/* Конфигурация msmtp */
+	fl : openw("conf-msmtprc"),				/* открываем файл настроек msmtp */
+	printf(fl, "account default~%host smtp.gmail.com~%port 587~%auth on~%tls on~%tls_starttls on~%tls_certcheck off~%"),
+	printf(fl, "from ~a@gmail.com~%user ~a@gmail.com~%password ~a~%", m_l, m_l, m_p),
+	close(fl),								/* закрываем файл настроек msmtp */
+	/* Конфигурация ssmtp */
+	/* fl : openw("conf-smsmtp.conf"), */			/* открываем файл настроек ssmtp */
+	/* printf(fl, "#~%# Config file for sSMTP sendmail~%#~%"), */
+	/* printf(fl, "root=~a~%mailhub=smtp.gmail.com:587~%UseSTARTTLS=YES~%UseTLS=YES~%", m_l), */
+	/* printf(fl, "AuthUser=~a@gmail.com~%AuthPass=~a~%FromLineOverride=Yes~%rewriteDomain=gmail.com~%hostname=~a~%", m_l, m_p, m_l), */
+	/* close(fl), */								/* закрываем файл настроек ssmtp */
+	/* fl : openw("conf-revaliases"), */			/* открываем файл алиасов ssmtp */
+	/* printf(fl, "# sSMTP aliases~%# Format:	local_account:outgoing_address:mailhub~%"), */
+	/* printf(fl, "# Example: root:your_login@your.domain:mailhub.your.domain[:port]~%"), */
+	/* printf(fl, "# where [:port] is an optional port number that defaults to 25.~%"), */
+	/* printf(fl, "~a:~a@gmail.com:smtp.gmail.com:587~%", u_n, m_l), */
+	/* close(fl) */								/* закрываем файл алиасов ssmtp */
+	/* Конфигурация sendmail */
+	s : read_whole_file_to_string("conf-sendmail.mc"),
+	i1 : ssearch("MAILER_DEFINITIONS", s),
+	i2 : ssearch("MAILER_DEFINITIONS", s, 'sequal, i1+18),
+	if (i2 # false) then i1 : i2,
+	ss : printf(false, "define(`SMART_HOST',`smtp.gmail.com:465')~%"),
+	ss : printf(false, "~a define(`confAUTH_MECHANISMS', `EXTERNAL GSSAPI DIGEST-MD5 CRAM-MD5 LOGIN PLAIN')dnl~%", ss),
+	ss : printf(false, "~a FEATURE(`authinfo',`hash /etc/mail/auth/client-info')dnl~%", ss),
+	sinsert(ss, s, i1),
+	fl : openw("conf-sendmail.mc"),
+	printf(fl, "~a", s),
+	close(fl)
+)$
+

@@ -1,0 +1,61 @@
+<script type="text/javascript">
+function getXmlHttp() {
+	var xmlhttp;
+	try {
+		xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+		} catch (e) {
+		try {
+			xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+		} catch (E) {xmlhttp = false;}
+	}
+	if (!xmlhttp && typeof XMLHttpRequest!='undefined') {
+		xmlhttp = new XMLHttpRequest();
+		}
+		return xmlhttp;
+	}
+function solve() {
+	~a 
+	var xmlhttp = getXmlHttp();
+	document.getElementById("solve").innerHTML = "Задание решается, это может занять около минуты, подождите...";
+	xmlhttp.open('POST', 'ts_solver.php', true);
+	xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	all_params = ~a;
+	xmlhttp.send("prs=" + encodeURIComponent(all_params));
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == 4) {
+			if(xmlhttp.status == 200) {
+				document.getElementById("solve").innerHTML = xmlhttp.responseText;
+				}
+			}
+		};
+	}
+function send_err() {
+	~a
+	var s_e_t = document.getElementById("send_err_text").value;
+	var all_params;
+	var xmlhttp = getXmlHttp();
+	xmlhttp.open('POST', 'ts_send_err.php', true);
+	xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+	all_params = ~a;
+	xmlhttp.send("emsg=" + encodeURIComponent(s_e_t) + "&prs=" + encodeURIComponent(all_params));
+	xmlhttp.onreadystatechange = function() {
+		if (xmlhttp.readyState == 4) {
+			if(xmlhttp.status == 200) {
+				document.getElementById("solve").innerHTML = xmlhttp.responseText;
+				}
+			}
+		};
+	}
+</script>	
+<H1>Ввод параметров задания для решения</H1>
+~a
+<input type="button" value="Решить задание" onclick="solve()" />
+<p>Решение: <span id="solve"></span></p>
+<hr>
+<p>Чтобы получить дополнительную информацию об определенном параметре просто наведите курсор на соответствующее поле ввода.</p>
+<hr>
+<p>Если Вы заметили ошибку в решении или у Вас есть другие замечания по работе проекта, то можете сообщить об этом нам нажав кнопку, 
+расположенную ниже. Строку сообщения можно оставить пустой. Кроме собственно сообщения мы получим все параметры задания, введенные 
+на странице. Если в сообщении будет указан адрес электронной почты, то на нее мы отправим ответ, если он требуется.</p>
+<p><input type="button" value="Отправить сообщение об ошибке" onclick="send_err()" />
+<input type="text" name="send_err_text" id="send_err_text" />~%<br /></p>

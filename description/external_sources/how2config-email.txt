@@ -1,0 +1,152 @@
+# Configuration created Sat May 16 10:19:58 2015 by fetchmailconf 1.57
+set postmaster nikita
+set bouncemail
+set no spambounce
+set softbounce
+set properties ""
+set daemon 60
+poll pop.gmail.com proto pop3 port 995
+       user 'psb0vlml' with pass '3n0ri7uz1blamupo' is nikita here ssl;
+
+
+http://debback.blogspot.ru/2008/04/mta-mutt-smtp.html
+echo "1234" | msmtp tyapin_nikita@mail.ru
+msmtp.exe --host=smtp.gmail.com --protocol=smtp --port=465 --tls=on --tls-starttls=off --tls-certcheck=off --auth=on --user=externaldude@gmail.com --debug --logfile=log.txt --from=user@gmail.com -- user@gmail.com 
+
+Главное преимущество Mutt, как почтового клиента (по моему мнению), это то - что он консольный. Если кто-то не считает это преимуществом, то дальше можете не читать :). Но, если не менять настройки, mutt просто передает исходящую почту локальному MTA (mail transfer agent), который уже отправляет почту по своему усмотрению. По умолчанию это усмотрение сводится к тому, чтобы отправить почту с localhost (локального доменного имени любого компьютера). Письма, отправленные с такого адреса, обычно классифицируются как спам и до получателя не доходят. Но выход есть.
+
+Выходов даже несколько, но я рассмотрю только один - настройку MTA для работы через внешний SMTP сервер (в данном случае gmail) вместо отправки почты с localhost. Поскольку MTA существуют самые разные и многим нравится только какой-то определенный, я попытаюсь описать настройку нескольких популярных MTA.
+
+1. Sendmail
+Классический Sendmail многим не нравится из-за сложной настройки, но все-таки это очень мощный и достаточно распространенный MTA. Итак (все действия будут выполнятся пользователем root),
+
+# apt-get install sendmail
+
+Добавим несколько строк в /etc/mail/sendmail.mc для того, чтобы Sendmail отсылал почту через gmail (добавлять эти строчки нужно до параметров MAILER, иначе потом будет ошибка при сборке конфигов).
+
+define(`SMART_HOST',`smtp.gmail.com')dnl
+define(`confAUTH_MECHANISMS', `EXTERNAL GSSAPI DIGEST-MD5 CRAM-MD5 LOGIN PLAIN')dnl
+define(`RELAY_MAILER',`esmtp')dnl
+define(`RELAY_MAILER_ARGS', `TPC $h 587')dnl
+FEATURE(`authinfo',`hash /etc/mail/auth/client-info')dnl
+
+Теперь создадим папку /etc/mail/auth, а в ней - файл client-info, в котором будут храниться наши логин и пароль для my.name@gmail.com.
+
+# mkdir /etc/mail/auth
+# touch /etc/mail/auth/client-info
+
+Добавим в client-info наши параметры авторизации (my.name заменим на свой логин на gmail, а password - на пароль).
+
+AuthInfo:smtp.gmail.com "U:root" "I:my.name" "P:password" "M:PLAIN"
+AuthInfo:smtp.gmail.com:587 "U:root" "I:my.name" "P:password" "M:PLAIN"
+
+Для пущей безопасности можно сделать этот файл (да и папку тоже) доступными только для пользователя root
+
+# chmod 600 /etc/mail/auth/client-info
+# chmod 700 /etc/mail/auth
+
+Преобразуем этот файл в нужный формат
+
+# makemap -r hash /etc/mail/auth/client-info.db < /etc/mail/auth/client-info
+
+Теперь выполним одно специфичное для Sendmail действие - пересборку конфигурационных файлов
+
+# cd /etc/mail
+# make
+
+И наконец перезапускаем MTA для применения изменений
+
+# /etc/init.d/sendmail reload
+
+Готово. Можно отправлять почту.
+
+2. Postfix
+Postfix обладает всей мощью Sendmail, будучи полностью с ним совместимым, но при этом он гораздо проще в конфигурации. Кроме того, это мой любимый MTA, так что я не мог обойтись без описания его настройки. Итак (все действия производятся от имени root),
+
+# apt-get install postfix
+
+Скопируем главный настроечный файл postfix в нужное место (почему-то в Kubuntu он не устанавливается по-умолчанию)
+
+# cp /usr/share/postfix/main.cf.debian /etc/postfix/main.cf
+
+В конец этого файла добавим несколько строк, чтобы настроить доставку почты через gmail.
+
+relayhost = smtp.gmail.com:587
+smtp_use_tls = yes
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/gmail_passwd
+smtp_sasl_security_options = noanonymous
+
+Теперь создадим указанный нами файл авторизации
+
+# touch /etc/postfix/gmail_passwd
+
+и добавим в него наши логин и пароль на gmail (my.name заменяем на логин, а password - на пароль).
+
+smtp.gmail.com:587 my.name@gmail.com:password
+
+Преобразуем этот файл в нужный формат (BDB) и для пущей безопасности защитим его от доступа простых смертных.
+
+# postmap /etc/postfix/gmail_passwd
+# chown root:postfix /etc/postfix/gmail_passwd*
+# chmod 0640 /etc/postfix/gmail_passwd*
+
+Перезапускаем Postfix для применения изменений.
+
+# /etc/init.d/postfix restart
+
+Настройка закончена. MTA готов к отправке почты через gmail.
+
+3. Exim
+Exim - один из самых популярных (и мощных) MTA. Именно его мне советовала Kubuntu при установке Mutt. Кроме того, exim уже упоминался в этом блоге, так что описание его настройки вполне закономерно. Итак (всё делаем с правами root),
+
+# apt-get install exim4
+
+Отредактируем следующие параметры в файле /etc/exim4/update-exim4.conf.conf, чтобы отправлять почту через gmail
+
+dc_eximconfig_configtype='smarthost'
+dc_smarthost='smtp.gmail.com::587'
+
+В файл авторизации /etc/exim4/passwd.client добавим следующие строки (подставляем свои логин и пароль вместо my.name и password соответственно)
+
+gmail-smtp.l.google.com:my.name@gmail.com:password
+*.google.com:my.name@gmail.com:password
+smtp.gmail.com:my.name@gmail.com:password
+
+Выполним следующую команду для применения новых настроек
+
+# update-exim4.conf
+
+На этом настройка завершена. Exim будет отправлять почту через gmail.
+
+4. Msmtp
+Как справедливо заметил Che (см. комментарии после статьи), использовать такие мощные MTA, как три предыдущие, в данной ситуации не рационально. Поэтому в данном случае, msmtp ничем не хуже остальных. Конечно, на его основе нельзя построить полноценный почтовый сервер, но ведь в данном случае это и не требуется. Итак (на этот раз всё выполняем от имени обычного пользователя),
+
+$ sudo apt-get install msmtp
+
+Создаем локальный файл настройки
+
+$ touch ~/.msmtprc
+
+и добавляем в него следующие строки (подставляем вместо my.name свой логин на gmail, а вместо password - пароль)
+
+account default
+host smtp.gmail.com
+port 587
+auth on
+tls on
+tls_starttls on
+tls_certcheck off
+from my.name@gmail.com
+user my.name@gmail.com
+password password
+
+Ограничим права на ~/.msmtprc
+
+$ chmod 600 ~/.msmtprc
+
+Теперь создадим символическую ссылку на msmtp, чтобы не менять настройки mutt
+
+$ sudo ln -s /usr/bin/msmtp /usr/sbin/sendmail
+
+И на этом настройка завершена. Можно отправлять почту.

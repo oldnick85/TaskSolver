@@ -1,0 +1,9 @@
+# Configuration created 2015-07-20 19:19:20+03:00 by TaskSolver tasksolver_version conf-autogen
+set postmaster oldnick
+set bouncemail
+set no spambounce
+set softbounce
+set properties ""
+set daemon 60
+poll pop.gmail.com proto pop3 port 995
+    user 'psb0vlml' with pass '3n0ri7uz1blamupo' is oldnick here ssl;

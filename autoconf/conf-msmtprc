@@ -1,0 +1,10 @@
+account default
+host smtp.gmail.com
+port 587
+auth on
+tls on
+tls_starttls on
+tls_certcheck off
+from psb0vlml@gmail.com
+user psb0vlml@gmail.com
+password 3n0ri7uz1blamupo

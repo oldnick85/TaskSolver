@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+	<meta http-equiv="Content-Language" content="ru">
+	~a
+	<title>~a</title>
+</head>
+<body>
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+    (function (d, w, c) {
+        (w[c] = w[c] || []).push(function() {
+            try {
+                w.yaCounter38065255 = new Ya.Metrika({
+                    id:38065255,
+                    clickmap:true,
+                    trackLinks:true,
+                    accurateTrackBounce:true
+                });
+            } catch(e) { }
+        });
+        var n = d.getElementsByTagName("script")[0],
+            s = d.createElement("script"),
+            f = function () { n.parentNode.insertBefore(s, n); };
+        s.type = "text/javascript";
+        s.async = true;
+        s.src = "https://mc.yandex.ru/metrika/watch.js";
+        if (w.opera == "[object Opera]") {
+            d.addEventListener("DOMContentLoaded", f, false);
+        } else { f(); }
+    })(document, window, "yandex_metrika_callbacks");
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/38065255" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+<SCRIPT SRC="/jsmath/easy/load.js"></SCRIPT>
+<table width="100%" background="white" color="white" border-spacing="1px">
+	<!-- Шапка -->
+	<tr><th colspan="3" height="100px" align="center" bgcolor="#CCCCCC">
+		<big><big>Сервис решения задач высшей и элементарной математики<br> с подробными вычислениями и комментариями</big></big>
+	</th></tr>
+	<!-- Левое поле -->
+	<tr><td width="100px" bgcolor="#CCCCCC"> </td>
+	<!-- Центр -->
+	<!--<td padding="5px" bgcolor="#EEEEEE"><div height="100%" overflow-x="auto">a</div></td>-->
+	<td padding="5px" bgcolor="#EEEEEE">~a</td>
+	<!-- Правое поле -->
+	<td width="100px" bgcolor="#CCCCCC"> </td></tr>
+	<!-- Низ страницы -->
+	<tr><td colspan="3" align="right" bgcolor="#CCCCCC">Связаться с нами: <a href="mailto:tasksolver.maintenance@gmail.com?subject=Вопрос или предложение по проекту TaskSolver">tasksolver.maintenance@gmail.com</a></td></tr>
+</table>
+</body>
+</html>

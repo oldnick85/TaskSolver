@@ -1,0 +1,18 @@
+/* ========================================== */
+/* == Режим обработки команд веб-сервера ==== */
+/* ========================================== */
+/* ts_web_server_command - переменная, хранящая в себе команду, переданную сервером */
+/* эта переменная инициализируется командной строкой, которая формируется вызывающей программой */
+/* Показать все задания [ts_command = ts_show_informaltasks_all] */
+/* Показать задания определенного типа [ts_command = ts_show_informaltasks, ts_category = "???"] */
+/* Показать конкретное задание [ts_command = ts_show_informaltask, ts_shortname = "???"] */
+/* Решить задание [ts_command = ts_solve_informaltask, ts_shortname = "???", ts_parameters = [...]] */
+file_search_maxima : append(file_search_maxima, ["/home/oldnick/TaskSolver/###.mac"])$	/* чтобы нашлись подгружаемые пакеты */
+/* ts_web_server_command : [ts_command = ts_solve_informaltask, ts_parameters = " ts_shortname=mc_itml,n=100,p=0.5,m1=1,m2=10 "]; */
+generate_debug_functions : true$										/* будут ли генерироваться функции отладки */
+load("ts.mac")$
+debuglog_is_on : true$
+debug_out_source : [[true, false], [true, false], [true, false]]$
+load("code/func-ts-web.mac")$
+printf(true, "func-ts-web loaded~%")$
+ts_web_main()$
